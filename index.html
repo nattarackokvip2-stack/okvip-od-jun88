@@ -324,11 +324,11 @@
                <input type="text" id="searchSchedule" class="form-control bg-transparent border-0 text-white shadow-none px-0" placeholder="ค้นหาพนักงาน..." oninput="handleScheduleSearch(this.value)">
             </div>
             
-            <div class="d-flex align-items-center gap-2">
-                <div class="d-flex align-items-center" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; padding: 2px;">
-                    <button type="button" class="btn btn-sm text-info" onclick="changeMonth(-1)" style="padding: 5px 15px; cursor: pointer; position: relative; z-index: 10;">◀</button>
-                    <input type="month" id="monthPicker" class="form-control w-auto text-center bg-transparent text-info border-0 shadow-none fw-bold px-0" onchange="loadScheduleTable()" style="position: relative; z-index: 1;">
-                    <button type="button" class="btn btn-sm text-info" onclick="changeMonth(1)" style="padding: 5px 15px; cursor: pointer; position: relative; z-index: 10;">▶</button>
+            <div class="d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="changeMonth(-1)" style="border-radius: 8px; padding: 6px 12px;">◀</button>
+                    <input type="month" id="monthPicker" class="form-control text-center text-info shadow-none fw-bold" onchange="loadScheduleTable()" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; width: 140px; padding: 5px;">
+                    <button type="button" class="btn btn-outline-info btn-sm" onclick="changeMonth(1)" style="border-radius: 8px; padding: 6px 12px;">▶</button>
                 </div>
                 <button id="btnLeaveSystem" class="btn btn-warning px-3 fw-bold text-dark" style="border-radius: 8px; transition: all 0.3s;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
             </div>
