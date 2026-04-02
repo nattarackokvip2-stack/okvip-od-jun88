@@ -974,7 +974,7 @@
         document.getElementById('btnClearSchedule').style.display = 'inline-block'; 
         document.getElementById('btnAssignShift').style.display = 'inline-block'; 
         document.getElementById('addBtn').style.display = 'block'; 
-        document.getElementById('addPenaltyBtn').style.display = 'block'; 
+        document.getElementById('addPenaltyBtn').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none';
         document.getElementById('addManualBtn').style.display = 'block'; 
         document.getElementById('btnJobSettings').style.display = 'block'; 
         document.getElementById('addAnnounceBtn').style.display = 'block'; 
@@ -1192,7 +1192,7 @@
     allPenalties.forEach(p => { 
         if (!filterMonth || p[9] === filterMonth) {
             hasData = true;
-            let btn = (myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button>` : '-'; 
+            let btn = (myRole === 'SuperAdmin') ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button>` : '-'; 
             let deductStr = p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย' ? `<span class="text-danger fw-bold">${p[8]} ฿</span> <br><small class="text-muted">(${p[7]}% จาก ${p[6]}฿)</small>` : '-'; 
             tb.innerHTML += `<tr><td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td><td class="fw-bold">${p[2]}</td><td>${p[3]}</td><td>${p[4]}</td><td class="text-warning">${p[5]}</td><td>${deductStr}</td><td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td><td class="text-center">${btn}</td></tr>`; 
         }
