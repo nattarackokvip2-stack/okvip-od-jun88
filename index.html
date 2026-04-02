@@ -316,6 +316,7 @@
                 <input type="month" id="monthPicker" class="form-control w-auto text-center bg-transparent text-info border-0 shadow-none fw-bold" onchange="loadScheduleTable()">
                 <button class="btn btn-sm text-info" onclick="changeMonth(1)" style="padding: 8px 15px;">▶</button>
             </div>
+            <button class="btn btn-warning px-3 fw-bold text-dark" style="border-radius: 8px;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
         </div>
       </div>
 
@@ -712,6 +713,54 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+  <div class="modal fade" id="leaveHistoryModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+        <h4 class="fw-bold mb-0 text-warning">📩 ระบบแจ้งลากิจ/ลาป่วย</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="d-flex justify-content-between mb-3">
+          <span class="text-muted small">รายการคำขอลาทั้งหมดในระบบ</span>
+          <button class="btn btn-warning fw-bold text-dark px-4" style="border-radius: 8px;" onclick="openSubmitLeaveModal()">➕ แจ้งวันลา</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>วันที่ขอลา</th><th>ผู้แจ้ง (แผนก)</th><th>ประเภท</th><th>สาเหตุ</th><th>สถานะ</th><th class="text-center">จัดการ</th></tr></thead>
+            <tbody id="leaveTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="submitLeaveModal" tabindex="-1" data-bs-theme="dark" style="z-index: 1060;">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-4">
+        <h5 class="fw-bold mb-4 text-center text-warning">📝 แจ้งลากิจ / ลาป่วย</h5>
+        <form id="leaveForm" onsubmit="handleLeaveSubmit(event)">
+          <label class="small mb-1 text-white">1. วัน/เดือน/ปี ที่ต้องการลา</label>
+          <input type="date" id="leaveDateInput" class="form-control mb-3" required>
+          
+          <label class="small mb-1 text-white">2. ประเภทการลา</label>
+          <select id="leaveTypeInput" class="form-select mb-3" required>
+            <option value="">-- เลือกประเภท --</option>
+            <option value="ลากิจ">ลากิจ</option>
+            <option value="ลาป่วย">ลาป่วย</option>
+          </select>
+          
+          <label class="small mb-1 text-white">3. รายละเอียด / สาเหตุ</label>
+          <textarea id="leaveReasonInput" class="form-control mb-4" rows="3" required placeholder="ระบุเหตุผลการลา..."></textarea>
+          
+          <button type="submit" class="btn btn-warning w-100 py-2 fw-bold text-dark">ส่งคำขอลา</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
   let myRole = ""; 
   let currentUsername = ""; 
@@ -870,7 +919,8 @@
               loadSupabaseWebsites(),
               loadSupabasePenalties(),
               loadSupabaseManuals(),
-              loadSupabaseAnnouncements()
+              loadSupabaseAnnouncements(),
+              loadSupabaseLeaves() //
           ]);
           await loadScheduleTable();
           await loadDailyJobData();
@@ -1732,6 +1782,137 @@
   
   async function confirmDeletePortal(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('portals').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
   async function confirmDeleteBackend(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('backends').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
+// ==========================================
+  // 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests)
+  // ==========================================
+  let allLeavesData = [];
+
+  async function loadSupabaseLeaves() {
+      try {
+          const { data } = await supabaseClient.from('leave_requests').select('*').order('created_at', { ascending: false });
+          allLeavesData = data || [];
+          renderLeaveTable();
+      } catch (err) { console.error('Error loading leaves:', err); }
+  }
+
+  function openLeaveHistoryModal() {
+      renderLeaveTable();
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('leaveHistoryModal')).show();
+  }
+
+  function openSubmitLeaveModal() {
+      document.getElementById('leaveForm').reset();
+      const now = new Date();
+      document.getElementById('leaveDateInput').value = now.toISOString().split('T')[0];
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).show();
+  }
+
+  async function handleLeaveSubmit(e) {
+      e.preventDefault();
+      const btn = document.querySelector('#leaveForm button[type="submit"]');
+      btn.disabled = true; btn.innerText = '⏳ กำลังส่งคำขอ...';
+      
+      const myNick = localStorage.getItem('okvip_nick');
+      const me = allUsersData.find(u => u[1] === myNick);
+      const myDept = me ? me[3] : 'ไม่ระบุ';
+      
+      const payload = {
+          nickname: myNick,
+          department: myDept,
+          leave_date: document.getElementById('leaveDateInput').value,
+          leave_type: document.getElementById('leaveTypeInput').value,
+          reason: document.getElementById('leaveReasonInput').value,
+          status: 'Pending' // รออนุมัติ
+      };
+      
+      try {
+          await supabaseClient.from('leave_requests').insert([payload]);
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).hide();
+          await loadSupabaseLeaves();
+          Swal.fire({toast:true, position:'top-end', title:'ส่งคำขอลาสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
+      } catch(err) {
+          Swal.fire('Error', err.message, 'error');
+      } finally {
+          btn.disabled = false; btn.innerText = 'ส่งคำขอลา';
+      }
+  }
+
+  function renderLeaveTable() {
+      const tb = document.getElementById('leaveTableBody');
+      tb.innerHTML = '';
+      const myNick = localStorage.getItem('okvip_nick');
+      
+      if(allLeavesData.length === 0) {
+          tb.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีประวัติการแจ้งลา</td></tr>`;
+          return;
+      }
+      
+      allLeavesData.forEach(L => {
+          let statusBadge = '';
+          if(L.status === 'Pending') statusBadge = `<span class="badge bg-warning text-dark border">⏳ รออนุมัติ</span>`;
+          else if(L.status === 'Approved') statusBadge = `<span class="badge bg-success border">✅ อนุมัติแล้ว</span>`;
+          else if(L.status === 'Rejected') statusBadge = `<span class="badge bg-danger border">❌ ปฏิเสธ</span>`;
+          
+          let actionBtns = '-';
+          // 1. ถ้าเป็น SuperAdmin จะเห็นปุ่ม อนุมัติ / ปฏิเสธ
+          if(myRole === 'SuperAdmin' && L.status === 'Pending') {
+              actionBtns = `
+                  <button class="btn btn-sm btn-outline-success me-1" onclick="updateLeaveStatus('${L.id}', 'Approved')">✔️</button>
+                  <button class="btn btn-sm btn-outline-danger" onclick="updateLeaveStatus('${L.id}', 'Rejected')">❌</button>
+              `;
+          } 
+          // 2. ถ้าเป็นคำขอของตัวเองที่ยัง 'รออนุมัติ' หรือเป็น SuperAdmin สามารถกดยกเลิก (ลบ) คำขอทิ้งได้
+          else if ((myRole === 'SuperAdmin' || myNick === L.nickname) && L.status === 'Pending') {
+             actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ยกเลิกคำขอ</button>`;
+          }
+          // 3. SuperAdmin สามารถลบประวัติเก่าๆ ทิ้งได้
+          else if (myRole === 'SuperAdmin') {
+             actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ลบประวัติ</button>`;
+          }
+          
+          let displayNick = L.nickname;
+          if (L.nickname === myNick) displayNick = `<span class="text-warning">${L.nickname} (คุณ)</span>`;
+
+          tb.innerHTML += `
+              <tr>
+                  <td>${new Date(L.leave_date).toLocaleDateString('th-TH')}</td>
+                  <td class="fw-bold text-white">${displayNick} <br><small class="text-muted">${L.department.split(' ')[0]}</small></td>
+                  <td class="text-info">${L.leave_type}</td>
+                  <td class="small text-muted" style="max-width: 200px; white-space: normal;">${L.reason}</td>
+                  <td>${statusBadge}</td>
+                  <td class="text-center">${actionBtns}</td>
+              </tr>
+          `;
+      });
+  }
+
+  function updateLeaveStatus(id, newStatus) {
+      Swal.fire({
+          title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?',
+          icon: 'question', showCancelButton: true, 
+          confirmButtonColor: newStatus === 'Approved' ? '#00ff66' : '#ff3366',
+          confirmButtonText: 'ยืนยัน',
+          background:'#111', color:'#fff'
+      }).then(async r => {
+          if(r.isConfirmed) {
+              Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()});
+              await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id);
+              await loadSupabaseLeaves();
+              Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+      });
+  }
+
+  function deleteLeave(id) {
+       Swal.fire({title: 'ยกเลิกคำขอนี้?', text: 'ข้อมูลจะถูกลบออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background:'#111', color:'#fff'}).then(async r => {
+          if(r.isConfirmed) {
+              Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()});
+              await supabaseClient.from('leave_requests').delete().eq('id', id);
+              await loadSupabaseLeaves();
+              Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+       });
+  }
 </script>
 
 </body>
