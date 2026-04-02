@@ -210,6 +210,16 @@
   .col-sticky-dept { position: sticky; left: 150px; background-color: var(--bg-card) !important; z-index: 2; border-right: 1px solid #444; width: 80px; min-width: 80px; }
   .stat-input-cell { width: 90px; min-width: 90px; }
   .highlight-me { color: var(--neon-green) !important; text-shadow: 0 0 10px rgba(0, 255, 102, 0.8) !important; font-size: 1.05rem; }
+    /* 🌟 Animation ไฟกระพริบแจ้งเตือน 🌟 */
+  @keyframes blinkAlert {
+    0% { box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px var(--neon-red); background-color: rgba(255, 51, 102, 0.2); border-color: var(--neon-red); color: #fff; }
+    50% { box-shadow: 0 0 20px var(--neon-red), inset 0 0 20px var(--neon-red); background-color: rgba(255, 51, 102, 0.6); border-color: var(--neon-red); color: #fff; }
+    100% { box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px var(--neon-red); background-color: rgba(255, 51, 102, 0.2); border-color: var(--neon-red); color: #fff; }
+  }
+  .btn-alert-blink {
+    animation: blinkAlert 1.5s infinite;
+    font-weight: bold;
+  }
 </style>
 </head>
 <body>
@@ -316,7 +326,7 @@
                 <input type="month" id="monthPicker" class="form-control w-auto text-center bg-transparent text-info border-0 shadow-none fw-bold" onchange="loadScheduleTable()">
                 <button class="btn btn-sm text-info" onclick="changeMonth(1)" style="padding: 8px 15px;">▶</button>
             </div>
-            <button class="btn btn-warning px-3 fw-bold text-dark" style="border-radius: 8px;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
+            <button id="btnLeaveSystem" class="btn btn-warning px-3 fw-bold text-dark ms-2" style="border-radius: 8px; transition: all 0.3s;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
         </div>
       </div>
 
@@ -721,8 +731,11 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body p-4">
-        <div class="d-flex justify-content-between mb-3">
-          <span class="text-muted small">รายการคำขอลาทั้งหมดในระบบ</span>
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+             <span class="text-white small">📅 กรองตามเดือน:</span>
+             <input type="month" id="leaveMonthFilter" class="form-control" style="width: auto; background: #111; color: #ffcc00; border-color: #ffcc00;" onchange="loadLeavesPage(1)">
+          </div>
           <button class="btn btn-warning fw-bold text-dark px-4" style="border-radius: 8px;" onclick="openSubmitLeaveModal()">➕ แจ้งวันลา</button>
         </div>
         <div class="table-responsive">
@@ -731,6 +744,7 @@
             <tbody id="leaveTableBody"></tbody>
           </table>
         </div>
+        <div id="leavePaginationArea" class="d-flex justify-content-center mt-3 gap-2 flex-wrap"></div>
       </div>
     </div>
   </div>
@@ -1279,7 +1293,12 @@
   function selectStamp(code, btn) { if (myRole === 'Member' && code !== 'X' && code !== '') { Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); return; } currentStamp = code; document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); }
   function filterScheduleDept(dept, btn) { if(Object.keys(unsavedChanges).length > 0){ Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); return; } currentScheduleFilter = dept; document.querySelectorAll('#holidaySection .dept-badge').forEach(b => { b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; }); btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)"; loadScheduleTable(); }
   function handleScheduleSearch(term) { scheduleSearchTerm = term.toLowerCase().trim(); loadScheduleTable(); }
-  function changeMonth(offset) { if(Object.keys(unsavedChanges).length>0){ Swal.fire({title:'ยังไม่ได้บันทึก!', icon:'warning', background:'#111', color:'#fff'}); return; } const p = document.getElementById('monthPicker'); if(!p.value) return; let [y, m] = p.value.split('-').map(Number); m += offset; if (m>12){m=1;y++;} else if(m<1){m=12;y--;} p.value = `${y}-${String(m).padStart(2, '0')}`; loadScheduleTable(); }
+  function changeMonth(offset) { 
+      // ... (โค้ดเดิม) ...
+      p.value = `${y}-${String(m).padStart(2, '0')}`; 
+      loadScheduleTable(); 
+      checkLeaveAlerts(); //
+  }
   document.addEventListener('mouseup', function() {
     isDraggingStamp = false;
 })
@@ -1782,21 +1801,53 @@
   
   async function confirmDeletePortal(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('portals').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
   async function confirmDeleteBackend(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('backends').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
-// ==========================================
+
+  // ==========================================
   // 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests)
   // ==========================================
   let allLeavesData = [];
+  let currentLeavePage = 1;
+  const leavesPerPage = 10;
 
   async function loadSupabaseLeaves() {
       try {
           const { data } = await supabaseClient.from('leave_requests').select('*').order('created_at', { ascending: false });
           allLeavesData = data || [];
-          renderLeaveTable();
+          checkLeaveAlerts(); // เช็คไฟกระพริบทุกครั้งที่ดึงข้อมูลใหม่
       } catch (err) { console.error('Error loading leaves:', err); }
   }
 
+  // ฟังก์ชันเช็คไฟกระพริบ (อิงตามเดือนที่เลือกหน้าตารางหลัก)
+  function checkLeaveAlerts() {
+      const btnLeave = document.getElementById('btnLeaveSystem');
+      if (!btnLeave) return;
+
+      const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : '';
+      let hasPendingInCurrentMonth = false;
+
+      if (myRole === 'SuperAdmin') {
+          // แอดมินจะเห็นไฟกระพริบ ถ้ามีรายการ Pending ในเดือนที่เปิดดูอยู่
+          hasPendingInCurrentMonth = allLeavesData.some(L => {
+              const reqMonth = L.leave_date.substring(0, 7); // เอาแค่ YYYY-MM
+              return L.status === 'Pending' && (!currentMonth || reqMonth === currentMonth);
+          });
+      }
+
+      if (hasPendingInCurrentMonth) {
+          btnLeave.classList.add('btn-alert-blink');
+          btnLeave.innerText = '🚨 มีคำขอลาใหม่!';
+      } else {
+          btnLeave.classList.remove('btn-alert-blink');
+          btnLeave.innerText = '📩 ระบบแจ้งลา';
+      }
+  }
+
   function openLeaveHistoryModal() {
-      renderLeaveTable();
+      // ตั้งค่าเดือนใน Modal ให้ตรงกับเดือนหน้าตารางงาน
+      const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : '';
+      if(document.getElementById('leaveMonthFilter')) document.getElementById('leaveMonthFilter').value = currentMonth;
+      
+      loadLeavesPage(1); // เปิดมาหน้าแรกเสมอ
       bootstrap.Modal.getOrCreateInstance(document.getElementById('leaveHistoryModal')).show();
   }
 
@@ -1822,13 +1873,14 @@
           leave_date: document.getElementById('leaveDateInput').value,
           leave_type: document.getElementById('leaveTypeInput').value,
           reason: document.getElementById('leaveReasonInput').value,
-          status: 'Pending' // รออนุมัติ
+          status: 'Pending'
       };
       
       try {
           await supabaseClient.from('leave_requests').insert([payload]);
           bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).hide();
           await loadSupabaseLeaves();
+          loadLeavesPage(currentLeavePage); // รีเฟรชตาราง
           Swal.fire({toast:true, position:'top-end', title:'ส่งคำขอลาสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
       } catch(err) {
           Swal.fire('Error', err.message, 'error');
@@ -1837,35 +1889,50 @@
       }
   }
 
-  function renderLeaveTable() {
+  // ฟังก์ชันแยกสำหรับโหลดตารางแบบแบ่งหน้า
+  function loadLeavesPage(page) {
+      currentLeavePage = page;
       const tb = document.getElementById('leaveTableBody');
-      tb.innerHTML = '';
-      const myNick = localStorage.getItem('okvip_nick');
+      const pagArea = document.getElementById('leavePaginationArea');
+      tb.innerHTML = ''; pagArea.innerHTML = '';
       
-      if(allLeavesData.length === 0) {
-          tb.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีประวัติการแจ้งลา</td></tr>`;
+      const filterMonth = document.getElementById('leaveMonthFilter').value;
+      const myNick = localStorage.getItem('okvip_nick');
+
+      // กรองข้อมูลตามเดือนที่เลือก
+      let filteredData = allLeavesData.filter(L => {
+          const reqMonth = L.leave_date ? L.leave_date.substring(0, 7) : '';
+          return !filterMonth || reqMonth === filterMonth;
+      });
+
+      if(filteredData.length === 0) {
+          tb.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลการแจ้งลาในเดือนที่เลือก</td></tr>`;
           return;
       }
-      
-      allLeavesData.forEach(L => {
+
+      // คำนวณหน้า
+      const totalPages = Math.ceil(filteredData.length / leavesPerPage);
+      if (currentLeavePage > totalPages) currentLeavePage = totalPages;
+      const startIndex = (currentLeavePage - 1) * leavesPerPage;
+      const paginatedData = filteredData.slice(startIndex, startIndex + leavesPerPage);
+
+      // วาดตาราง
+      paginatedData.forEach(L => {
           let statusBadge = '';
           if(L.status === 'Pending') statusBadge = `<span class="badge bg-warning text-dark border">⏳ รออนุมัติ</span>`;
           else if(L.status === 'Approved') statusBadge = `<span class="badge bg-success border">✅ อนุมัติแล้ว</span>`;
           else if(L.status === 'Rejected') statusBadge = `<span class="badge bg-danger border">❌ ปฏิเสธ</span>`;
           
           let actionBtns = '-';
-          // 1. ถ้าเป็น SuperAdmin จะเห็นปุ่ม อนุมัติ / ปฏิเสธ
           if(myRole === 'SuperAdmin' && L.status === 'Pending') {
               actionBtns = `
                   <button class="btn btn-sm btn-outline-success me-1" onclick="updateLeaveStatus('${L.id}', 'Approved')">✔️</button>
                   <button class="btn btn-sm btn-outline-danger" onclick="updateLeaveStatus('${L.id}', 'Rejected')">❌</button>
               `;
           } 
-          // 2. ถ้าเป็นคำขอของตัวเองที่ยัง 'รออนุมัติ' หรือเป็น SuperAdmin สามารถกดยกเลิก (ลบ) คำขอทิ้งได้
           else if ((myRole === 'SuperAdmin' || myNick === L.nickname) && L.status === 'Pending') {
              actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ยกเลิกคำขอ</button>`;
           }
-          // 3. SuperAdmin สามารถลบประวัติเก่าๆ ทิ้งได้
           else if (myRole === 'SuperAdmin') {
              actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ลบประวัติ</button>`;
           }
@@ -1884,6 +1951,16 @@
               </tr>
           `;
       });
+
+      // วาดปุ่มแบ่งหน้า
+      if (totalPages > 1) { 
+          let pageHtml = `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage - 1})" ${currentLeavePage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; 
+          for (let i = 1; i <= totalPages; i++) {
+              pageHtml += `<button class="page-btn ${i === currentLeavePage ? 'active' : ''}" onclick="loadLeavesPage(${i})">${i}</button>`; 
+          }
+          pageHtml += `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage + 1})" ${currentLeavePage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; 
+          pagArea.innerHTML = pageHtml; 
+      }
   }
 
   function updateLeaveStatus(id, newStatus) {
@@ -1898,6 +1975,7 @@
               Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()});
               await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id);
               await loadSupabaseLeaves();
+              loadLeavesPage(currentLeavePage); // รีเฟรชหน้าปัจจุบัน
               Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
           }
       });
@@ -1909,6 +1987,7 @@
               Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()});
               await supabaseClient.from('leave_requests').delete().eq('id', id);
               await loadSupabaseLeaves();
+              loadLeavesPage(1); // รีเฟรชกลับไปหน้าแรก
               Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
           }
        });
