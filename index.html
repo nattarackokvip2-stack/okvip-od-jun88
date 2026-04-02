@@ -453,9 +453,12 @@
     <div id="penaltySection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h4 class="fw-bold mb-0" style="color: #ff3366;">⚠️ ตารางบันทึกการลงโทษพนักงาน</h4>
-        <div class="d-flex gap-2 align-items-center">
+        <div class="d-flex gap-2 align-items-center flex-wrap">
             <span class="text-white small">📅 เลือกเดือน:</span>
             <input type="month" id="penaltyMonthFilter" class="form-control" style="width: auto; background: #111; color: #ff3366; border-color: #ff3366;" onchange="loadPenaltiesTable()">
+            
+            <input type="text" id="penaltySearchInput" class="form-control neon-input-search" style="width: 200px; border-color: #ff3366;" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="loadPenaltiesTable()">
+            
             <button id="addPenaltyBtn" class="btn btn-neon-red px-4 ms-2" style="display:none;" onclick="openPenaltyModal()">➕ บันทึกความผิด</button>
         </div>
       </div>
@@ -1182,6 +1185,11 @@
     const tb = document.getElementById('penaltyTableBody'); tb.innerHTML = ''; 
     const filterMonthElement = document.getElementById('penaltyMonthFilter');
     const filterMonth = filterMonthElement ? filterMonthElement.value : '';
+    
+    // ดึงค่าจากช่องค้นหา และ ดึงชื่อของคนที่กำลังล็อกอินอยู่
+    const searchElement = document.getElementById('penaltySearchInput');
+    const searchTerm = searchElement ? searchElement.value.toLowerCase().trim() : '';
+    const myNick = localStorage.getItem('okvip_nick') || ''; 
 
     if(allPenalties.length === 0) { 
         tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีประวัติการลงโทษ</td></tr>`; 
@@ -1190,15 +1198,28 @@
 
     let hasData = false;
     allPenalties.forEach(p => { 
-        if (!filterMonth || p[9] === filterMonth) {
+        const nickName = p[2] || '';
+        
+        // เช็คว่าตรงกับเดือนที่เลือก และ ตรงกับคำค้นหาหรือไม่
+        const matchMonth = (!filterMonth || p[9] === filterMonth);
+        const matchSearch = (!searchTerm || nickName.toLowerCase().includes(searchTerm));
+
+        if (matchMonth && matchSearch) {
             hasData = true;
             let btn = (myRole === 'SuperAdmin') ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button>` : '-'; 
             let deductStr = p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย' ? `<span class="text-danger fw-bold">${p[8]} ฿</span> <br><small class="text-muted">(${p[7]}% จาก ${p[6]}฿)</small>` : '-'; 
-            tb.innerHTML += `<tr><td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td><td class="fw-bold">${p[2]}</td><td>${p[3]}</td><td>${p[4]}</td><td class="text-warning">${p[5]}</td><td>${deductStr}</td><td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td><td class="text-center">${btn}</td></tr>`; 
+            
+            // 🌟 ตรวจสอบว่าเป็นชื่อตัวเองไหม ถ้าใช่ให้ใส่สีแดงนีออน 🌟
+            let displayNick = nickName;
+            if (nickName === myNick) {
+                displayNick = `<span style="color: var(--neon-red); text-shadow: 0 0 10px rgba(255,51,102,0.8); font-weight: bold; border: 1px solid var(--neon-red); padding: 4px 10px; border-radius: 6px;">${nickName} (ฉัน)</span>`;
+            }
+
+            tb.innerHTML += `<tr><td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td><td class="fw-bold">${displayNick}</td><td>${p[3]}</td><td>${p[4]}</td><td class="text-warning">${p[5]}</td><td>${deductStr}</td><td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td><td class="text-center">${btn}</td></tr>`; 
         }
     });
 
-    if (!hasData) tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลในเดือนที่เลือก</td></tr>`;
+    if (!hasData) tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลที่ค้นหา</td></tr>`;
   }
 
   // ==========================================
