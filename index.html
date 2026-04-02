@@ -1145,6 +1145,9 @@
   function filterScheduleDept(dept, btn) { if(Object.keys(unsavedChanges).length > 0){ Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); return; } currentScheduleFilter = dept; document.querySelectorAll('#holidaySection .dept-badge').forEach(b => { b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; }); btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)"; loadScheduleTable(); }
   function handleScheduleSearch(term) { scheduleSearchTerm = term.toLowerCase().trim(); loadScheduleTable(); }
   function changeMonth(offset) { if(Object.keys(unsavedChanges).length>0){ Swal.fire({title:'ยังไม่ได้บันทึก!', icon:'warning', background:'#111', color:'#fff'}); return; } const p = document.getElementById('monthPicker'); if(!p.value) return; let [y, m] = p.value.split('-').map(Number); m += offset; if (m>12){m=1;y++;} else if(m<1){m=12;y--;} p.value = `${y}-${String(m).padStart(2, '0')}`; loadScheduleTable(); }
+  document.addEventListener('mouseup', function() {
+    isDraggingStamp = false;
+})
   
   async function confirmClearSchedule() {
     const ym = document.getElementById('monthPicker').value;
@@ -1191,7 +1194,7 @@
         const userDays = dataMap[nick] || {};
         for(let d=1; d<=daysInMonth; d++) {
             const val = userDays[d] || ''; const style = stampConfig[val] || { bg:'transparent', text:'#eee' }; 
-            const mouse = canEdit ? `onmousedown="startStampDrag(this,'${nick}','${dept}',${d})" onmouseenter="enterStampDrag(this,'${nick}','${dept}',${d})"` : ''; 
+            const mouse = canEdit ? `onmousedown="startStampDrag(this,'${nick}','${dept}',${d})" onmouseenter="enterStampDrag(event, this,'${nick}','${dept}',${d})"` : ''; 
             const c = (isCurMonth && d === curD) ? 'today-column' : ''; const curClass = canEdit ? 'admin-mode cell-day' : 'cell-day'; 
             tb += `<td class="${curClass} ${c}" data-day="${d}" data-original="${val}" style="background-color:${style.bg}; color:${style.text};" ${mouse}>${val}</td>`;
         } 
@@ -1202,7 +1205,15 @@
   }
 
   function startStampDrag(cell, nick, dept, day) { if(currentStamp===null){ Swal.fire({toast:true, position:'top', title:'เลือกตรายางก่อนครับ', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return;} isDraggingStamp = true; applyStamp(cell, nick, dept, day); }
-  function enterStampDrag(cell, nick, dept, day) { if(isDraggingStamp && currentStamp!==null) applyStamp(cell, nick, dept, day); }
+  function enterStampDrag(e, cell, nick, dept, day) { 
+    // เช็ค e.buttons === 1 เพื่อให้มั่นใจว่ากำลังกดคลิกซ้ายค้างไว้อยู่จริงๆ
+    if(isDraggingStamp && currentStamp !== null && e.buttons === 1) {
+        applyStamp(cell, nick, dept, day); 
+    } else {
+        // ถ้าเมาส์แค่เลื่อนผ่าน แต่ไม่ได้กดคลิกซ้ายค้างไว้ ให้ยกเลิกสถานะการลาก
+        isDraggingStamp = false;
+    }
+}
   function applyStamp(cell, nick, dept, day) {
     if(currentStamp===null || cell.innerText===currentStamp) return; const conf = stampConfig[currentStamp];
     if(myRole === 'Member' && currentStamp === 'X') { let count = 0; cell.parentElement.querySelectorAll('.cell-day').forEach(c => { if(c.innerText === 'X') count++; }); if(count >= conf.limit) { isDraggingStamp = false; Swal.fire({toast:true, position:'top', title:'โควต้าเต็ม!', text:`ใช้ X ได้ไม่เกิน ${conf.limit} ครั้งต่อเดือน`, icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); return; } }
