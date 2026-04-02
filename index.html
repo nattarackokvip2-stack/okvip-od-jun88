@@ -212,13 +212,15 @@
   .highlight-me { color: var(--neon-green) !important; text-shadow: 0 0 10px rgba(0, 255, 102, 0.8) !important; font-size: 1.05rem; }
     /* 🌟 Animation ไฟกระพริบแจ้งเตือน 🌟 */
   @keyframes blinkAlert {
-    0% { box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px var(--neon-red); background-color: rgba(255, 51, 102, 0.2); border-color: var(--neon-red); color: #fff; }
-    50% { box-shadow: 0 0 20px var(--neon-red), inset 0 0 20px var(--neon-red); background-color: rgba(255, 51, 102, 0.6); border-color: var(--neon-red); color: #fff; }
-    100% { box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px var(--neon-red); background-color: rgba(255, 51, 102, 0.2); border-color: var(--neon-red); color: #fff; }
+    0% { box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px var(--neon-red); background-color: rgba(255, 51, 102, 0.2); border-color: var(--neon-red); }
+    50% { box-shadow: 0 0 20px var(--neon-red), inset 0 0 20px var(--neon-red); background-color: rgba(255, 51, 102, 0.6); border-color: var(--neon-red); }
+    100% { box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px var(--neon-red); background-color: rgba(255, 51, 102, 0.2); border-color: var(--neon-red); }
   }
   .btn-alert-blink {
     animation: blinkAlert 1.5s infinite;
-    font-weight: bold;
+    font-weight: 800 !important;
+    color: var(--neon-yellow) !important; /* เปลี่ยนตัวหนังสือเป็นสีเหลืองนีออน */
+    text-shadow: 0 0 5px #000 !important; /* เพิ่มขอบดำให้ตัวหนังสือเด่นขึ้น */
   }
 </style>
 </head>
@@ -321,13 +323,14 @@
                <span class="input-group-text bg-transparent border-0 text-white">🔍</span>
                <input type="text" id="searchSchedule" class="form-control bg-transparent border-0 text-white shadow-none px-0" placeholder="ค้นหาพนักงาน..." oninput="handleScheduleSearch(this.value)">
             </div>
-            <div class="d-flex align-items-center" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; overflow: hidden;">
-                <button class="btn btn-sm text-info" onclick="changeMonth(-1)" style="padding: 8px 15px;">◀</button>
-                <input type="month" id="monthPicker" class="form-control w-auto text-center bg-transparent text-info border-0 shadow-none fw-bold" onchange="loadScheduleTable()">
-                <button class="btn btn-sm text-info" onclick="changeMonth(1)" style="padding: 8px 15px;">▶</button>
+            <div class="d-flex align-items-center gap-2">
+                <div class="btn-group" role="group" style="border: 1px solid var(--neon-blue); border-radius: 8px; overflow: hidden; background: #111;">
+                    <button type="button" class="btn btn-sm text-info" onclick="changeMonth(-1)" style="padding: 8px 15px; background: transparent; border-right: 1px solid #333; z-index: 1;">◀</button>
+                    <input type="month" id="monthPicker" class="form-control w-auto text-center bg-transparent text-info border-0 shadow-none fw-bold" onchange="loadScheduleTable()" style="z-index: 1;">
+                    <button type="button" class="btn btn-sm text-info" onclick="changeMonth(1)" style="padding: 8px 15px; background: transparent; border-left: 1px solid #333; z-index: 1;">▶</button>
+                </div>
+                <button id="btnLeaveSystem" class="btn btn-warning px-3 fw-bold text-dark" style="border-radius: 8px; transition: all 0.3s;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
             </div>
-            <button id="btnLeaveSystem" class="btn btn-warning px-3 fw-bold text-dark ms-2" style="border-radius: 8px; transition: all 0.3s;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
-        </div>
       </div>
 
       <div class="schedule-toolbar d-flex flex-column gap-3 mb-3 p-3" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
