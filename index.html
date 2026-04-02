@@ -323,14 +323,16 @@
                <span class="input-group-text bg-transparent border-0 text-white">🔍</span>
                <input type="text" id="searchSchedule" class="form-control bg-transparent border-0 text-white shadow-none px-0" placeholder="ค้นหาพนักงาน..." oninput="handleScheduleSearch(this.value)">
             </div>
+            
             <div class="d-flex align-items-center gap-2">
-                <div class="btn-group" role="group" style="border: 1px solid var(--neon-blue); border-radius: 8px; overflow: hidden; background: #111;">
-                    <button type="button" class="btn btn-sm text-info" onclick="changeMonth(-1)" style="padding: 8px 15px; background: transparent; border-right: 1px solid #333; z-index: 1;">◀</button>
-                    <input type="month" id="monthPicker" class="form-control w-auto text-center bg-transparent text-info border-0 shadow-none fw-bold" onchange="loadScheduleTable()" style="z-index: 1;">
-                    <button type="button" class="btn btn-sm text-info" onclick="changeMonth(1)" style="padding: 8px 15px; background: transparent; border-left: 1px solid #333; z-index: 1;">▶</button>
+                <div class="d-flex align-items-center" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; padding: 2px;">
+                    <button type="button" class="btn btn-sm text-info" onclick="changeMonth(-1)" style="padding: 5px 15px; cursor: pointer; position: relative; z-index: 10;">◀</button>
+                    <input type="month" id="monthPicker" class="form-control w-auto text-center bg-transparent text-info border-0 shadow-none fw-bold px-0" onchange="loadScheduleTable()" style="position: relative; z-index: 1;">
+                    <button type="button" class="btn btn-sm text-info" onclick="changeMonth(1)" style="padding: 5px 15px; cursor: pointer; position: relative; z-index: 10;">▶</button>
                 </div>
                 <button id="btnLeaveSystem" class="btn btn-warning px-3 fw-bold text-dark" style="border-radius: 8px; transition: all 0.3s;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
             </div>
+        </div>
       </div>
 
       <div class="schedule-toolbar d-flex flex-column gap-3 mb-3 p-3" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
