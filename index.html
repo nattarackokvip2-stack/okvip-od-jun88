@@ -575,7 +575,15 @@
       <input type="hidden" id="editPenaltyId"> 
       <label class="small mb-1 text-white">ประจำเดือน/ปี (รีเซ็ตโควต้าตามเดือนนี้)</label>
       <input type="month" id="penMonth" class="form-control mb-3" required onchange="checkPenaltyLimits()">
-      <label class="small mb-1 text-white">เลือกพนักงาน (แยกตามแผนก)</label>
+      <label class="small mb-1 text-white">1. กรองตามแผนก</label>
+      <select id="penDeptFilter" class="form-select mb-2" onchange="updatePenaltySelect()">
+        <option value="ALL">-- ดูทุกแผนก --</option>
+        <option value="OD">ออดิท (OD)</option>
+        <option value="ODOL">ออดิทออนไลน์ (ODOL)</option>
+        <option value="OTHER">อื่นๆ</option>
+      </select>
+      <label class="small mb-1 text-white">2. พิมพ์ค้นหา หรือ เลือกพนักงาน</label>
+      <input type="text" id="penNickSearch" class="form-control mb-2" placeholder="🔍 พิมพ์ชื่อเล่น..." oninput="updatePenaltySelect()">
       <select id="penNick" class="form-select mb-3" onchange="checkPenaltyLimits()" required></select>
       <label class="small mb-1 text-white">รายละเอียดความผิด</label>
       <textarea id="penReason" class="form-control mb-3" rows="3" required placeholder="ระบุเหตุผล..."></textarea>
@@ -1107,11 +1115,47 @@
       loadPenaltiesTable();
   }
   function updatePenaltySelect() { 
-      let html = '<option value="">-- เลือกพนักงาน --</option>'; let odHtml = '<optgroup label="แผนก OD (ออดิท)">'; let odolHtml = '<optgroup label="แผนก ODOL (ออดิทออนไลน์)">'; let otherHtml = '<optgroup label="แผนกอื่นๆ">';
-      allUsersData.forEach(u => { if(u[7] === 'Active') { const val = `${u[1]}|${u[3]}`; const txt = `${u[1]} (${u[3]})`; if (u[3].includes("ODOL")) odolHtml += `<option value="${val}">${txt}</option>`; else if (u[3].includes("OD")) odHtml += `<option value="${val}">${txt}</option>`; else otherHtml += `<option value="${val}">${txt}</option>`; } }); 
-      odHtml += '</optgroup>'; odolHtml += '</optgroup>'; otherHtml += '</optgroup>'; document.getElementById('penNick').innerHTML = html + odHtml + odolHtml + otherHtml; 
+      const deptFilter = document.getElementById('penDeptFilter') ? document.getElementById('penDeptFilter').value : 'ALL';
+      const searchTerm = document.getElementById('penNickSearch') ? document.getElementById('penNickSearch').value.toLowerCase().trim() : '';
+      let html = '<option value="">-- เลือกพนักงาน --</option>'; 
+      
+      allUsersData.forEach(u => { 
+          if(u[7] === 'Active') { 
+              const nick = u[1] || ''; 
+              const dept = u[3] || ''; 
+              const val = `${nick}|${dept}`; 
+              const txt = `${nick} (${dept})`; 
+
+              // 1. ตรวจสอบการกรองแผนก
+              let deptMatch = false;
+              if (deptFilter === 'ALL') deptMatch = true;
+              else if (deptFilter === 'OD' && dept.includes('OD') && !dept.includes('ODOL')) deptMatch = true;
+              else if (deptFilter === 'ODOL' && dept.includes('ODOL')) deptMatch = true;
+              else if (deptFilter === 'OTHER' && !dept.includes('ODOL') && !dept.includes('OD')) deptMatch = true;
+
+              // 2. ตรวจสอบคำค้นหาที่พิมพ์
+              let searchMatch = true;
+              if (searchTerm !== '') {
+                  searchMatch = nick.toLowerCase().includes(searchTerm);
+              }
+
+              // ถ้าตรงทั้งแผนกและคำค้นหา ค่อยเอามาแสดง
+              if (deptMatch && searchMatch) {
+                  html += `<option value="${val}">${txt}</option>`;
+              }
+          } 
+      }); 
+      document.getElementById('penNick').innerHTML = html; 
   }
-  function openPenaltyModal() { document.getElementById('penaltyForm').reset(); const now = new Date(); document.getElementById('penMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; togglePenaltyFields(); bootstrap.Modal.getOrCreateInstance(document.getElementById('penaltyModal')).show(); }
+  function openPenaltyModal() { 
+      document.getElementById('penaltyForm').reset(); 
+      // เพิ่ม 3 บรรทัดนี้เพื่อให้ช่องค้นหากลับเป็นค่าเริ่มต้นตอนเปิดใหม่
+      if(document.getElementById('penDeptFilter')) document.getElementById('penDeptFilter').value = 'ALL';
+      if(document.getElementById('penNickSearch')) document.getElementById('penNickSearch').value = '';
+      updatePenaltySelect(); 
+      
+      const now = new Date(); document.getElementById('penMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; togglePenaltyFields(); bootstrap.Modal.getOrCreateInstance(document.getElementById('penaltyModal')).show(); 
+  }
   function togglePenaltyFields() { const type = document.getElementById('penType').value; const extra = document.getElementById('penaltyExtraFields'); if (type === '3. ใบปรับตามข้อและเกิดความเสียหาย') { extra.style.display = 'block'; checkPenaltyLimits(); } else { extra.style.display = 'none'; } }
   function checkPenaltyLimits() {
       const type = document.getElementById('penType').value; if (type !== '3. ใบปรับตามข้อและเกิดความเสียหาย') return; const monthYear = document.getElementById('penMonth').value; const nickVal = document.getElementById('penNick').value; if (!monthYear || !nickVal) return; const nick = nickVal.split('|')[0];
