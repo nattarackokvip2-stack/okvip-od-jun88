@@ -451,10 +451,12 @@
     </div>
 
     <div id="penaltySection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <h4 class="fw-bold mb-0" style="color: #ff3366;">⚠️ ตารางบันทึกการลงโทษพนักงาน</h4>
-        <div class="d-flex gap-2">
-            <button id="addPenaltyBtn" class="btn btn-neon-red px-4" style="display:none;" onclick="openPenaltyModal()">➕ บันทึกความผิด</button>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="text-white small">📅 เลือกเดือน:</span>
+            <input type="month" id="penaltyMonthFilter" class="form-control" style="width: auto; background: #111; color: #ff3366; border-color: #ff3366;" onchange="loadPenaltiesTable()">
+            <button id="addPenaltyBtn" class="btn btn-neon-red px-4 ms-2" style="display:none;" onclick="openPenaltyModal()">➕ บันทึกความผิด</button>
         </div>
       </div>
       <div class="table-responsive mt-3">
@@ -833,8 +835,11 @@
     
     const now = new Date();
     const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0') + "-" + String(now.getDate()).padStart(2, '0');
-    document.getElementById('monthPicker').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const thisMonthStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0'); // สร้างตัวแปรเดือนนี้
     
+    document.getElementById('monthPicker').value = thisMonthStr;
+    if(document.getElementById('penaltyMonthFilter')) document.getElementById('penaltyMonthFilter').value = thisMonthStr; // <--- เติมบรรทัดนี้ลงไปครับ!
+
     if(document.getElementById('jobDatePicker')) document.getElementById('jobDatePicker').value = todayStr;
     if(document.getElementById('mealDatePicker')) document.getElementById('mealDatePicker').value = todayStr; 
     
@@ -1126,35 +1131,32 @@
               const val = `${nick}|${dept}`; 
               const txt = `${nick} (${dept})`; 
 
-              // 1. ตรวจสอบการกรองแผนก
               let deptMatch = false;
               if (deptFilter === 'ALL') deptMatch = true;
               else if (deptFilter === 'OD' && dept.includes('OD') && !dept.includes('ODOL')) deptMatch = true;
               else if (deptFilter === 'ODOL' && dept.includes('ODOL')) deptMatch = true;
               else if (deptFilter === 'OTHER' && !dept.includes('ODOL') && !dept.includes('OD')) deptMatch = true;
 
-              // 2. ตรวจสอบคำค้นหาที่พิมพ์
               let searchMatch = true;
-              if (searchTerm !== '') {
-                  searchMatch = nick.toLowerCase().includes(searchTerm);
-              }
+              if (searchTerm !== '') searchMatch = nick.toLowerCase().includes(searchTerm);
 
-              // ถ้าตรงทั้งแผนกและคำค้นหา ค่อยเอามาแสดง
-              if (deptMatch && searchMatch) {
-                  html += `<option value="${val}">${txt}</option>`;
-              }
+              if (deptMatch && searchMatch) html += `<option value="${val}">${txt}</option>`;
           } 
       }); 
       document.getElementById('penNick').innerHTML = html; 
   }
   function openPenaltyModal() { 
       document.getElementById('penaltyForm').reset(); 
-      // เพิ่ม 3 บรรทัดนี้เพื่อให้ช่องค้นหากลับเป็นค่าเริ่มต้นตอนเปิดใหม่
       if(document.getElementById('penDeptFilter')) document.getElementById('penDeptFilter').value = 'ALL';
       if(document.getElementById('penNickSearch')) document.getElementById('penNickSearch').value = '';
+      
+      // ดึงรายชื่อมาแสดงใหม่ตามฟิลเตอร์ (ที่ตอนนี้ถูกรีเซ็ตแล้ว)
       updatePenaltySelect(); 
       
-      const now = new Date(); document.getElementById('penMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; togglePenaltyFields(); bootstrap.Modal.getOrCreateInstance(document.getElementById('penaltyModal')).show(); 
+      const now = new Date(); 
+      document.getElementById('penMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; 
+      togglePenaltyFields(); 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('penaltyModal')).show(); 
   }
   function togglePenaltyFields() { const type = document.getElementById('penType').value; const extra = document.getElementById('penaltyExtraFields'); if (type === '3. ใบปรับตามข้อและเกิดความเสียหาย') { extra.style.display = 'block'; checkPenaltyLimits(); } else { extra.style.display = 'none'; } }
   function checkPenaltyLimits() {
@@ -1177,8 +1179,26 @@
 
   async function deleteSupabasePenalty(id) { Swal.fire({title:'ลบประวัติลงโทษ?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('penalties').delete().eq('id', id); await loadSupabasePenalties(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); } }); }
   function loadPenaltiesTable() {
-    const tb = document.getElementById('penaltyTableBody'); tb.innerHTML = ''; if(allPenalties.length === 0) { tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีประวัติการลงโทษ</td></tr>`; return; }
-    allPenalties.forEach(p => { let btn = (myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button>` : '-'; let deductStr = p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย' ? `<span class="text-danger fw-bold">${p[8]} ฿</span> <br><small class="text-muted">(${p[7]}% จาก ${p[6]}฿)</small>` : '-'; tb.innerHTML += `<tr><td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td><td class="fw-bold">${p[2]}</td><td>${p[3]}</td><td>${p[4]}</td><td class="text-warning">${p[5]}</td><td>${deductStr}</td><td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td><td class="text-center">${btn}</td></tr>`; });
+    const tb = document.getElementById('penaltyTableBody'); tb.innerHTML = ''; 
+    const filterMonthElement = document.getElementById('penaltyMonthFilter');
+    const filterMonth = filterMonthElement ? filterMonthElement.value : '';
+
+    if(allPenalties.length === 0) { 
+        tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีประวัติการลงโทษ</td></tr>`; 
+        return; 
+    }
+
+    let hasData = false;
+    allPenalties.forEach(p => { 
+        if (!filterMonth || p[9] === filterMonth) {
+            hasData = true;
+            let btn = (myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button>` : '-'; 
+            let deductStr = p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย' ? `<span class="text-danger fw-bold">${p[8]} ฿</span> <br><small class="text-muted">(${p[7]}% จาก ${p[6]}฿)</small>` : '-'; 
+            tb.innerHTML += `<tr><td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td><td class="fw-bold">${p[2]}</td><td>${p[3]}</td><td>${p[4]}</td><td class="text-warning">${p[5]}</td><td>${deductStr}</td><td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td><td class="text-center">${btn}</td></tr>`; 
+        }
+    });
+
+    if (!hasData) tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลในเดือนที่เลือก</td></tr>`;
   }
 
   // ==========================================
