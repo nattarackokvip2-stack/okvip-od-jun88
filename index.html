@@ -1385,7 +1385,12 @@
   
   function renderMealTable() {
       const tbody = document.getElementById('mealTableBody'); tbody.innerHTML = '';
-      const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : ''; const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL'; const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL';
+      const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : ''; 
+      const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL'; 
+      const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL';
+      
+      const myNick = localStorage.getItem('okvip_nick') || ''; // ดึงชื่อของคนที่ล็อกอิน
+
       let workingUsers = [];
       allUsersData.forEach(u => {
           if(!u || u[7] !== 'Active') return; const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const stamp = dailyScheduleData[nick] || ''; const isOff = offDutyStamps.includes(stamp) || stamp === ''; const isExcluded = (sysSettings.userSites[nick] || []).includes('EXCLUDE_DUTY');
@@ -1396,34 +1401,161 @@
               if (matchSearch && matchShift && matchDept) { workingUsers.push({ nick, dept, site, stamp, shiftType }); }
           }
       });
+      
       if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
       
       let mealSelectOptionsHTML = `<option value="">-- เลือกเวลา --</option>`;
       mealTimeBlocks.forEach(block => { mealSelectOptionsHTML += `<optgroup label="${block.name}">`; let slots = generateTimeSlots(block.start, block.end); slots.forEach(slot => { mealSelectOptionsHTML += `<option value="${slot}" data-type="${block.type}">${slot}</option>`; }); mealSelectOptionsHTML += `</optgroup>`; });
       
       workingUsers.forEach(u => {
-          let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (เช้า)</span>`; if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (ดึก)</span>`;
-          const curMeal = dailyMealData[u.nick] || {}; const m1 = curMeal.slot1 || ''; const m2 = curMeal.slot2 || '';
-          let select1 = mealSelectOptionsHTML.replace(`value="${m1}"`, `value="${m1}" selected`); let select2 = mealSelectOptionsHTML.replace(`value="${m2}"`, `value="${m2}" selected`);
-          tbody.innerHTML += `<tr data-nick="${u.nick}"><td class="fw-bold text-white">${u.nick}</td><td class="text-muted small">${u.dept.split(' ')[0]}</td><td>${stampBadge}</td><td class="text-info site-cell">${u.site}</td><td style="width: 320px;"><div class="d-flex gap-2"><select class="form-select form-select-sm bg-dark text-white sel-meal-1" onchange="checkMealOverlap()">${select1}</select><select class="form-select form-select-sm bg-dark text-white sel-meal-2" onchange="checkMealOverlap()">${select2}</select></div></td></tr>`;
+          let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; 
+          if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (เช้า)</span>`; 
+          if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (ดึก)</span>`;
+          
+          const curMeal = dailyMealData[u.nick] || {}; 
+          const m1 = curMeal.slot1 || ''; 
+          const m2 = curMeal.slot2 || '';
+
+          // 🌟 เช็คว่าเป็นแถวของตัวเองไหม
+          const isMyRow = (u.nick === myNick);
+          // 🌟 เช็คว่าเป็นแอดมินไหม
+          const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
+          
+          // กำหนดสีและสไตล์สำหรับชื่อตัวเอง
+          let nameDisplay = u.nick;
+          let rowStyle = '';
+          if (isMyRow) {
+              nameDisplay = `<span style="color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.8); font-weight: bold; border: 1px solid var(--neon-green); padding: 4px 10px; border-radius: 6px;">${u.nick} (ฉัน)</span>`;
+              rowStyle = 'background-color: rgba(0, 255, 102, 0.05);';
+          }
+
+          // สร้างส่วนของ Dropdown ทานข้าว
+          let mealControlHtml = '';
+          
+          if (isAdmin || isMyRow) {
+              // ถ้าเป็น Admin หรือเป็นแถวของตัวเอง ให้แก้ไขได้
+              let select1 = mealSelectOptionsHTML.replace(`value="${m1}"`, `value="${m1}" selected`); 
+              let select2 = mealSelectOptionsHTML.replace(`value="${m2}"`, `value="${m2}" selected`);
+              mealControlHtml = `
+                  <div class="d-flex gap-2">
+                      <select class="form-select form-select-sm bg-dark text-white sel-meal-1" onchange="checkMealOverlap()">${select1}</select>
+                      <select class="form-select form-select-sm bg-dark text-white sel-meal-2" onchange="checkMealOverlap()">${select2}</select>
+                  </div>
+              `;
+          } else {
+              // ถ้าไม่ใช่ตัวเองและไม่ใช่แอดมิน ให้แค่ดูข้อมูลเท่านั้น (ถ้ายังไม่ลงเวลาจะขึ้นว่า ยังไม่ระบุ)
+              let t1 = m1 ? `<span class="badge bg-secondary">${m1}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`;
+              let t2 = m2 ? `<span class="badge bg-secondary">${m2}</span>` : ``;
+              // แอบใส่ Input ซ่อนไว้ (เพื่อไม่ให้โค้ดส่วนเช็ค Overlap พังตอนดึงค่า)
+              mealControlHtml = `
+                  <div class="d-flex gap-2 align-items-center">
+                      ${t1} ${t2}
+                      <select class="sel-meal-1" style="display:none;"><option value="${m1}">${m1}</option></select>
+                      <select class="sel-meal-2" style="display:none;"><option value="${m2}">${m2}</option></select>
+                  </div>
+              `;
+          }
+
+          tbody.innerHTML += `
+              <tr data-nick="${u.nick}" style="${rowStyle}">
+                  <td class="fw-bold text-white">${nameDisplay}</td>
+                  <td class="text-muted small">${u.dept.split(' ')[0]}</td>
+                  <td>${stampBadge}</td>
+                  <td class="text-info site-cell">${u.site}</td>
+                  <td style="width: 320px;">${mealControlHtml}</td>
+              </tr>
+          `;
       });
+
+      // จัดการปุ่มบันทึก/สุ่ม สำหรับ Member และ Admin
+      const actionBtnsContainer = document.getElementById('mealActionBtns');
+      actionBtnsContainer.style.display = 'flex'; // โชว์ปุ่มเสมอ
+      
+      if (myRole === 'Member') {
+          // Member เห็นแค่ปุ่มบันทึก
+          actionBtnsContainer.innerHTML = `
+              <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>
+          `;
+      } else {
+          // Admin เห็นทั้งสุ่มและบันทึก
+          actionBtnsContainer.innerHTML = `
+              <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
+              <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
+          `;
+      }
+
       setTimeout(checkMealOverlap, 500);
   }
+
   function checkMealOverlap() {
       let siteTimes = {};
       document.querySelectorAll('#mealTableBody tr').forEach(tr => {
           let site = tr.querySelector('.site-cell').innerText; let sel1 = tr.querySelector('.sel-meal-1'); let sel2 = tr.querySelector('.sel-meal-2'); let time1 = sel1.value; let time2 = sel2.value;
-          sel1.style.border = "1px solid #444"; sel1.style.color = "white"; sel2.style.border = "1px solid #444"; sel2.style.color = "white";
+          if(sel1.style.display !== 'none') { sel1.style.border = "1px solid #444"; sel1.style.color = "white"; }
+          if(sel2.style.display !== 'none') { sel2.style.border = "1px solid #444"; sel2.style.color = "white"; }
           if(site !== 'ยังไม่ระบุเว็บ') { if(!siteTimes[site]) siteTimes[site] = []; if(time1) siteTimes[site].push({sel: sel1, time: time1}); if(time2) siteTimes[site].push({sel: sel2, time: time2}); }
       });
-      for(let site in siteTimes) { let timesCount = {}; siteTimes[site].forEach(item => { timesCount[item.time] = (timesCount[item.time] || 0) + 1; }); siteTimes[site].forEach(item => { if(timesCount[item.time] > 1) { item.sel.style.border = "1px solid #ff3366"; item.sel.style.color = "#ff3366"; } }); }
+      for(let site in siteTimes) { let timesCount = {}; siteTimes[site].forEach(item => { timesCount[item.time] = (timesCount[item.time] || 0) + 1; }); siteTimes[site].forEach(item => { if(timesCount[item.time] > 1 && item.sel.style.display !== 'none') { item.sel.style.border = "1px solid #ff3366"; item.sel.style.color = "#ff3366"; } }); }
   }
+
+  function autoBalanceMeals() {
+      Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
+      let workingUsers = [];
+      document.querySelectorAll('#mealTableBody tr').forEach(tr => {
+          const nick = tr.getAttribute('data-nick'); if(!nick) return;
+          const site = tr.querySelector('.site-cell').innerText;
+          const stampText = tr.querySelector('td:nth-child(3)').innerText;
+          const stamp = stampText.includes('เช้า') || stampText.includes('N') ? 'N' : (stampText.includes('ดึก') || stampText.includes('D') ? 'D' : 'OTHER');
+          workingUsers.push({ tr, nick, site, stamp });
+      });
+      let siteGroups = {};
+      workingUsers.forEach(u => { if(!siteGroups[u.site]) siteGroups[u.site] = []; siteGroups[u.site].push(u); });
+      for(let site in siteGroups) {
+          let users = siteGroups[site]; let nUsers = users.filter(u => u.stamp === 'N'); let dUsers = users.filter(u => u.stamp === 'D'); let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
+          let nSlots = []; let dSlots = [];
+          mealTimeBlocks.forEach(b => { let slots = generateTimeSlots(b.start, b.end); if(b.type === 'N') nSlots = nSlots.concat(slots); else dSlots = dSlots.concat(slots); });
+          let allSlots = nSlots.concat(dSlots);
+          nUsers.sort(() => Math.random() - 0.5); dUsers.sort(() => Math.random() - 0.5);
+          nUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = nSlots[i % nSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = nSlots[(i + 3) % nSlots.length] || ''; } });
+          dUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = dSlots[i % dSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = dSlots[(i + 3) % dSlots.length] || ''; } });
+          otherUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = allSlots[i % allSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = allSlots[(i + 3) % allSlots.length] || ''; } });
+      }
+      setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาสำเร็จ (โปรดตรวจสอบและบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
+  }
+
   async function saveMealData() {
       const dateStr = document.getElementById('mealDatePicker').value; let hasOverlap = false;
-      document.querySelectorAll('#mealTableBody tr').forEach(tr => { const nick = tr.getAttribute('data-nick'); if(!nick) return; const sel1 = tr.querySelector('.sel-meal-1'); const sel2 = tr.querySelector('.sel-meal-2'); if(sel1.style.borderColor === "rgb(255, 51, 102)" || sel2.style.borderColor === "rgb(255, 51, 102)") hasOverlap = true; dailyMealData[nick] = { slot1: sel1.value, slot2: sel2.value }; });
+      document.querySelectorAll('#mealTableBody tr').forEach(tr => { 
+          const nick = tr.getAttribute('data-nick'); if(!nick) return; 
+          const sel1 = tr.querySelector('.sel-meal-1'); const sel2 = tr.querySelector('.sel-meal-2'); 
+          if(sel1.style.display !== 'none' && (sel1.style.borderColor === "rgb(255, 51, 102)" || sel2.style.borderColor === "rgb(255, 51, 102)")) hasOverlap = true; 
+          // 🌟 บันทึกทับเฉพาะค่าใหม่ที่มีการโชว์ให้เลือกเท่านั้น ป้องกันค่าเก่าโดนลบ
+          dailyMealData[nick] = { slot1: sel1.value, slot2: sel2.value }; 
+      });
       if (hasOverlap) { Swal.fire({title:'ระวัง!', text:'มีพนักงานที่ดูแลเว็บเดียวกันทานข้าวพร้อมกัน (กรอบสีแดง) ยืนยันที่จะบันทึกหรือไม่?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ffcc00', background:'#111', color:'#fff'}).then(r => { if(r.isConfirmed) executeSaveMeal(dateStr, dailyMealData); }); } else { executeSaveMeal(dateStr, dailyMealData); }
   }
-  async function executeSaveMeal(dateStr, payloadData) { const btn = document.querySelector('#mealActionBtns button:nth-child(2)'); btn.innerText = '⏳...'; btn.disabled = true; try { const { data: existing } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1); if(existing && existing.length > 0) await supabaseClient.from('meal_schedules').update({ mealData: JSON.stringify(payloadData) }).eq('id', existing[0].id); else await supabaseClient.from('meal_schedules').insert([{ dateStr: dateStr, mealData: JSON.stringify(payloadData) }]); await loadDailyMealData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางทานข้าวสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch (err) { Swal.fire('Error', 'ไม่สามารถบันทึกตารางทานข้าวได้', 'error'); } finally { btn.innerText = '💾 บันทึกตารางทานข้าว'; btn.disabled = false; } }
+
+  async function executeSaveMeal(dateStr, payloadData) { 
+      // 🌟 แก้ไขให้หาปุ่มบันทึกเจอแน่นอน ไม่ว่าจะ Admin หรือ Member
+      const btnGroup = document.getElementById('mealActionBtns');
+      const btns = btnGroup.getElementsByTagName('button');
+      const saveBtn = btns[btns.length - 1]; // ปุ่มบันทึกจะอยู่ขวาสุดเสมอ
+      
+      if(saveBtn) { saveBtn.innerText = '⏳...'; saveBtn.disabled = true; }
+      
+      try { 
+          const { data: existing } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1); 
+          if(existing && existing.length > 0) await supabaseClient.from('meal_schedules').update({ mealData: JSON.stringify(payloadData) }).eq('id', existing[0].id); 
+          else await supabaseClient.from('meal_schedules').insert([{ dateStr: dateStr, mealData: JSON.stringify(payloadData) }]); 
+          
+          await loadDailyMealData(); 
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางทานข้าวสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch (err) { 
+          Swal.fire('Error', 'ไม่สามารถบันทึกตารางทานข้าวได้', 'error'); 
+      } finally { 
+          if(saveBtn) { saveBtn.innerText = myRole === 'Member' ? '💾 บันทึกเวลาทานข้าวของฉัน' : '💾 บันทึกตารางทานข้าว'; saveBtn.disabled = false; }
+      } 
+  }
 
   // ==========================================
   // 🚀 7. คู่มือการทำงาน (Manuals)
