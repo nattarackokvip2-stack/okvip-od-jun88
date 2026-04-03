@@ -1492,7 +1492,37 @@
     });
   }
   
-  function randomizeDuties() { Swal.fire({title:'กำลังสุ่ม...', timer:800, didOpen:()=>Swal.showLoading()}); document.querySelectorAll('#dutyTableBody tr').forEach(r => { if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; const nick = r.getAttribute('data-nick'); const sites = (sysSettings.userSites[nick]||[]).filter(s=>s!=='EXCLUDE_DUTY'); if(sites.length>0) { let s = sites.sort(()=>0.5-Math.random()).slice(0,2); const inSite = r.querySelector('.sel-site'); if(inSite) inSite.value = s.join(','); const inDuty = r.querySelector('.sel-duty'); if(inDuty && sysSettings.dutyTypes.length>0) inDuty.value = sysSettings.dutyTypes[Math.floor(Math.random()*sysSettings.dutyTypes.length)]; } }); setTimeout(()=>{Swal.fire({toast:true, position:'top-end', title:'สุ่มเสร็จแล้ว อย่าลืมกดบันทึกนะครับ', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});},800); }
+  function randomizeDuties() {
+      Swal.fire({title:'กำลังสุ่ม...', timer:800, didOpen:()=>Swal.showLoading()});
+      
+      document.querySelectorAll('#dutyTableBody tr').forEach(r => {
+          if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
+          
+          const nick = r.getAttribute('data-nick');
+          const sites = (sysSettings.userSites[nick]||[]).filter(s=>s!=='EXCLUDE_DUTY');
+          
+          if(sites.length > 0) {
+              // สุ่มเว็บ 1-2 เว็บจากที่รับผิดชอบ
+              let s = sites.sort(()=>0.5-Math.random()).slice(0, 2);
+              const inSite = r.querySelector('.sel-site');
+              if(inSite) {
+                  inSite.value = s.join(', '); // ใส่ , เพื่อความสวยงาม
+              }
+              
+              // สุ่มหน้าที่
+              const inDuty = r.querySelector('.sel-duty');
+              if(inDuty && sysSettings.dutyTypes.length > 0) {
+                  inDuty.value = sysSettings.dutyTypes[Math.floor(Math.random() * sysSettings.dutyTypes.length)];
+              }
+          }
+      });
+      
+      setTimeout(() => {
+          // รีโหลดตารางข้าวทันที เพื่อให้มันดึงข้อมูล "เว็บที่ทำวันนี้" ไปใช้จัดกะอัตโนมัติ
+          renderMealTable(); 
+          Swal.fire({toast:true, position:'top-end', title:'สุ่มเสร็จแล้ว อย่าลืมกดบันทึกนะครับ', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
+      }, 800);
+  }
   
   async function saveDutyTable() { 
       const dateStr = document.getElementById('jobDatePicker').value; const payload = []; 
@@ -1563,6 +1593,13 @@
   // ==========================================
   // 🍽️ 6.5 ระบบตารางทานข้าว (Meal Schedule) แบบ 30 นาที + กะ
   // ==========================================
+  function syncMealDate() {
+      document.getElementById('jobDatePicker').value = document.getElementById('mealDatePicker').value;
+      loadDailyJobData().then(() => loadDailyMealData());
+  }
+
+  function handleMealSearch(term) { mealSearchTerm = term.toLowerCase().trim(); renderMealTable(); }
+
   async function loadDailyMealData() {
       const dateStr = document.getElementById('mealDatePicker').value; if(!dateStr) return;
       const { data } = await supabaseClient.from('meal_schedules').select('*').eq('dateStr', dateStr).limit(1);
@@ -1765,17 +1802,6 @@
           
           await loadDailyMealData(); 
           Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางทานข้าวสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-      } catch (err) { Swal.fire('Error', 'ไม่สามารถบันทึกตารางทานข้าวได้', 'error'); } finally { btn.innerText = '💾 บันทึกตารางทานข้าว'; btn.disabled = false; }
-  }
-
-  async function executeSaveMeal(dateStr, payloadData) {
-      const btn = document.querySelector('#mealActionBtns button:nth-child(2)');
-      btn.innerText = '⏳...'; btn.disabled = true;
-      try {
-          const { data: existing } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1);
-          if(existing && existing.length > 0) await supabaseClient.from('meal_schedules').update({ mealData: JSON.stringify(payloadData) }).eq('id', existing[0].id);
-          else await supabaseClient.from('meal_schedules').insert([{ dateStr: dateStr, mealData: JSON.stringify(payloadData) }]);
-          await loadDailyMealData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางทานข้าวสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
       } catch (err) { Swal.fire('Error', 'ไม่สามารถบันทึกตารางทานข้าวได้', 'error'); } finally { btn.innerText = '💾 บันทึกตารางทานข้าว'; btn.disabled = false; }
   }
 
