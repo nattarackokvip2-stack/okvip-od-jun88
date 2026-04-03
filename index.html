@@ -1382,7 +1382,7 @@
   function syncMealDate() { document.getElementById('jobDatePicker').value = document.getElementById('mealDatePicker').value; loadDailyJobData().then(() => loadDailyMealData()); }
   function handleMealSearch(term) { mealSearchTerm = term.toLowerCase().trim(); renderMealTable(); }
   async function loadDailyMealData() { const dateStr = document.getElementById('mealDatePicker').value; if(!dateStr) return; const { data } = await supabaseClient.from('meal_schedules').select('*').eq('dateStr', dateStr).limit(1); dailyMealData = {}; if (data && data.length > 0) { dailyMealData = data[0].mealData ? JSON.parse(data[0].mealData) : {}; } renderMealTable(); }
-  
+
   function renderMealTable() {
       const tbody = document.getElementById('mealTableBody'); tbody.innerHTML = '';
       const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : ''; 
@@ -1402,9 +1402,19 @@
           }
       });
       
+      // อัปเดตส่วนหัวของตารางให้มีคอลัมน์ใหม่ (เพื่อนร่วมงานเว็บเดียวกัน)
+      const tableHead = document.querySelector('#mealSection table thead tr');
+      tableHead.innerHTML = `
+        <th>ชื่อพนักงาน</th>
+        <th>แผนก</th>
+        <th>กะงานวันนี้</th>
+        <th>เว็บที่รับผิดชอบวันนี้</th>
+        <th>เพื่อนร่วมงานเว็บเดียวกัน</th>
+        <th>จัดรอบทานข้าว</th>
+      `;
+
       if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
       
-      // 🌟 สร้าง Dropdown แยก 2 แบบ 🌟
       let optionsForODOL = `<option value="">-- เลือกเวลา --</option>`;
       let optionsForOD = `<option value="">-- เลือกเวลา --</option>`;
 
@@ -1414,15 +1424,8 @@
           slots.forEach(slot => { groupHtml += `<option value="${slot}" data-type="${block.type}">${slot}</option>`; }); 
           groupHtml += `</optgroup>`; 
 
-          // ถ้าเป็นกลุ่ม ปอยเปต/ODOL ให้โชว์ทั้งคู่
-          if (block.type === 'OD_POIPET') {
-              optionsForODOL += groupHtml;
-              optionsForOD += groupHtml;
-          } 
-          // ถ้าเป็นกลุ่ม ลาว ให้โชว์เฉพาะ OD
-          else if (block.type === 'OD_LAOS') {
-              optionsForOD += groupHtml;
-          }
+          if (block.type === 'OD_POIPET') { optionsForODOL += groupHtml; optionsForOD += groupHtml; } 
+          else if (block.type === 'OD_LAOS') { optionsForOD += groupHtml; }
       });
       
       workingUsers.forEach(u => {
@@ -1444,12 +1447,37 @@
               rowStyle = 'background-color: rgba(0, 255, 102, 0.05);';
           }
 
-          let mealControlHtml = '';
-          
-          if (isAdmin || isMyRow) {
-              // 🌟 เช็คแผนกเพื่อเลือกชุด Dropdown 🌟
-              let myOptions = u.dept.includes('ODOL') ? optionsForODOL : optionsForOD;
+          // 🌟 เริ่มกระบวนการหา "เพื่อนร่วมงานเว็บเดียวกัน" 🌟
+          let coworkersList = [];
+          if (u.site !== 'ยังไม่ระบุเว็บ') {
+              // ดึงชื่อเว็บที่พนักงานคนนี้รับผิดชอบ (ตัดคำว่า (หลัก), (รอง) ออก)
+              let mySites = u.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
               
+              // วนลูปหาพนักงานคนอื่นที่ทำงานวันนี้ และไม่ได้เป็นคนๆ เดียวกัน
+              workingUsers.forEach(otherUser => {
+                  if (otherUser.nick !== u.nick && otherUser.site !== 'ยังไม่ระบุเว็บ') {
+                      let otherSites = otherUser.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+                      
+                      // เช็คว่ามีเว็บที่รับผิดชอบตรงกันอย่างน้อย 1 เว็บหรือไม่
+                      let isShared = mySites.some(mySite => otherSites.includes(mySite));
+                      
+                      if (isShared) {
+                          coworkersList.push(`<span class="text-warning">${otherUser.nick}</span>`);
+                      }
+                  }
+              });
+          }
+          
+          // จัดรูปแบบการแสดงผลเพื่อนร่วมงาน
+          let coworkersDisplay = '<span class="text-muted small">-</span>';
+          if (coworkersList.length > 0) {
+              coworkersDisplay = `<div class="small" style="max-width: 150px; white-space: normal; line-height: 1.4;">${coworkersList.join(', ')}</div>`;
+          }
+
+
+          let mealControlHtml = '';
+          if (isAdmin || isMyRow) {
+              let myOptions = u.dept.includes('ODOL') ? optionsForODOL : optionsForOD;
               let select1 = myOptions.replace(`value="${m1}"`, `value="${m1}" selected`); 
               let select2 = myOptions.replace(`value="${m2}"`, `value="${m2}" selected`);
               mealControlHtml = `
@@ -1476,7 +1504,7 @@
                   <td class="text-muted small">${u.dept.split(' ')[0]}</td>
                   <td>${stampBadge}</td>
                   <td class="text-info site-cell">${u.site}</td>
-                  <td style="width: 320px;">${mealControlHtml}</td>
+                  <td>${coworkersDisplay}</td> <td style="width: 320px;">${mealControlHtml}</td>
               </tr>
           `;
       });
