@@ -671,7 +671,8 @@ async function handleRegSubmit(e) {
         if(!u || u[7]!=='Active') return false; 
         const nick = u[1] ? u[1].toString().toLowerCase() : ''; 
         const dept = u[3] ? u[3].toString() : '';
-        const shiftSet = u[9] ? u[9].toString() : ''; 
+        // 🌟 แก้ไขตรงนี้: เพิ่มการเช็คค่าว่างให้รัดกุมขึ้น
+        const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
         
         if(currentJobFilter !== 'ALL' && !dept.startsWith(currentJobFilter.split(' ')[0])) return false;
         if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; 
@@ -740,7 +741,8 @@ async function handleRegSubmit(e) {
         if(!u || u[7]!=='Active') return false; 
         const nick = u[1]?u[1].toString().toLowerCase():''; 
         const dept = u[3]?u[3].toString():''; 
-        const shiftSet = u[9] ? u[9].toString() : ''; 
+        // 🌟 แก้ไขตรงนี้: เพิ่มการเช็คค่าว่างให้รัดกุมขึ้น
+        const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
         
         if(currentJobFilter!=='ALL' && !dept.startsWith(currentJobFilter.split(' ')[0])) return false; 
         if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; 
