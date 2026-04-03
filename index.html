@@ -335,10 +335,12 @@
         </div>
         <button id="btnJobSettings" class="btn btn-sm btn-outline-secondary" style="display:none;" onclick="openJobSettingsModal()">⚙️ ตั้งค่าระบบ</button>
       </div>
+      
       <div class="filter-bar mb-3">
         <div class="dept-badge active" id="badgeJobOD" onclick="filterJobDept('ออดิท (OD)', this)">OD</div>
         <div class="dept-badge" id="badgeJobODOL" onclick="filterJobDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
       </div>
+      
       <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
          <div class="d-flex align-items-center gap-3 flex-wrap">
              <input type="text" id="searchJob" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 180px;">
@@ -346,6 +348,8 @@
                  <option value="ALL">-- ทุกเซ็ตกะ --</option>
                  <option value="OD (A)">เซ็ตกะ: OD (A)</option>
                  <option value="OD (B)">เซ็ตกะ: OD (B)</option>
+                 <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
+                 <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
              </select>
              <div class="form-check form-switch mt-1">
                  <input class="form-check-input" type="checkbox" id="toggleHiddenUsers" onchange="toggleShowHidden(this)">
@@ -575,7 +579,6 @@
     <button class="btn btn-neon-blue w-100 py-2" onclick="saveUserCapableSitesBtn()">บันทึกข้อมูล</button>
   </div></div></div>
 </div>
-
 <div class="modal fade" id="penaltyModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center" style="color:#ff3366;">⚠️ บันทึกความผิด</h4>
@@ -765,6 +768,7 @@
     </div>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
@@ -1349,6 +1353,7 @@
       const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
       const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; 
       
+      // 🌟 ดึงหน้าที่ตามแผนก (ถ้ามีคำว่า ODOL ให้ใช้ของ ODOL ถ้าไม่ให้ใช้ของ OD)
       let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
       let availableDuties = sysSettings.dutyTypes[myDeptType] || [];
       
@@ -1388,6 +1393,7 @@
               }
               
               const inDuty = u.row.querySelector('.sel-duty');
+              // 🌟 สุ่มหน้าที่ตามแผนก 🌟
               let myDeptType = u.row.getAttribute('data-dept').includes('ODOL') ? 'ODOL' : 'OD';
               let availableDuties = sysSettings.dutyTypes[myDeptType] || [];
               
