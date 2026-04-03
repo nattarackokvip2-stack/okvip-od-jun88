@@ -1414,12 +1414,12 @@
           slots.forEach(slot => { groupHtml += `<option value="${slot}" data-type="${block.type}">${slot}</option>`; }); 
           groupHtml += `</optgroup>`; 
 
-          // ถ้าเป็นกลุ่ม ปอยเปต/ODOL ให้ใส่ทั้ง 2 ชุด
+          // ถ้าเป็นกลุ่ม ปอยเปต/ODOL ให้โชว์ทั้งคู่
           if (block.type === 'OD_POIPET') {
               optionsForODOL += groupHtml;
               optionsForOD += groupHtml;
           } 
-          // ถ้าเป็นกลุ่ม ลาว ให้ใส่เฉพาะของ OD เท่านั้น
+          // ถ้าเป็นกลุ่ม ลาว ให้โชว์เฉพาะ OD
           else if (block.type === 'OD_LAOS') {
               optionsForOD += groupHtml;
           }
@@ -1509,30 +1509,7 @@
       for(let site in siteTimes) { let timesCount = {}; siteTimes[site].forEach(item => { timesCount[item.time] = (timesCount[item.time] || 0) + 1; }); siteTimes[site].forEach(item => { if(timesCount[item.time] > 1 && item.sel.style.display !== 'none') { item.sel.style.border = "1px solid #ff3366"; item.sel.style.color = "#ff3366"; } }); }
   }
 
-  function autoBalanceMeals() {
-      Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
-      let workingUsers = [];
-      document.querySelectorAll('#mealTableBody tr').forEach(tr => {
-          const nick = tr.getAttribute('data-nick'); if(!nick) return;
-          const site = tr.querySelector('.site-cell').innerText;
-          const stampText = tr.querySelector('td:nth-child(3)').innerText;
-          const stamp = stampText.includes('เช้า') || stampText.includes('N') ? 'N' : (stampText.includes('ดึก') || stampText.includes('D') ? 'D' : 'OTHER');
-          workingUsers.push({ tr, nick, site, stamp });
-      });
-      let siteGroups = {};
-      workingUsers.forEach(u => { if(!siteGroups[u.site]) siteGroups[u.site] = []; siteGroups[u.site].push(u); });
-      for(let site in siteGroups) {
-          let users = siteGroups[site]; let nUsers = users.filter(u => u.stamp === 'N'); let dUsers = users.filter(u => u.stamp === 'D'); let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
-          let nSlots = []; let dSlots = [];
-          mealTimeBlocks.forEach(b => { let slots = generateTimeSlots(b.start, b.end); if(b.type === 'N') nSlots = nSlots.concat(slots); else dSlots = dSlots.concat(slots); });
-          let allSlots = nSlots.concat(dSlots);
-          nUsers.sort(() => Math.random() - 0.5); dUsers.sort(() => Math.random() - 0.5);
-          nUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = nSlots[i % nSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = nSlots[(i + 3) % nSlots.length] || ''; } });
-          dUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = dSlots[i % dSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = dSlots[(i + 3) % dSlots.length] || ''; } });
-          otherUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = allSlots[i % allSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = allSlots[(i + 3) % allSlots.length] || ''; } });
-      }
-      setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาสำเร็จ (โปรดตรวจสอบและบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
-  }
+  // ไม่ต้องแก้ไขฟังก์ชัน autoBalanceMeals() ถ้ามีอยู่แล้วข้ามไปแก้ที่ saveMealData เลยครับ
 
   async function saveMealData() {
       const dateStr = document.getElementById('mealDatePicker').value; let hasOverlap = false;
@@ -1540,29 +1517,35 @@
           const nick = tr.getAttribute('data-nick'); if(!nick) return; 
           const sel1 = tr.querySelector('.sel-meal-1'); const sel2 = tr.querySelector('.sel-meal-2'); 
           if(sel1.style.display !== 'none' && (sel1.style.borderColor === "rgb(255, 51, 102)" || sel2.style.borderColor === "rgb(255, 51, 102)")) hasOverlap = true; 
-          // 🌟 บันทึกทับเฉพาะค่าใหม่ที่มีการโชว์ให้เลือกเท่านั้น ป้องกันค่าเก่าโดนลบ
           dailyMealData[nick] = { slot1: sel1.value, slot2: sel2.value }; 
       });
       if (hasOverlap) { Swal.fire({title:'ระวัง!', text:'มีพนักงานที่ดูแลเว็บเดียวกันทานข้าวพร้อมกัน (กรอบสีแดง) ยืนยันที่จะบันทึกหรือไม่?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ffcc00', background:'#111', color:'#fff'}).then(r => { if(r.isConfirmed) executeSaveMeal(dateStr, dailyMealData); }); } else { executeSaveMeal(dateStr, dailyMealData); }
   }
 
   async function executeSaveMeal(dateStr, payloadData) { 
-      // 🌟 แก้ไขให้หาปุ่มบันทึกเจอแน่นอน ไม่ว่าจะ Admin หรือ Member
       const btnGroup = document.getElementById('mealActionBtns');
       const btns = btnGroup.getElementsByTagName('button');
-      const saveBtn = btns[btns.length - 1]; // ปุ่มบันทึกจะอยู่ขวาสุดเสมอ
+      const saveBtn = btns[btns.length - 1]; 
       
       if(saveBtn) { saveBtn.innerText = '⏳...'; saveBtn.disabled = true; }
       
       try { 
-          const { data: existing } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1); 
-          if(existing && existing.length > 0) await supabaseClient.from('meal_schedules').update({ mealData: JSON.stringify(payloadData) }).eq('id', existing[0].id); 
-          else await supabaseClient.from('meal_schedules').insert([{ dateStr: dateStr, mealData: JSON.stringify(payloadData) }]); 
+          const { data: existing, error: e1 } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1); 
+          if (e1) throw e1; // 🌟 ตรวจจับ Error จาก Supabase 🌟
+
+          if(existing && existing.length > 0) {
+              const { error: e2 } = await supabaseClient.from('meal_schedules').update({ mealData: JSON.stringify(payloadData) }).eq('id', existing[0].id); 
+              if (e2) throw e2;
+          } else {
+              const { error: e3 } = await supabaseClient.from('meal_schedules').insert([{ dateStr: dateStr, mealData: JSON.stringify(payloadData) }]); 
+              if (e3) throw e3;
+          }
           
           await loadDailyMealData(); 
           Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางทานข้าวสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
       } catch (err) { 
-          Swal.fire('Error', 'ไม่สามารถบันทึกตารางทานข้าวได้', 'error'); 
+          console.error("Save Meal Error:", err);
+          Swal.fire('Error', 'ระบบปฏิเสธการบันทึก: ' + (err.message || 'เช็ค Console'), 'error'); 
       } finally { 
           if(saveBtn) { saveBtn.innerText = myRole === 'Member' ? '💾 บันทึกเวลาทานข้าวของฉัน' : '💾 บันทึกตารางทานข้าว'; saveBtn.disabled = false; }
       } 
