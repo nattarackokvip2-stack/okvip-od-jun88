@@ -336,8 +336,7 @@
         <button id="btnJobSettings" class="btn btn-sm btn-outline-secondary" style="display:none;" onclick="openJobSettingsModal()">⚙️ ตั้งค่าระบบ</button>
       </div>
       <div class="filter-bar mb-3">
-        <div class="dept-badge active" id="badgeJobAll" onclick="filterJobDept('ALL', this)">ทั้งหมด</div>
-        <div class="dept-badge" id="badgeJobOD" onclick="filterJobDept('ออดิท (OD)', this)">OD</div>
+        <div class="dept-badge active" id="badgeJobOD" onclick="filterJobDept('ออดิท (OD)', this)">OD</div>
         <div class="dept-badge" id="badgeJobODOL" onclick="filterJobDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
       </div>
       <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
@@ -959,29 +958,63 @@
   }
 function setupJobFilters() {
       const myNick = localStorage.getItem('okvip_nick');
+      const myRole = localStorage.getItem('okvip_role');
       const me = allUsersData.find(u => u[1] === myNick);
       if (!me) return;
-      const myDept = me[3] || ''; // เช็คแผนกของตัวเอง
+      const myDept = me[3] || ''; 
 
       const badgeOD = document.getElementById('badgeJobOD');
       const badgeODOL = document.getElementById('badgeJobODOL');
       const shiftSelect = document.getElementById('jobShiftSetFilter');
 
-      // ถ้าผู้ใช้เป็น ODOL
-      if (myDept.includes('ODOL')) {
-          if(badgeOD) badgeOD.style.display = 'none'; // ซ่อนปุ่ม OD
-          if(badgeODOL) {
-              badgeODOL.style.display = 'inline-block';
-              badgeODOL.click(); // บังคับกดปุ่ม ODOL ให้เป็นค่าเริ่มต้น
+      // ถ้าเป็น Member หรือ Admin ทั่วไป ให้กรองตามแผนกตัวเองอย่างเด็ดขาด
+      if (myRole !== 'SuperAdmin') {
+          // ถ้าผู้ใช้เป็น ODOL
+          if (myDept.includes('ODOL')) {
+              if(badgeOD) badgeOD.style.display = 'none'; // ซ่อนปุ่ม OD ทิ้งไปเลย
+              if(badgeODOL) {
+                  badgeODOL.style.display = 'inline-block';
+                  badgeODOL.click(); // บังคับกดปุ่ม ODOL ให้เป็นค่าเริ่มต้น
+              }
+              if(shiftSelect) {
+                  // เปลี่ยนตัวเลือก Dropdown ให้มีแค่ ODOL
+                  shiftSelect.innerHTML = `
+                      <option value="ALL">-- ทุกเซ็ตกะ --</option>
+                      <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
+                      <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
+                  `;
+              }
+          } 
+          // ถ้าผู้ใช้เป็น OD
+          else if (myDept.includes('OD') && !myDept.includes('ODOL')) {
+              if(badgeODOL) badgeODOL.style.display = 'none'; // ซ่อนปุ่ม ODOL ทิ้งไปเลย
+              if(badgeOD) {
+                  badgeOD.style.display = 'inline-block';
+                  badgeOD.click(); // บังคับกดปุ่ม OD ให้เป็นค่าเริ่มต้น
+              }
+              if(shiftSelect) {
+                  // เปลี่ยนตัวเลือก Dropdown ให้มีแค่ OD
+                  shiftSelect.innerHTML = `
+                      <option value="ALL">-- ทุกเซ็ตกะ --</option>
+                      <option value="OD (A)">เซ็ตกะ: OD (A)</option>
+                      <option value="OD (B)">เซ็ตกะ: OD (B)</option>
+                  `;
+              }
           }
+      } else {
+          // 🌟 สำหรับ SuperAdmin ให้เห็นปุ่มทั้งหมด และตัวเลือกกะครบทุกคน
+          if(badgeOD) badgeOD.click();
           if(shiftSelect) {
               shiftSelect.innerHTML = `
                   <option value="ALL">-- ทุกเซ็ตกะ --</option>
-                  <option value="ODOL (A)">เซ็ตกะ ODOL (A)</option>
-                  <option value="ODOL (B)">เซ็ตกะ ODOL (B)</option>
+                  <option value="OD (A)">เซ็ตกะ: OD (A)</option>
+                  <option value="OD (B)">เซ็ตกะ: OD (B)</option>
+                  <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
+                  <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
               `;
           }
-      } 
+      }
+  }
       // ถ้าผู้ใช้เป็น OD
       else if (myDept.includes('OD') && !myDept.includes('ODOL')) {
           if(badgeODOL) badgeODOL.style.display = 'none'; // ซ่อนปุ่ม ODOL
