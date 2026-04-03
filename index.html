@@ -41,30 +41,37 @@
   .hub-icon { font-size: 3.5rem; margin-bottom: 15px; text-shadow: none; transition: 0.3s; }
   .hub-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; transition: 0.3s; }
   
+  /* 👥 รายชื่อ (Blue) */
   .hub-staff { border: 1px solid var(--neon-blue); box-shadow: 0 0 10px rgba(0, 240, 255, 0.1); }
   .hub-staff .hub-title { color: var(--neon-blue); text-shadow: 0 0 5px rgba(0, 240, 255, 0.3); }
   .hub-staff:hover { box-shadow: 0 0 25px rgba(0, 240, 255, 0.4); background: rgba(0, 240, 255, 0.05); }
 
+  /* 📅 ตารางงาน (Green) */
   .hub-schedule { border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(0, 255, 102, 0.1); }
   .hub-schedule .hub-title { color: var(--neon-green); text-shadow: 0 0 5px rgba(0, 255, 102, 0.3); }
   .hub-schedule:hover { box-shadow: 0 0 25px rgba(0, 255, 102, 0.4); background: rgba(0, 255, 102, 0.05); }
 
+  /* 📋 หน้าที่ (Yellow) */
   .hub-job { border: 1px solid var(--neon-yellow); box-shadow: 0 0 10px rgba(255, 204, 0, 0.1); }
   .hub-job .hub-title { color: var(--neon-yellow); text-shadow: 0 0 5px rgba(255, 204, 0, 0.3); }
   .hub-job:hover { box-shadow: 0 0 25px rgba(255, 204, 0, 0.4); background: rgba(255, 204, 0, 0.05); }
 
+  /* 🍽️ ทานข้าว (Pink) */
   .hub-meal { border: 1px solid #ff66cc; box-shadow: 0 0 10px rgba(255, 102, 204, 0.1); }
   .hub-meal .hub-title { color: #ff66cc; text-shadow: 0 0 5px rgba(255, 102, 204, 0.3); }
   .hub-meal:hover { box-shadow: 0 0 25px rgba(255, 102, 204, 0.4); background: rgba(255, 102, 204, 0.05); }
 
+  /* 📖 คู่มือ (Orange) */
   .hub-manual { border: 1px solid #ff9900; box-shadow: 0 0 10px rgba(255, 153, 0, 0.1); }
   .hub-manual .hub-title { color: #ff9900; text-shadow: 0 0 5px rgba(255, 153, 0, 0.3); }
   .hub-manual:hover { box-shadow: 0 0 25px rgba(255, 153, 0, 0.4); background: rgba(255, 153, 0, 0.05); }
 
+  /* ⚠️ ลงโทษ (Red) */
   .hub-penalty { border: 1px solid var(--neon-red); box-shadow: 0 0 10px rgba(255, 51, 102, 0.1); }
   .hub-penalty .hub-title { color: var(--neon-red); text-shadow: 0 0 5px rgba(255, 51, 102, 0.3); }
   .hub-penalty:hover { box-shadow: 0 0 25px rgba(255, 51, 102, 0.4); background: rgba(255, 51, 102, 0.05); }
 
+  /* 🌐 เว็บไซต์ (Purple) */
   .hub-portal { border: 1px solid #cc66ff; box-shadow: 0 0 10px rgba(204, 102, 255, 0.1); }
   .hub-portal .hub-title { color: #cc66ff; text-shadow: 0 0 5px rgba(204, 102, 255, 0.3); }
   .hub-portal:hover { box-shadow: 0 0 25px rgba(204, 102, 255, 0.4); background: rgba(204, 102, 255, 0.05); }
@@ -107,6 +114,7 @@
   .page-btn:hover:not(:disabled) { background: rgba(0, 240, 255, 0.1); border-color: var(--neon-blue); color: var(--neon-blue); }
   .page-btn.active { background: var(--neon-blue); color: #000; box-shadow: 0 0 10px rgba(0,240,255,0.5); border-color: var(--neon-blue); font-weight: bold; pointer-events: none; }
   
+  /* 🌟 สำคัญมาก: โค้ดนี้คือตัวเปิดปิดหน้าเว็บ (ห้ามลบ) 🌟 */
   .content-section { display: none; }
   .content-section.active { display: block !important; animation: fadeIn 0.4s; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -187,6 +195,8 @@
   .tool-btn.settings:hover { background: rgba(255,255,255,0.1); }
   .tool-btn.delete { color: #ff3366; border-color: #ff3366; }
   .tool-btn.delete:hover { background: rgba(255,51,102,0.2); }
+  .tool-btn.password { color: #ffaa00; border-color: #ffaa00; }
+  .tool-btn.password:hover { background: rgba(255, 170, 0, 0.2); }
   .tool-btn.telegram { color: #0088cc; border-color: #0088cc; }
   .tool-btn.telegram:hover { background: rgba(0, 136, 204, 0.2); }
   
@@ -212,7 +222,7 @@
     color: var(--neon-yellow) !important; /* เปลี่ยนตัวหนังสือเป็นสีเหลืองนีออน */
     text-shadow: 0 0 5px #000 !important; /* เพิ่มขอบดำให้ตัวหนังสือเด่นขึ้น */
   }
-  </style>
+</style>
 </head>
 <body>
 
@@ -404,7 +414,7 @@
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
            <h4 class="fw-bold mb-0" style="color: #ff66cc;">🍽️ จัดการตารางทานข้าว</h4>
-           <p class="small text-muted mb-0 mt-1">ระบบจะดึงเฉพาะพนักงานที่มาทำงานวันนี้</p>
+           <p class="small text-muted mb-0 mt-1">ระบบจะดึงเฉพาะพนักงานที่มาทำงานวันนี้ และกระจายรอบทานข้าวเพื่อป้องกันเว็บขาดคน</p>
         </div>
         <div class="d-flex align-items-center" style="background: #111; border: 1px solid #ff66cc; border-radius: 8px;">
             <span class="px-3 text-white small">📅 เลือกวันที่:</span>
@@ -427,6 +437,7 @@
              </select>
          </div>
          <div id="mealActionBtns" style="display: flex; gap: 10px;">
+           <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
            <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
          </div>
       </div>
@@ -501,9 +512,7 @@
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
     </div>
 
-  </div> </div> 
-
-<div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
+  </div> </div> <div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center text-warning" id="announceModalTitle">📢 สร้างประกาศใหม่</h4>
     <form id="announceForm" onsubmit="handleAnnounceSubmit(event)">
@@ -586,7 +595,7 @@
         </div>
     </div>
     <div class="d-flex justify-content-end mb-2">
-        <button type="button" class="btn btn-sm btn-outline-info" onclick="selectAllUserSites()">☑️ เลือกทั้งหมด / ยกเลิก</button>
+        <button class="btn btn-sm btn-outline-info" onclick="selectAllUserSites()">☑️ เลือกทั้งหมด / ยกเลิก</button>
     </div>
     <div id="userSiteCheckboxes" class="d-flex flex-wrap gap-2 mb-4"></div>
     <button class="btn btn-neon-blue w-100 py-2" onclick="saveUserCapableSitesBtn()">บันทึกข้อมูล</button>
@@ -730,7 +739,9 @@
   </div></div></div>
 </div>
 
-<div class="modal fade" id="leaveHistoryModal" tabindex="-1" data-bs-theme="dark">
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
+  <div class="modal fade" id="leaveHistoryModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
     <div class="modal-content">
       <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
@@ -782,7 +793,6 @@
     </div>
   </div>
 </div>
-
 <script>
   let myRole = ""; 
   let currentUsername = ""; 
@@ -912,7 +922,7 @@
     const thisMonthStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0'); // สร้างตัวแปรเดือนนี้
     
     document.getElementById('monthPicker').value = thisMonthStr;
-    if(document.getElementById('penaltyMonthFilter')) document.getElementById('penaltyMonthFilter').value = thisMonthStr; 
+    if(document.getElementById('penaltyMonthFilter')) document.getElementById('penaltyMonthFilter').value = thisMonthStr; // <--- เติมบรรทัดนี้ลงไปครับ!
 
     if(document.getElementById('jobDatePicker')) document.getElementById('jobDatePicker').value = todayStr;
     if(document.getElementById('mealDatePicker')) document.getElementById('mealDatePicker').value = todayStr; 
@@ -1447,8 +1457,7 @@
   // ==========================================
   // 🚀 6. หน้าที่ & สถิติ (Jobs & Stats)
   // ==========================================
-  function toggleJobTab(tabName) { currentJobTab = tabName; document.getElementById('btnTabDuty').classList.toggle('active', tabName==='duty'); document.getElementById('btnTabDuty').classList.toggle('btn-outline-warning', tabName!=='duty'); document.getElementById('btnTabDuty').classList.toggle('btn-warning', tabName==='duty'); document.getElementById('btnTabStat').classList.toggle('active', tabName==='stat'); document.getElementById('btnTabStat').classList.toggle('btn-outline-info', tabName!=='stat'); document.getElementById('btnTabStat').classList.toggle('btn-info', tabName==='stat'); document.getElementById('dutyTableArea').style.display = tabName==='duty'?'block':'none'; document.getElementById('statTableArea').style.display =
-    tabName==='stat'?'block':'none'; document.getElementById('dutyActionBtns').style.display = tabName==='duty'?'flex':'none'; document.getElementById('statActionBtns').style.display = tabName==='stat'?'block':'none'; renderJobTables(); }
+  function toggleJobTab(tabName) { currentJobTab = tabName; document.getElementById('btnTabDuty').classList.toggle('active', tabName==='duty'); document.getElementById('btnTabDuty').classList.toggle('btn-outline-warning', tabName!=='duty'); document.getElementById('btnTabDuty').classList.toggle('btn-warning', tabName==='duty'); document.getElementById('btnTabStat').classList.toggle('active', tabName==='stat'); document.getElementById('btnTabStat').classList.toggle('btn-outline-info', tabName!=='stat'); document.getElementById('btnTabStat').classList.toggle('btn-info', tabName==='stat'); document.getElementById('dutyTableArea').style.display = tabName==='duty'?'block':'none'; document.getElementById('statTableArea').style.display = tabName==='stat'?'block':'none'; document.getElementById('dutyActionBtns').style.display = tabName==='duty'?'flex':'none'; document.getElementById('statActionBtns').style.display = tabName==='stat'?'block':'none'; renderJobTables(); }
   function filterJobDept(dept, btn) { currentJobFilter = dept; document.querySelectorAll('#jobSection .dept-badge').forEach(b => {b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc";}); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderJobTables(); }
   function handleJobSearch(term) { jobSearchTerm = term.toLowerCase().trim(); renderJobTables(); }
   function toggleShowHidden(checkbox) { isShowingHiddenUsers = checkbox.checked; renderJobTables(); }
@@ -1496,12 +1505,14 @@
           const sites = (sysSettings.userSites[nick]||[]).filter(s=>s!=='EXCLUDE_DUTY');
           
           if(sites.length > 0) {
+              // สุ่มเว็บ 1-2 เว็บจากที่รับผิดชอบ
               let s = sites.sort(()=>0.5-Math.random()).slice(0, 2);
               const inSite = r.querySelector('.sel-site');
               if(inSite) {
-                  inSite.value = s.join(', ');
+                  inSite.value = s.join(', '); // ใส่ , เพื่อความสวยงาม
               }
               
+              // สุ่มหน้าที่
               const inDuty = r.querySelector('.sel-duty');
               if(inDuty && sysSettings.dutyTypes.length > 0) {
                   inDuty.value = sysSettings.dutyTypes[Math.floor(Math.random() * sysSettings.dutyTypes.length)];
@@ -1510,6 +1521,7 @@
       });
       
       setTimeout(() => {
+          // รีโหลดตารางข้าวทันที เพื่อให้มันดึงข้อมูล "เว็บที่ทำวันนี้" ไปใช้จัดกะอัตโนมัติ
           renderMealTable(); 
           Swal.fire({toast:true, position:'top-end', title:'สุ่มเสร็จแล้ว อย่าลืมกดบันทึกนะครับ', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
       }, 800);
@@ -1559,13 +1571,6 @@
   
   function openUserSiteModal(nick) { tempSetupNick = nick; document.getElementById('siteNickName').innerText = nick; const capable = sysSettings.userSites[nick] || []; document.getElementById('chkExcludeDuty').checked = capable.includes('EXCLUDE_DUTY'); let html = ''; sysSettings.websites.forEach(s => { const checked = capable.includes(s) ? 'checked' : ''; html += `<div class="form-check form-check-inline bg-dark border border-secondary px-3 py-2" style="border-radius:10px;"><input class="form-check-input capable-chk" type="checkbox" id="chk_${s}" value="${s}" ${checked}><label class="form-check-label text-white ms-2" for="chk_${s}">${s}</label></div>`; }); if(sysSettings.websites.length===0) html='<span class="text-danger">ยังไม่ได้ตั้งเว็บ</span>'; document.getElementById('userSiteCheckboxes').innerHTML = html; bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).show(); }
   
-  function selectAllUserSites() {
-      const checkboxes = document.querySelectorAll('.capable-chk');
-      let allChecked = true;
-      checkboxes.forEach(chk => { if(!chk.checked) allChecked = false; });
-      checkboxes.forEach(chk => chk.checked = !allChecked);
-  }
-
   async function saveUserCapableSitesBtn() { 
       let sel = []; document.querySelectorAll('.capable-chk:checked').forEach(el => sel.push(el.value)); 
       if(document.getElementById('chkExcludeDuty').checked) sel.push('EXCLUDE_DUTY'); 
@@ -1576,6 +1581,15 @@
       bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).hide(); Swal.fire({toast:true, position:'top', title:'ตั้งค่าเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
   }
   
+  // 🌟 ฟังก์ชันสำหรับติ๊กเลือกเว็บทั้งหมด
+  function selectAllUserSites() {
+      const checkboxes = document.querySelectorAll('.capable-chk');
+      // ตรวจสอบว่าตอนนี้เลือกทั้งหมดอยู่หรือเปล่า ถ้าเลือกอยู่ให้เอาออก ถ้ายังไม่ครบให้ติ๊กทั้งหมด
+      let allChecked = true;
+      checkboxes.forEach(chk => { if(!chk.checked) allChecked = false; });
+      
+      checkboxes.forEach(chk => chk.checked = !allChecked);
+  }
   function openJobSettingsModal() { document.getElementById('setWebsites').value = sysSettings.websites.join('\n'); document.getElementById('setDuties').value = sysSettings.dutyTypes.join('\n'); bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).show(); }
   
   async function saveAdminJobSettings() { 
@@ -1609,6 +1623,7 @@
   function renderMealTable() {
       const tbody = document.getElementById('mealTableBody'); tbody.innerHTML = '';
       
+      // ดึงค่าจากช่องค้นหาและฟิลเตอร์
       const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : '';
       const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL';
       const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL';
@@ -1625,14 +1640,17 @@
           if (!isOff && !isExcluded) {
               const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ';
               
+              // หากะงาน เพื่อใช้กรอง
               let shiftType = 'OTHER';
               if (stamp === 'N' || stamp.includes('เช้า')) shiftType = 'N';
               else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
 
+              // ตรวจสอบเงื่อนไขตัวกรอง
               let matchSearch = !searchT || nick.toLowerCase().includes(searchT);
               let matchShift = shiftF === 'ALL' || shiftType === shiftF;
               let matchDept = deptF === 'ALL' || dept.includes(deptF);
 
+              // ถ้าผ่านเงื่อนไข ค่อยเอามาแสดง
               if (matchSearch && matchShift && matchDept) {
                   workingUsers.push({ nick, dept, site, stamp, shiftType });
               }
@@ -1657,6 +1675,7 @@
           if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (เช้า)</span>`;
           if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (ดึก)</span>`;
 
+          // ดึงข้อมูลมื้อที่ 1 และมื้อที่ 2 (ถ้ามีบันทึกไว้)
           const curMeal = dailyMealData[u.nick] || {};
           const m1 = curMeal.slot1 || '';
           const m2 = curMeal.slot2 || '';
@@ -1712,10 +1731,63 @@
       }
   }
 
+  function autoBalanceMeals() {
+      Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
+      
+      let workingUsers = [];
+      document.querySelectorAll('#mealTableBody tr').forEach(tr => {
+          const nick = tr.getAttribute('data-nick'); if(!nick) return;
+          const site = tr.querySelector('.site-cell').innerText;
+          const stampText = tr.querySelector('td:nth-child(3)').innerText;
+          const stamp = stampText.includes('เช้า') || stampText.includes('N') ? 'N' : (stampText.includes('ดึก') || stampText.includes('D') ? 'D' : 'OTHER');
+          workingUsers.push({ tr, nick, site, stamp });
+      });
+
+      let siteGroups = {};
+      workingUsers.forEach(u => {
+          if(!siteGroups[u.site]) siteGroups[u.site] = [];
+          siteGroups[u.site].push(u);
+      });
+
+      for(let site in siteGroups) {
+          let users = siteGroups[site];
+          let nUsers = users.filter(u => u.stamp === 'N');
+          let dUsers = users.filter(u => u.stamp === 'D');
+          let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
+
+          let nSlots = []; let dSlots = [];
+          mealTimeBlocks.forEach(b => {
+              let slots = generateTimeSlots(b.start, b.end);
+              if(b.type === 'N') nSlots = nSlots.concat(slots);
+              else dSlots = dSlots.concat(slots);
+          });
+          let allSlots = nSlots.concat(dSlots);
+
+          nUsers.sort(() => Math.random() - 0.5); dUsers.sort(() => Math.random() - 0.5);
+
+          // แจก 2 รอบ ให้เวลาห่างกัน
+          nUsers.forEach((u, i) => { 
+              u.tr.querySelector('.sel-meal-1').value = nSlots[i % nSlots.length] || ''; 
+              u.tr.querySelector('.sel-meal-2').value = nSlots[(i + 3) % nSlots.length] || ''; 
+          });
+          dUsers.forEach((u, i) => { 
+              u.tr.querySelector('.sel-meal-1').value = dSlots[i % dSlots.length] || ''; 
+              u.tr.querySelector('.sel-meal-2').value = dSlots[(i + 3) % dSlots.length] || ''; 
+          });
+          otherUsers.forEach((u, i) => { 
+              u.tr.querySelector('.sel-meal-1').value = allSlots[i % allSlots.length] || ''; 
+              u.tr.querySelector('.sel-meal-2').value = allSlots[(i + 3) % allSlots.length] || ''; 
+          });
+      }
+      setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาสำเร็จ (โปรดตรวจสอบและบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
+  }
+
   async function saveMealData() {
       const dateStr = document.getElementById('mealDatePicker').value;
       let hasOverlap = false;
 
+      // 🌟 แก้ปัญหาบันทึกไม่ติด/ลบคนอื่นทิ้ง: อัปเดตข้อมูลใส่ Object ตัวแม่ (dailyMealData) ก่อน 
+      // เพื่อป้องกันไม่ให้คนที่ถูกซ่อนด้วย Filter โดนลบข้อมูลทิ้งตอนบันทึก
       document.querySelectorAll('#mealTableBody tr').forEach(tr => {
           const nick = tr.getAttribute('data-nick'); if(!nick) return;
           const sel1 = tr.querySelector('.sel-meal-1');
@@ -1723,6 +1795,7 @@
           
           if(sel1.style.borderColor === "rgb(255, 51, 102)" || sel2.style.borderColor === "rgb(255, 51, 102)") hasOverlap = true;
           
+          // บันทึกใส่ Object เป็นชุด 2 มื้อ
           dailyMealData[nick] = { slot1: sel1.value, slot2: sel2.value };
       });
 
@@ -1732,7 +1805,7 @@
   }
 
   async function executeSaveMeal(dateStr, payloadData) {
-      const btn = document.querySelector('#mealActionBtns button:nth-child(1)'); 
+      const btn = document.querySelector('#mealActionBtns button:nth-child(2)');
       btn.innerText = '⏳...'; btn.disabled = true;
       try {
           const { data: existing } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1);
@@ -1865,10 +1938,11 @@
       try {
           const { data } = await supabaseClient.from('leave_requests').select('*').order('created_at', { ascending: false });
           allLeavesData = data || [];
-          checkLeaveAlerts(); 
+          checkLeaveAlerts(); // เช็คไฟกระพริบทุกครั้งที่ดึงข้อมูลใหม่
       } catch (err) { console.error('Error loading leaves:', err); }
   }
 
+  // ฟังก์ชันเช็คไฟกระพริบ (อิงตามเดือนที่เลือกหน้าตารางหลัก)
   function checkLeaveAlerts() {
       const btnLeave = document.getElementById('btnLeaveSystem');
       if (!btnLeave) return;
@@ -1877,8 +1951,9 @@
       let hasPendingInCurrentMonth = false;
 
       if (myRole === 'SuperAdmin') {
+          // แอดมินจะเห็นไฟกระพริบ ถ้ามีรายการ Pending ในเดือนที่เปิดดูอยู่
           hasPendingInCurrentMonth = allLeavesData.some(L => {
-              const reqMonth = L.leave_date.substring(0, 7); 
+              const reqMonth = L.leave_date.substring(0, 7); // เอาแค่ YYYY-MM
               return L.status === 'Pending' && (!currentMonth || reqMonth === currentMonth);
           });
       }
@@ -1893,10 +1968,11 @@
   }
 
   function openLeaveHistoryModal() {
+      // ตั้งค่าเดือนใน Modal ให้ตรงกับเดือนหน้าตารางงาน
       const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : '';
       if(document.getElementById('leaveMonthFilter')) document.getElementById('leaveMonthFilter').value = currentMonth;
       
-      loadLeavesPage(1); 
+      loadLeavesPage(1); // เปิดมาหน้าแรกเสมอ
       bootstrap.Modal.getOrCreateInstance(document.getElementById('leaveHistoryModal')).show();
   }
 
@@ -1929,7 +2005,7 @@
           await supabaseClient.from('leave_requests').insert([payload]);
           bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).hide();
           await loadSupabaseLeaves();
-          loadLeavesPage(currentLeavePage); 
+          loadLeavesPage(currentLeavePage); // รีเฟรชตาราง
           Swal.fire({toast:true, position:'top-end', title:'ส่งคำขอลาสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
       } catch(err) {
           Swal.fire('Error', err.message, 'error');
@@ -1938,6 +2014,7 @@
       }
   }
 
+  // ฟังก์ชันแยกสำหรับโหลดตารางแบบแบ่งหน้า
   function loadLeavesPage(page) {
       currentLeavePage = page;
       const tb = document.getElementById('leaveTableBody');
@@ -1947,6 +2024,7 @@
       const filterMonth = document.getElementById('leaveMonthFilter').value;
       const myNick = localStorage.getItem('okvip_nick');
 
+      // กรองข้อมูลตามเดือนที่เลือก
       let filteredData = allLeavesData.filter(L => {
           const reqMonth = L.leave_date ? L.leave_date.substring(0, 7) : '';
           return !filterMonth || reqMonth === filterMonth;
@@ -1957,11 +2035,13 @@
           return;
       }
 
+      // คำนวณหน้า
       const totalPages = Math.ceil(filteredData.length / leavesPerPage);
       if (currentLeavePage > totalPages) currentLeavePage = totalPages;
       const startIndex = (currentLeavePage - 1) * leavesPerPage;
       const paginatedData = filteredData.slice(startIndex, startIndex + leavesPerPage);
 
+      // วาดตาราง
       paginatedData.forEach(L => {
           let statusBadge = '';
           if(L.status === 'Pending') statusBadge = `<span class="badge bg-warning text-dark border">⏳ รออนุมัติ</span>`;
@@ -1997,6 +2077,7 @@
           `;
       });
 
+      // วาดปุ่มแบ่งหน้า
       if (totalPages > 1) { 
           let pageHtml = `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage - 1})" ${currentLeavePage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; 
           for (let i = 1; i <= totalPages; i++) {
@@ -2019,7 +2100,7 @@
               Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()});
               await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id);
               await loadSupabaseLeaves();
-              loadLeavesPage(currentLeavePage); 
+              loadLeavesPage(currentLeavePage); // รีเฟรชหน้าปัจจุบัน
               Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
           }
       });
@@ -2031,11 +2112,12 @@
               Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()});
               await supabaseClient.from('leave_requests').delete().eq('id', id);
               await loadSupabaseLeaves();
-              loadLeavesPage(1); 
+              loadLeavesPage(1); // รีเฟรชกลับไปหน้าแรก
               Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
           }
        });
   }
 </script>
+
 </body>
 </html>
