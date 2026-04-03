@@ -1056,7 +1056,10 @@
     let filteredData = allUsersData.filter(row => {
         if (!row || !row[1]) return false; 
         const dept = row[3] ? row[3].toString() : ''; const nick = row[1] ? row[1].toString().toLowerCase() : ''; const user = row[4] ? row[4].toString().toLowerCase() : '';
-        if(currentDeptFilter !== 'ALL' && dept !== currentDeptFilter && !dept.startsWith(currentDeptFilter.split(' ')[0])) return false;
+        
+        // 🌟 แก้ไขตรงนี้: เช็คให้เป๊ะๆ ว่าค่าตรงกันเท่านั้น (ป้องกัน OD ไปปนกับ ODOL)
+        if(currentDeptFilter !== 'ALL' && dept !== currentDeptFilter) return false;
+        
         if(currentSearchTerm && !nick.includes(currentSearchTerm) && !user.includes(currentSearchTerm)) return false;
         return true;
     });
@@ -1252,7 +1255,7 @@
     const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = '';
     let filteredUsers = allUsersData.filter(u => { 
         if(!u || u[7]!=='Active') return false; const nick = u[1] ? u[1].toString().toLowerCase() : ''; const dept = u[3] ? u[3].toString() : ''; const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
-        if(currentJobFilter !== 'ALL' && !dept.startsWith(currentJobFilter.split(' ')[0])) return false;
+        if(currentJobFilter !== 'ALL' && dept !== currentJobFilter) return false;
         if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; 
         if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false;
         const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; 
