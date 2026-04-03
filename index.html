@@ -1393,16 +1393,26 @@
 
       let workingUsers = [];
       allUsersData.forEach(u => {
-          if(!u || u[7] !== 'Active') return; const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const stamp = dailyScheduleData[nick] || ''; const isOff = offDutyStamps.includes(stamp) || stamp === ''; const isExcluded = (sysSettings.userSites[nick] || []).includes('EXCLUDE_DUTY');
+          if(!u || u[7] !== 'Active') return; 
+          const nick = u[1]; 
+          const dept = u[3] ? u[3].toString() : ''; 
+          const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; // 🌟 ดึงข้อมูลเซ็ตกะมาด้วย
+          const stamp = dailyScheduleData[nick] || ''; 
+          const isOff = offDutyStamps.includes(stamp) || stamp === ''; 
+          const isExcluded = (sysSettings.userSites[nick] || []).includes('EXCLUDE_DUTY');
+          
           if (!isOff && !isExcluded) {
               const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ'; let shiftType = 'OTHER';
               if (stamp === 'N' || stamp.includes('เช้า')) shiftType = 'N'; else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
               let matchSearch = !searchT || nick.toLowerCase().includes(searchT); let matchShift = shiftF === 'ALL' || shiftType === shiftF; let matchDept = deptF === 'ALL' || dept.includes(deptF);
-              if (matchSearch && matchShift && matchDept) { workingUsers.push({ nick, dept, site, stamp, shiftType }); }
+              
+              if (matchSearch && matchShift && matchDept) { 
+                  // 🌟 เก็บ shiftSet เข้าไปใน workingUsers ด้วย
+                  workingUsers.push({ nick, dept, site, stamp, shiftType, shiftSet }); 
+              }
           }
       });
       
-      // อัปเดตส่วนหัวของตารางให้มีคอลัมน์ใหม่ (เพื่อนร่วมงานเว็บเดียวกัน)
       const tableHead = document.querySelector('#mealSection table thead tr');
       tableHead.innerHTML = `
         <th>ชื่อพนักงาน</th>
@@ -1450,15 +1460,17 @@
           // 🌟 เริ่มกระบวนการหา "เพื่อนร่วมงานเว็บเดียวกัน" 🌟
           let coworkersList = [];
           if (u.site !== 'ยังไม่ระบุเว็บ') {
-              // ดึงชื่อเว็บที่พนักงานคนนี้รับผิดชอบ (ตัดคำว่า (หลัก), (รอง) ออก)
               let mySites = u.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
               
-              // วนลูปหาพนักงานคนอื่นที่ทำงานวันนี้ และไม่ได้เป็นคนๆ เดียวกัน
               workingUsers.forEach(otherUser => {
-                  if (otherUser.nick !== u.nick && otherUser.site !== 'ยังไม่ระบุเว็บ') {
+                  // 🌟 เช็คให้ชัวร์ว่าไม่ใช่ตัวเอง + แผนกตรงกัน + เซ็ตกะตรงกัน (A/B)
+                  if (otherUser.nick !== u.nick && 
+                      otherUser.site !== 'ยังไม่ระบุเว็บ' &&
+                      otherUser.dept === u.dept && 
+                      otherUser.shiftSet === u.shiftSet) { 
+                      
                       let otherSites = otherUser.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
                       
-                      // เช็คว่ามีเว็บที่รับผิดชอบตรงกันอย่างน้อย 1 เว็บหรือไม่
                       let isShared = mySites.some(mySite => otherSites.includes(mySite));
                       
                       if (isShared) {
@@ -1468,12 +1480,10 @@
               });
           }
           
-          // จัดรูปแบบการแสดงผลเพื่อนร่วมงาน
           let coworkersDisplay = '<span class="text-muted small">-</span>';
           if (coworkersList.length > 0) {
               coworkersDisplay = `<div class="small" style="max-width: 150px; white-space: normal; line-height: 1.4;">${coworkersList.join(', ')}</div>`;
           }
-
 
           let mealControlHtml = '';
           if (isAdmin || isMyRow) {
@@ -1504,7 +1514,8 @@
                   <td class="text-muted small">${u.dept.split(' ')[0]}</td>
                   <td>${stampBadge}</td>
                   <td class="text-info site-cell">${u.site}</td>
-                  <td>${coworkersDisplay}</td> <td style="width: 320px;">${mealControlHtml}</td>
+                  <td>${coworkersDisplay}</td>
+                  <td style="width: 320px;">${mealControlHtml}</td>
               </tr>
           `;
       });
