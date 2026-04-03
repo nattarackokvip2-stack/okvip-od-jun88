@@ -1298,11 +1298,29 @@
   function selectStamp(code, btn) { if (myRole === 'Member' && code !== 'X' && code !== '') { Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); return; } currentStamp = code; document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); }
   function filterScheduleDept(dept, btn) { if(Object.keys(unsavedChanges).length > 0){ Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); return; } currentScheduleFilter = dept; document.querySelectorAll('#holidaySection .dept-badge').forEach(b => { b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; }); btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)"; loadScheduleTable(); }
   function handleScheduleSearch(term) { scheduleSearchTerm = term.toLowerCase().trim(); loadScheduleTable(); }
-  function changeMonth(offset) { 
-      // ... (โค้ดเดิม) ...
-      p.value = `${y}-${String(m).padStart(2, '0')}`; 
-      loadScheduleTable(); 
-      checkLeaveAlerts(); //
+  function changeMonth(offset) {
+      // 1. เช็คก่อนว่ามีงานที่ยังไม่ได้เซฟไหม
+      if(Object.keys(unsavedChanges).length > 0){ 
+          Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณาบันทึกตารางปัจจุบันก่อนเปลี่ยนเดือน', icon:'warning', background:'#111', color:'#fff'}); 
+          return; 
+      }
+      
+      // 2. ดึงค่าเดือนปัจจุบันจากกล่อง
+      const p = document.getElementById('monthPicker');
+      if(!p.value) return;
+      
+      // 3. คำนวณบวกลบเดือน
+      let [y, m] = p.value.split('-').map(Number);
+      m += offset;
+      if (m > 12) { m = 1; y++; } 
+      else if (m < 1) { m = 12; y--; }
+      
+      // 4. อัปเดตกลับเข้าไปในกล่อง
+      p.value = `${y}-${String(m).padStart(2, '0')}`;
+      
+      // 5. โหลดตารางใหม่ + เช็คไฟกระพริบ
+      loadScheduleTable();
+      checkLeaveAlerts(); 
   }
   document.addEventListener('mouseup', function() {
     isDraggingStamp = false;
