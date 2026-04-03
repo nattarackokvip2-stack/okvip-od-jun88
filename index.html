@@ -1389,7 +1389,7 @@
       const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL'; 
       const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL';
       
-      const myNick = localStorage.getItem('okvip_nick') || ''; // ดึงชื่อของคนที่ล็อกอิน
+      const myNick = localStorage.getItem('okvip_nick') || ''; 
 
       let workingUsers = [];
       allUsersData.forEach(u => {
@@ -1404,8 +1404,26 @@
       
       if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
       
-      let mealSelectOptionsHTML = `<option value="">-- เลือกเวลา --</option>`;
-      mealTimeBlocks.forEach(block => { mealSelectOptionsHTML += `<optgroup label="${block.name}">`; let slots = generateTimeSlots(block.start, block.end); slots.forEach(slot => { mealSelectOptionsHTML += `<option value="${slot}" data-type="${block.type}">${slot}</option>`; }); mealSelectOptionsHTML += `</optgroup>`; });
+      // 🌟 สร้าง Dropdown แยก 2 แบบ 🌟
+      let optionsForODOL = `<option value="">-- เลือกเวลา --</option>`;
+      let optionsForOD = `<option value="">-- เลือกเวลา --</option>`;
+
+      mealTimeBlocks.forEach(block => { 
+          let groupHtml = `<optgroup label="${block.name}">`; 
+          let slots = generateTimeSlots(block.start, block.end); 
+          slots.forEach(slot => { groupHtml += `<option value="${slot}" data-type="${block.type}">${slot}</option>`; }); 
+          groupHtml += `</optgroup>`; 
+
+          // ถ้าเป็นกลุ่ม ปอยเปต/ODOL ให้ใส่ทั้ง 2 ชุด
+          if (block.type === 'OD_POIPET') {
+              optionsForODOL += groupHtml;
+              optionsForOD += groupHtml;
+          } 
+          // ถ้าเป็นกลุ่ม ลาว ให้ใส่เฉพาะของ OD เท่านั้น
+          else if (block.type === 'OD_LAOS') {
+              optionsForOD += groupHtml;
+          }
+      });
       
       workingUsers.forEach(u => {
           let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; 
@@ -1416,12 +1434,9 @@
           const m1 = curMeal.slot1 || ''; 
           const m2 = curMeal.slot2 || '';
 
-          // 🌟 เช็คว่าเป็นแถวของตัวเองไหม
           const isMyRow = (u.nick === myNick);
-          // 🌟 เช็คว่าเป็นแอดมินไหม
           const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
           
-          // กำหนดสีและสไตล์สำหรับชื่อตัวเอง
           let nameDisplay = u.nick;
           let rowStyle = '';
           if (isMyRow) {
@@ -1429,13 +1444,14 @@
               rowStyle = 'background-color: rgba(0, 255, 102, 0.05);';
           }
 
-          // สร้างส่วนของ Dropdown ทานข้าว
           let mealControlHtml = '';
           
           if (isAdmin || isMyRow) {
-              // ถ้าเป็น Admin หรือเป็นแถวของตัวเอง ให้แก้ไขได้
-              let select1 = mealSelectOptionsHTML.replace(`value="${m1}"`, `value="${m1}" selected`); 
-              let select2 = mealSelectOptionsHTML.replace(`value="${m2}"`, `value="${m2}" selected`);
+              // 🌟 เช็คแผนกเพื่อเลือกชุด Dropdown 🌟
+              let myOptions = u.dept.includes('ODOL') ? optionsForODOL : optionsForOD;
+              
+              let select1 = myOptions.replace(`value="${m1}"`, `value="${m1}" selected`); 
+              let select2 = myOptions.replace(`value="${m2}"`, `value="${m2}" selected`);
               mealControlHtml = `
                   <div class="d-flex gap-2">
                       <select class="form-select form-select-sm bg-dark text-white sel-meal-1" onchange="checkMealOverlap()">${select1}</select>
@@ -1443,10 +1459,8 @@
                   </div>
               `;
           } else {
-              // ถ้าไม่ใช่ตัวเองและไม่ใช่แอดมิน ให้แค่ดูข้อมูลเท่านั้น (ถ้ายังไม่ลงเวลาจะขึ้นว่า ยังไม่ระบุ)
               let t1 = m1 ? `<span class="badge bg-secondary">${m1}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`;
               let t2 = m2 ? `<span class="badge bg-secondary">${m2}</span>` : ``;
-              // แอบใส่ Input ซ่อนไว้ (เพื่อไม่ให้โค้ดส่วนเช็ค Overlap พังตอนดึงค่า)
               mealControlHtml = `
                   <div class="d-flex gap-2 align-items-center">
                       ${t1} ${t2}
@@ -1467,17 +1481,14 @@
           `;
       });
 
-      // จัดการปุ่มบันทึก/สุ่ม สำหรับ Member และ Admin
       const actionBtnsContainer = document.getElementById('mealActionBtns');
-      actionBtnsContainer.style.display = 'flex'; // โชว์ปุ่มเสมอ
+      actionBtnsContainer.style.display = 'flex'; 
       
       if (myRole === 'Member') {
-          // Member เห็นแค่ปุ่มบันทึก
           actionBtnsContainer.innerHTML = `
               <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>
           `;
       } else {
-          // Admin เห็นทั้งสุ่มและบันทึก
           actionBtnsContainer.innerHTML = `
               <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
               <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
