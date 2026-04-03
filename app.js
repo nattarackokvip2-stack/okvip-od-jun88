@@ -28,6 +28,7 @@ let myRole = "";
   
   let currentJobTab = 'duty'; 
   let currentJobFilter = 'ALL'; 
+  let currentJobShiftSet = 'ALL';
   let jobSearchTerm = ''; 
   let isShowingHiddenUsers = false;
   
@@ -649,6 +650,7 @@ let myRole = "";
   function toggleJobTab(tabName) { currentJobTab = tabName; document.getElementById('btnTabDuty').classList.toggle('active', tabName==='duty'); document.getElementById('btnTabDuty').classList.toggle('btn-outline-warning', tabName!=='duty'); document.getElementById('btnTabDuty').classList.toggle('btn-warning', tabName==='duty'); document.getElementById('btnTabStat').classList.toggle('active', tabName==='stat'); document.getElementById('btnTabStat').classList.toggle('btn-outline-info', tabName!=='stat'); document.getElementById('btnTabStat').classList.toggle('btn-info', tabName==='stat'); document.getElementById('dutyTableArea').style.display = tabName==='duty'?'block':'none'; document.getElementById('statTableArea').style.display = tabName==='stat'?'block':'none'; document.getElementById('dutyActionBtns').style.display = tabName==='duty'?'flex':'none'; document.getElementById('statActionBtns').style.display = tabName==='stat'?'block':'none'; renderJobTables(); }
   function filterJobDept(dept, btn) { currentJobFilter = dept; document.querySelectorAll('#jobSection .dept-badge').forEach(b => {b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc";}); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderJobTables(); }
   function handleJobSearch(term) { jobSearchTerm = term.toLowerCase().trim(); renderJobTables(); }
+  function handleJobShiftSetFilter(val) { currentJobShiftSet = val; renderJobTables(); }
   function toggleShowHidden(checkbox) { isShowingHiddenUsers = checkbox.checked; renderJobTables(); }
   function renderJobTables() { if(currentJobTab === 'duty') buildDutyTable(); else buildStatTable(); }
   
@@ -667,8 +669,13 @@ let myRole = "";
   function buildDutyTable() {
     const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = '';
     let filteredUsers = allUsersData.filter(u => { 
-        if(!u || u[7]!=='Active') return false; const nick = u[1] ? u[1].toString().toLowerCase() : ''; const dept = u[3] ? u[3].toString() : '';
+        if(!u || u[7]!=='Active') return false; 
+        const nick = u[1] ? u[1].toString().toLowerCase() : ''; 
+        const dept = u[3] ? u[3].toString() : '';
+        const shiftSet = u[9] ? u[9].toString() : ''; // ดึงเซ็ตกะมาเช็ค
+        
         if(currentJobFilter !== 'ALL' && !dept.startsWith(currentJobFilter.split(' ')[0])) return false;
+        if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; // ตรวจสอบเซ็ตกะ (A หรือ B)
         if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false;
         const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; 
     });
@@ -729,7 +736,18 @@ let myRole = "";
   
   function buildStatTable() {
     const thead = document.getElementById('statTableHeader'); const tbody = document.getElementById('statTableBody'); let thHtml = `<th class="col-sticky-name">ชื่อพนักงาน</th><th class="col-sticky-dept">แผนก</th>`; sysSettings.websites.forEach(s => thHtml += `<th class="stat-input-cell text-center text-muted">${s}</th>`); thHtml += `<th style="width:120px; color: var(--neon-yellow);" class="text-center">จำนวนรายการถอนจริง</th>`; thead.innerHTML = thHtml; tbody.innerHTML = '';
-    let filteredUsers = allUsersData.filter(u => { if(u[7]!=='Active') return false; const nick = u[1]?u[1].toString().toLowerCase():''; const dept = u[3]?u[3].toString():''; if(currentJobFilter!=='ALL' && !dept.startsWith(currentJobFilter.split(' ')[0])) return false; if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false; const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; });
+    
+    let filteredUsers = allUsersData.filter(u => { 
+        if(!u || u[7]!=='Active') return false; 
+        const nick = u[1]?u[1].toString().toLowerCase():''; 
+        const dept = u[3]?u[3].toString():''; 
+        const shiftSet = u[9] ? u[9].toString() : ''; // ดึงเซ็ตกะมาเช็ค
+        
+        if(currentJobFilter!=='ALL' && !dept.startsWith(currentJobFilter.split(' ')[0])) return false; 
+        if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; // ตรวจสอบเซ็ตกะ (A หรือ B)
+        if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false; 
+        const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; 
+    });
     filteredUsers.forEach(u => {
       const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; 
       if (capable.includes('EXCLUDE_DUTY')) { let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="true" style="opacity: 0.4;"><td class="col-sticky-name fw-bold text-white"><del>${nick}</del></td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => tdHtml += `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="ซ่อน"></td>`); tbody.innerHTML += tdHtml + `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="-"></td></tr>`; return; }
