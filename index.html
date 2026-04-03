@@ -973,7 +973,19 @@
   async function loadSupabaseUsers() {
       const { data, error } = await supabaseClient.from('users').select('*').order('id', { ascending: true });
       if (error) throw error;
-      allUsersData = data.map(item => [ item.id, item.nickname, item.workGroup, item.department, item.username, item.password, item.role, item.status || 'Active', item.telegram || '', item.shiftSet || '' ]);
+      // ป้องกัน Error หากข้อมูลใน Supabase ไม่มีคอลัมน์นั้นๆ หรือเป็น Null
+      allUsersData = (data || []).map(item => [ 
+          item.id || '', 
+          item.nickname || '', 
+          item.workGroup || '', 
+          item.department || '', 
+          item.username || '', 
+          item.password || '', 
+          item.role || 'Member', 
+          item.status || 'Active', 
+          item.telegram || '', 
+          item.shiftSet || '' 
+      ]);
       loadUsers(); updatePenaltySelect();
   }
 
@@ -1423,22 +1435,75 @@
   }
   
   function randomizeDuties() {
-      Swal.fire({title:'กำลังสุ่ม...', timer:800, didOpen:()=>Swal.showLoading()});
+      Swal.fire({title:'กำลังคำนวณสุ่มหน้าที่...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()});
       
-      document.querySelectorAll('#dutyTableBody tr').forEach(r => {
-          if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
-          const nick = r.getAttribute('data-nick'); const sites = (sysSettings.userSites[nick]||[]).filter(s=>s!=='EXCLUDE_DUTY');
-          
-          if(sites.length > 0) {
-              let s = sites.sort(()=>0.5-Math.random()).slice(0, 2);
-              const inSite = r.querySelector('.sel-site');
-              if(inSite) { inSite.value = s.join(', '); }
+      setTimeout(() => {
+          // 1. รวบรวมรายชื่อเว็บทั้งหมดที่มีคนรับผิดชอบ และนับว่าเว็บไหนมีคนว่างบ้าง
+          let allAvailableSites = {};
+          let availableUsers = [];
+
+          document.querySelectorAll('#dutyTableBody tr').forEach(r => {
+              if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
+              const nick = r.getAttribute('data-nick');
+              const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
               
-              const inDuty = r.querySelector('.sel-duty');
-              if(inDuty && sysSettings.dutyTypes.length > 0) { inDuty.value = sysSettings.dutyTypes[Math.floor(Math.random() * sysSettings.dutyTypes.length)]; }
-          }
-      });
-      setTimeout(() => { renderMealTable(); Swal.fire({toast:true, position:'top-end', title:'สุ่มเสร็จแล้ว อย่าลืมกดบันทึกนะครับ', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); }, 800);
+              if(capableSites.length > 0) {
+                  availableUsers.push({ row: r, nick: nick, capableSites: capableSites });
+                  capableSites.forEach(site => {
+                      if(!allAvailableSites[site]) allAvailableSites[site] = 0;
+                      allAvailableSites[site]++;
+                  });
+              }
+          });
+
+          // 2. เรียงลำดับเว็บที่ "ขาดคน" มากที่สุดขึ้นมาก่อน (หาคนยากสุด)
+          let sitePriority = Object.keys(allAvailableSites).sort((a, b) => allAvailableSites[a] - allAvailableSites[b]);
+          
+          // 3. เริ่มแจกเว็บหลัก (Primary) ให้พนักงานทีละคน โดยพยายามให้เว็บถูกกระจายให้ทั่วถึง
+          let siteAssignmentCount = {};
+          sysSettings.websites.forEach(s => siteAssignmentCount[s] = 0);
+
+          // สุ่มลำดับพนักงาน เพื่อไม่ให้คนเดิมได้เว็บเดิมตลอด
+          availableUsers.sort(() => 0.5 - Math.random());
+
+          availableUsers.forEach(u => {
+              let assignedPrimary = null;
+              let assignedSecondary = null;
+
+              // หาเว็บหลัก: เลือกเว็บที่พนักงานคนนี้ทำได้ และเว็บนั้นยังมีคนทำน้อยที่สุดในตอนนี้
+              let possiblePrimarySites = u.capableSites.sort((a, b) => (siteAssignmentCount[a] || 0) - (siteAssignmentCount[b] || 0));
+              if (possiblePrimarySites.length > 0) {
+                  assignedPrimary = possiblePrimarySites[0];
+                  if(siteAssignmentCount[assignedPrimary] !== undefined) siteAssignmentCount[assignedPrimary]++;
+              }
+
+              // หาเว็บรอง: เลือกเว็บถัดไป (ถ้ามี)
+              if (possiblePrimarySites.length > 1) {
+                  // สุ่มเว็บรองจากเว็บที่เหลือ
+                  let remainingSites = possiblePrimarySites.slice(1).sort(() => 0.5 - Math.random());
+                  assignedSecondary = remainingSites[0];
+              }
+
+              // นำไปแสดงผลในช่อง Input
+              const inSite = u.row.querySelector('.sel-site');
+              if(inSite) {
+                  let displayStr = "";
+                  if (assignedPrimary && assignedSecondary) displayStr = `${assignedPrimary} (หลัก), ${assignedSecondary} (รอง)`;
+                  else if (assignedPrimary) displayStr = `${assignedPrimary} (หลัก)`;
+                  
+                  inSite.value = displayStr;
+              }
+
+              // สุ่มหน้าที่ประจำวัน (อิงจากที่มีตั้งค่าไว้)
+              const inDuty = u.row.querySelector('.sel-duty');
+              if(inDuty && sysSettings.dutyTypes.length > 0) {
+                  inDuty.value = sysSettings.dutyTypes[Math.floor(Math.random() * sysSettings.dutyTypes.length)];
+              }
+          });
+
+          renderMealTable(); 
+          Swal.fire({toast:true, position:'top-end', title:'สุ่มและบาลานซ์หน้าที่เสร็จแล้ว!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+      }, 500); // ดีเลย์นิดนึงให้แสดง Popup โหลดได้ทัน
   }
   
   async function saveDutyTable() { 
