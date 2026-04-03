@@ -1603,8 +1603,40 @@
   }
 
   // ==========================================
-  // 🍽️ 6.5 ระบบตารางทานข้าว (Meal Schedule) แบบ 30 นาที + กะ
+  // 🍽️ 6.5 ระบบตารางทานข้าว (Meal Schedule) กำหนดรอบเองได้
   // ==========================================
+  const mealTimeBlocks = [
+      // รอบ OD ปอยเปต & ODOL (เหมือนกัน)
+      { name: "OD ปอยเปต / ODOL (รอบ 1) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD_POIPET" },
+      { name: "OD ปอยเปต / ODOL (รอบ 2) [07:00-10:00]", start: "07:00", end: "10:00", type: "OD_POIPET" },
+      { name: "OD ปอยเปต / ODOL (รอบ 3) [12:00-14:00]", start: "12:00", end: "14:00", type: "OD_POIPET" },
+      { name: "OD ปอยเปต / ODOL (รอบ 4) [16:30-18:30]", start: "16:30", end: "18:30", type: "OD_POIPET" },
+      { name: "OD ปอยเปต / ODOL (รอบ 5) [21:00-23:00]", start: "21:00", end: "23:00", type: "OD_POIPET" },
+      // รอบ OD ลาว
+      { name: "OD ลาว (รอบ 1) [04:00-07:00]", start: "04:00", end: "07:00", type: "OD_LAOS" },
+      { name: "OD ลาว (รอบ 2) [10:00-13:00]", start: "10:00", end: "13:00", type: "OD_LAOS" },
+      { name: "OD ลาว (รอบ 3) [16:00-18:00]", start: "16:00", end: "18:00", type: "OD_LAOS" },
+      { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD_LAOS" }
+  ];
+
+  function generateTimeSlots(start, end) {
+      let slots = [];
+      let [sH, sM] = start.split(':').map(Number);
+      let [eH, eM] = end.split(':').map(Number);
+      let currentMins = sH * 60 + sM;
+      let endMins = eH * 60 + eM;
+      if (endMins <= currentMins) endMins += 24 * 60; 
+      while (currentMins < endMins) {
+          let nextMins = currentMins + 30;
+          let cStr = `${String(Math.floor(currentMins / 60) % 24).padStart(2, '0')}:${String(currentMins % 60).padStart(2, '0')}`;
+          let nStr = `${String(Math.floor(nextMins / 60) % 24).padStart(2, '0')}:${String(nextMins % 60).padStart(2, '0')}`;
+          if(nStr === "00:00" && currentMins >= 23 * 60) nStr = "24:00";
+          slots.push(`${cStr}-${nStr}`);
+          currentMins = nextMins;
+      }
+      return slots;
+  }
+
   function syncMealDate() {
       document.getElementById('jobDatePicker').value = document.getElementById('mealDatePicker').value;
       loadDailyJobData().then(() => loadDailyMealData());
@@ -1623,7 +1655,6 @@
   function renderMealTable() {
       const tbody = document.getElementById('mealTableBody'); tbody.innerHTML = '';
       
-      // ดึงค่าจากช่องค้นหาและฟิลเตอร์
       const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : '';
       const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL';
       const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL';
@@ -1640,17 +1671,14 @@
           if (!isOff && !isExcluded) {
               const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ';
               
-              // หากะงาน เพื่อใช้กรอง
               let shiftType = 'OTHER';
               if (stamp === 'N' || stamp.includes('เช้า')) shiftType = 'N';
               else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
 
-              // ตรวจสอบเงื่อนไขตัวกรอง
               let matchSearch = !searchT || nick.toLowerCase().includes(searchT);
               let matchShift = shiftF === 'ALL' || shiftType === shiftF;
               let matchDept = deptF === 'ALL' || dept.includes(deptF);
 
-              // ถ้าผ่านเงื่อนไข ค่อยเอามาแสดง
               if (matchSearch && matchShift && matchDept) {
                   workingUsers.push({ nick, dept, site, stamp, shiftType });
               }
@@ -1662,7 +1690,8 @@
           return;
       }
 
-      let mealSelectOptionsHTML = `<option value="">-- เลือกเวลา --</option>`;
+      // สร้าง Dropdown ให้เลือกเวลา (เอาปุ่มสุ่มออกแล้ว ให้เลือกเอง)
+      let mealSelectOptionsHTML = `<option value="">-- เลือกเวลา 30 นาที --</option>`;
       mealTimeBlocks.forEach(block => {
           mealSelectOptionsHTML += `<optgroup label="${block.name}">`;
           let slots = generateTimeSlots(block.start, block.end);
@@ -1675,7 +1704,6 @@
           if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (เช้า)</span>`;
           if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (ดึก)</span>`;
 
-          // ดึงข้อมูลมื้อที่ 1 และมื้อที่ 2 (ถ้ามีบันทึกไว้)
           const curMeal = dailyMealData[u.nick] || {};
           const m1 = curMeal.slot1 || '';
           const m2 = curMeal.slot2 || '';
@@ -1731,63 +1759,10 @@
       }
   }
 
-  function autoBalanceMeals() {
-      Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
-      
-      let workingUsers = [];
-      document.querySelectorAll('#mealTableBody tr').forEach(tr => {
-          const nick = tr.getAttribute('data-nick'); if(!nick) return;
-          const site = tr.querySelector('.site-cell').innerText;
-          const stampText = tr.querySelector('td:nth-child(3)').innerText;
-          const stamp = stampText.includes('เช้า') || stampText.includes('N') ? 'N' : (stampText.includes('ดึก') || stampText.includes('D') ? 'D' : 'OTHER');
-          workingUsers.push({ tr, nick, site, stamp });
-      });
-
-      let siteGroups = {};
-      workingUsers.forEach(u => {
-          if(!siteGroups[u.site]) siteGroups[u.site] = [];
-          siteGroups[u.site].push(u);
-      });
-
-      for(let site in siteGroups) {
-          let users = siteGroups[site];
-          let nUsers = users.filter(u => u.stamp === 'N');
-          let dUsers = users.filter(u => u.stamp === 'D');
-          let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
-
-          let nSlots = []; let dSlots = [];
-          mealTimeBlocks.forEach(b => {
-              let slots = generateTimeSlots(b.start, b.end);
-              if(b.type === 'N') nSlots = nSlots.concat(slots);
-              else dSlots = dSlots.concat(slots);
-          });
-          let allSlots = nSlots.concat(dSlots);
-
-          nUsers.sort(() => Math.random() - 0.5); dUsers.sort(() => Math.random() - 0.5);
-
-          // แจก 2 รอบ ให้เวลาห่างกัน
-          nUsers.forEach((u, i) => { 
-              u.tr.querySelector('.sel-meal-1').value = nSlots[i % nSlots.length] || ''; 
-              u.tr.querySelector('.sel-meal-2').value = nSlots[(i + 3) % nSlots.length] || ''; 
-          });
-          dUsers.forEach((u, i) => { 
-              u.tr.querySelector('.sel-meal-1').value = dSlots[i % dSlots.length] || ''; 
-              u.tr.querySelector('.sel-meal-2').value = dSlots[(i + 3) % dSlots.length] || ''; 
-          });
-          otherUsers.forEach((u, i) => { 
-              u.tr.querySelector('.sel-meal-1').value = allSlots[i % allSlots.length] || ''; 
-              u.tr.querySelector('.sel-meal-2').value = allSlots[(i + 3) % allSlots.length] || ''; 
-          });
-      }
-      setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาสำเร็จ (โปรดตรวจสอบและบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
-  }
-
   async function saveMealData() {
       const dateStr = document.getElementById('mealDatePicker').value;
       let hasOverlap = false;
 
-      // 🌟 แก้ปัญหาบันทึกไม่ติด/ลบคนอื่นทิ้ง: อัปเดตข้อมูลใส่ Object ตัวแม่ (dailyMealData) ก่อน 
-      // เพื่อป้องกันไม่ให้คนที่ถูกซ่อนด้วย Filter โดนลบข้อมูลทิ้งตอนบันทึก
       document.querySelectorAll('#mealTableBody tr').forEach(tr => {
           const nick = tr.getAttribute('data-nick'); if(!nick) return;
           const sel1 = tr.querySelector('.sel-meal-1');
@@ -1795,7 +1770,6 @@
           
           if(sel1.style.borderColor === "rgb(255, 51, 102)" || sel2.style.borderColor === "rgb(255, 51, 102)") hasOverlap = true;
           
-          // บันทึกใส่ Object เป็นชุด 2 มื้อ
           dailyMealData[nick] = { slot1: sel1.value, slot2: sel2.value };
       });
 
@@ -1805,7 +1779,7 @@
   }
 
   async function executeSaveMeal(dateStr, payloadData) {
-      const btn = document.querySelector('#mealActionBtns button:nth-child(2)');
+      const btn = document.querySelector('#mealActionBtns button:nth-child(1)'); 
       btn.innerText = '⏳...'; btn.disabled = true;
       try {
           const { data: existing } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1);
