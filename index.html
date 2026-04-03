@@ -594,6 +594,9 @@
           <label class="form-check-label text-danger fw-bold ms-1" for="chkExcludeDuty">🚫 ซ่อนคนนี้จากตารางหน้าที่</label>
         </div>
     </div>
+    <div class="d-flex justify-content-end mb-2">
+        <button class="btn btn-sm btn-outline-info" onclick="selectAllUserSites()">☑️ เลือกทั้งหมด / ยกเลิก</button>
+    </div>
     <div id="userSiteCheckboxes" class="d-flex flex-wrap gap-2 mb-4"></div>
     <button class="btn btn-neon-blue w-100 py-2" onclick="saveUserCapableSitesBtn()">บันทึกข้อมูล</button>
   </div></div></div>
@@ -1578,6 +1581,15 @@
       bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).hide(); Swal.fire({toast:true, position:'top', title:'ตั้งค่าเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
   }
   
+  // 🌟 ฟังก์ชันสำหรับติ๊กเลือกเว็บทั้งหมด
+  function selectAllUserSites() {
+      const checkboxes = document.querySelectorAll('.capable-chk');
+      // ตรวจสอบว่าตอนนี้เลือกทั้งหมดอยู่หรือเปล่า ถ้าเลือกอยู่ให้เอาออก ถ้ายังไม่ครบให้ติ๊กทั้งหมด
+      let allChecked = true;
+      checkboxes.forEach(chk => { if(!chk.checked) allChecked = false; });
+      
+      checkboxes.forEach(chk => chk.checked = !allChecked);
+  }
   function openJobSettingsModal() { document.getElementById('setWebsites').value = sysSettings.websites.join('\n'); document.getElementById('setDuties').value = sysSettings.dutyTypes.join('\n'); bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).show(); }
   
   async function saveAdminJobSettings() { 
