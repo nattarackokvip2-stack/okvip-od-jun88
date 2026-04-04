@@ -234,7 +234,7 @@
         <div class="hub-card hub-portal" onclick="switchMainTab('portalSection')"><div class="hub-icon">🌐</div><div class="hub-title">จัดการเว็บไซต์</div></div>
         <div class="hub-card" style="border: 1px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(88, 101, 242, 0.4)'; this.style.background='rgba(88, 101, 242, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(88, 101, 242, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('discordSection')">
            <div class="hub-icon" style="text-shadow: none;">🎧</div>
-           <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);">เช็คชื่อ (Discord)</div>
+           <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
         </div>
     </div>
 
@@ -2118,7 +2118,7 @@
   function deleteLeave(id) { Swal.fire({title: 'ยกเลิกคำขอนี้?', text: 'ข้อมูลจะถูกลบออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').delete().eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(1); Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
   // ==========================================
-  // 🚀 10. ระบบเช็คชื่อ Discord (Real-time)
+  // 🚀 10. ระบบ Discord (Real-time)
   // ==========================================
   let allDiscordData = [];
   let currentDiscordFilter = 'ALL';
