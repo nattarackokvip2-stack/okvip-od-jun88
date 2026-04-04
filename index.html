@@ -506,31 +506,20 @@
         <div id="tabBtnDcMonitor" class="dept-badge" onclick="switchDiscordTab('monitor')" style="font-size: 1.05rem; padding: 8px 25px;">📡 2. ติดตามสถานะ (กล้องวงจรปิด)</div>
       </div>
 
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2" id="dcFilterContainer">
         <div class="filter-bar" id="dcFilterBar">
-          <div class="dept-badge active" id="dcFilterAll" onclick="filterDiscord('ALL', this)">แสดงทั้งหมด</div>
-          <div class="dept-badge" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
+          <div class="dept-badge active" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
           <div class="dept-badge" onclick="filterDiscord('LATE', this)">🔴 มาสาย</div>
           <div class="dept-badge" onclick="filterDiscord('MISSING', this)">⚪ ยังไม่เข้างาน</div>
-        </div>
-
-        <div id="dcShiftToolbar" class="d-flex align-items-center gap-2" style="background: rgba(88, 101, 242, 0.1); padding: 6px 15px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.4);">
-            <span class="text-white small fw-bold">⏰ กำหนดเวลาเข้ากะ:</span>
-            <select id="dcShiftSelect" class="form-select form-select-sm bg-dark text-warning fw-bold border-primary" style="width: auto; font-size: 0.95rem;" onchange="renderDiscordTable()">
-                <option value="08:00">08:00 น. (กะเช้า)</option>
-                <option value="20:00">20:00 น. (กะดึก)</option>
-                <option value="00:00">00:00 น. (เที่ยงคืน)</option>
-                <option value="12:00">12:00 น. (เที่ยงวัน)</option>
-            </select>
+          <div class="dept-badge" onclick="filterDiscord('LEAVE', this)" style="border-color:#ffcc00; color:#ffcc00;">🛏️ วันหยุด / ลา (X, TX, KL)</div>
         </div>
       </div>
 
       <div class="table-responsive mt-3">
         <table class="table table-hover align-middle">
-          <thead id="discordThead">
-            </thead>
+          <thead id="discordThead"></thead>
           <tbody id="discordTableBody">
-             <tr><td colspan="6" class="text-center text-muted py-5">กำลังเชื่อมต่อกับระบบ...</td></tr>
+             <tr><td colspan="7" class="text-center text-muted py-5">กำลังเชื่อมต่อกับระบบ...</td></tr>
           </tbody>
         </table>
       </div>
