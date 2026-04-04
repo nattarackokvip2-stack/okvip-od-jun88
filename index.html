@@ -2085,60 +2085,59 @@
       const tbody = document.getElementById('discordTableBody');
       tbody.innerHTML = '';
       
+      // ปรับหัวตารางให้มีคอลัมน์ใหม่
+      const thead = document.querySelector('#discordSection table thead tr');
+      if (thead) {
+          thead.innerHTML = `
+              <th>ชื่อพนักงาน</th>
+              <th>แผนก / กะ</th>
+              <th>เวลาเข้างาน</th>
+              <th>สถานะหน้าจอ</th>
+              <th>ห้องปัจจุบัน</th>
+              <th>ขยับล่าสุดเมื่อ</th>
+              <th>การมางาน</th>
+          `;
+      }
+
       let html = '';
       let hasData = false;
 
-      // 🧠 ฟังก์ชันอัจฉริยะ: ดึงเฉพาะ "ชื่อเล่น" ออกมาจากชื่อดิสคอร์ดที่รกๆ
       function extractCoreName(fullName) {
           if (!fullName) return "";
-          // 1. ลบอีโมจิทั้งหมดและแปลงเป็นพิมพ์ใหญ่
           let name = fullName.toUpperCase().replace(/[^\x00-\x7F]/g, "").trim();
-          // 2. ลบคำว่า กะดึก, กะเช้า
           name = name.replace(/กะดึก/g, '').replace(/กะเช้า/g, '').trim();
-          // 3. แยกคำด้วยเครื่องหมาย - หรือช่องว่าง
           let parts = name.split(/[\s-]+/);
-          // 4. ตัด Prefix ที่เราไม่ต้องการทิ้ง
           const prefixes = ['OD', 'ODOL', 'AMOL', 'FTOL', 'FT'];
           parts = parts.filter(p => !prefixes.includes(p));
-          // 5. หาคำที่เป็นภาษาอังกฤษล้วน (ชื่อคน) เพื่อหลีกเลี่ยงพวก 78WIN หรือ NM9
           let coreName = parts.find(p => /^[A-Z]+$/.test(p));
-          // ถ้าหาไม่เจอจริงๆ เอาอันแรกที่เหลือ
-          if (!coreName && parts.length > 0) {
-              coreName = parts[0].replace(/[^A-Z]/g, ''); 
-          }
+          if (!coreName && parts.length > 0) coreName = parts[0].replace(/[^A-Z]/g, ''); 
           return coreName || fullName.trim().toUpperCase();
       }
 
-      // 1. เช็คพนักงานทุกคนในระบบ
       allUsersData.forEach(u => {
           if (!u || u[7] !== 'Active') return;
           const nick = u[1];
           const dept = u[3] ? u[3].split(' ')[0] : '';
           const stamp = dailyScheduleData[nick] || 'ยังไม่ลงกะ';
-
-          // ชื่อพนักงานในระบบที่กรองแล้ว
           const sysNameCleaned = extractCoreName(nick);
 
-          // หาข้อมูลจาก Discord โดยเอาชื่อดิสคอร์ดมากรองก่อนเทียบ
-          const dcRecord = allDiscordData.find(d => {
-              return extractCoreName(d.nickname) === sysNameCleaned;
-          });
-
+          const dcRecord = allDiscordData.find(d => extractCoreName(d.nickname) === sysNameCleaned);
           const isOff = offDutyStamps.includes(stamp);
           if (isOff && !dcRecord) return; 
           
           hasData = true;
-          let timeIn = '-';
-          let channel = '-';
-          let statusHtml = '';
-          let filterMatch = false;
+          let timeIn = '-'; let channel = '-'; let statusHtml = ''; let filterMatch = false;
+          let presence = "⚪ ออฟไลน์"; let lastMove = "-"; let presenceClass = "text-muted";
 
           if (dcRecord) {
-              // จัดการเวลาให้เป็นเวลาไทย
               const timeObj = new Date(dcRecord.check_in_time);
               timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               channel = `<span class="text-info fw-bold">🔊 ${dcRecord.channel_name || 'ไม่ระบุห้อง'}</span>`;
               
+              presence = dcRecord.presence_status || "🟢 ออนไลน์";
+              lastMove = dcRecord.last_moved_at || timeIn;
+              presenceClass = presence.includes("🌙") ? "text-warning fw-bold" : "text-success";
+
               if (dcRecord.status === 'LATE') {
                   statusHtml = `<span class="badge bg-danger">🔴 มาสาย</span>`;
                   if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'LATE') filterMatch = true;
@@ -2152,13 +2151,14 @@
           }
 
           if (filterMatch) {
-              // ถ้ามีข้อมูลดิส ให้แสดงชื่อที่ดึงจากดิสคอร์ดเลย (จะได้เห็นตัวเต็ม)
               const displayNick = dcRecord ? dcRecord.nickname : nick;
               html += `<tr>
                   <td class="fw-bold text-white">${displayNick}</td>
                   <td class="text-muted small">${dept} <span class="badge bg-dark border">${stamp}</span></td>
                   <td class="text-warning">${timeIn}</td>
+                  <td class="${presenceClass}">${presence}</td>
                   <td>${channel}</td>
+                  <td class="text-white-50">${lastMove}</td>
                   <td>${statusHtml}</td>
               </tr>`;
           }
@@ -2174,29 +2174,29 @@
               const timeObj = new Date(dc.check_in_time);
               const timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               const channel = `<span class="text-info fw-bold">🔊 ${dc.channel_name || 'ไม่ระบุห้อง'}</span>`;
-              
+              const presence = dc.presence_status || "🟢 ออนไลน์";
+              const lastMove = dc.last_moved_at || timeIn;
+              const presenceClass = presence.includes("🌙") ? "text-warning fw-bold" : "text-success";
+
               let statusHtml = dc.status === 'LATE' ? `<span class="badge bg-danger">🔴 มาสาย</span>` : `<span class="badge bg-success">🟢 ตรงเวลา</span>`;
-              let filterMatch = (currentDiscordFilter === 'ALL') || 
-                                (dc.status === 'LATE' && currentDiscordFilter === 'LATE') || 
-                                (dc.status !== 'LATE' && currentDiscordFilter === 'ON_TIME');
+              let filterMatch = (currentDiscordFilter === 'ALL') || (dc.status === 'LATE' && currentDiscordFilter === 'LATE') || (dc.status !== 'LATE' && currentDiscordFilter === 'ON_TIME');
               
               if (filterMatch) {
                   html += `<tr>
                       <td class="fw-bold text-warning">${dc.nickname} <br><small class="text-danger">(ไม่มีชื่อในระบบ)</small></td>
                       <td class="text-muted small">-</td>
                       <td class="text-warning">${timeIn}</td>
+                      <td class="${presenceClass}">${presence}</td>
                       <td>${channel}</td>
+                      <td class="text-white-50">${lastMove}</td>
                       <td>${statusHtml}</td>
                   </tr>`;
               }
           }
       });
 
-      if (!hasData || html === '') {
-          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่พบพนักงานในสถานะที่เลือก (หรือทุกคนหยุดงาน)</td></tr>`;
-      } else {
-          tbody.innerHTML = html;
-      }
+      if (!hasData || html === '') tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-5">ไม่พบพนักงานในสถานะที่เลือก (หรือทุกคนหยุดงาน)</td></tr>`;
+      else tbody.innerHTML = html;
   }
 
   // 🌟 เปิดระบบดักฟัง Real-time จาก Supabase
