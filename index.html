@@ -2088,6 +2088,27 @@
       let html = '';
       let hasData = false;
 
+      // 🧠 ฟังก์ชันอัจฉริยะ: ดึงเฉพาะ "ชื่อเล่น" ออกมาจากชื่อดิสคอร์ดที่รกๆ
+      function extractCoreName(fullName) {
+          if (!fullName) return "";
+          // 1. ลบอีโมจิทั้งหมดและแปลงเป็นพิมพ์ใหญ่
+          let name = fullName.toUpperCase().replace(/[^\x00-\x7F]/g, "").trim();
+          // 2. ลบคำว่า กะดึก, กะเช้า
+          name = name.replace(/กะดึก/g, '').replace(/กะเช้า/g, '').trim();
+          // 3. แยกคำด้วยเครื่องหมาย - หรือช่องว่าง
+          let parts = name.split(/[\s-]+/);
+          // 4. ตัด Prefix ที่เราไม่ต้องการทิ้ง
+          const prefixes = ['OD', 'ODOL', 'AMOL', 'FTOL', 'FT'];
+          parts = parts.filter(p => !prefixes.includes(p));
+          // 5. หาคำที่เป็นภาษาอังกฤษล้วน (ชื่อคน) เพื่อหลีกเลี่ยงพวก 78WIN หรือ NM9
+          let coreName = parts.find(p => /^[A-Z]+$/.test(p));
+          // ถ้าหาไม่เจอจริงๆ เอาอันแรกที่เหลือ
+          if (!coreName && parts.length > 0) {
+              coreName = parts[0].replace(/[^A-Z]/g, ''); 
+          }
+          return coreName || fullName.trim().toUpperCase();
+      }
+
       // 1. เช็คพนักงานทุกคนในระบบ
       allUsersData.forEach(u => {
           if (!u || u[7] !== 'Active') return;
@@ -2095,19 +2116,12 @@
           const dept = u[3] ? u[3].split(' ')[0] : '';
           const stamp = dailyScheduleData[nick] || 'ยังไม่ลงกะ';
 
-          // ฟังก์ชันทำความสะอาดชื่อ (ลบเว้นวรรค, ลบอีโมจิ, ลบคำว่ากะดึก/เช้า เอาแค่ตัวอักษร)
-          const cleanName = (name) => {
-              let cleaned = name.toUpperCase()
-                  .replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').replace('FT-', '')
-                  .replace(/กะดึก/g, '').replace(/กะเช้า/g, '');
-              // ลบทุกอย่างที่ไม่ใช่ A-Z หรือตัวเลข
-              return cleaned.replace(/[^A-Z0-9]/g, '').trim();
-          };
+          // ชื่อพนักงานในระบบที่กรองแล้ว
+          const sysNameCleaned = extractCoreName(nick);
 
-          const sysNameCleaned = cleanName(nick);
-
+          // หาข้อมูลจาก Discord โดยเอาชื่อดิสคอร์ดมากรองก่อนเทียบ
           const dcRecord = allDiscordData.find(d => {
-              return cleanName(d.nickname) === sysNameCleaned;
+              return extractCoreName(d.nickname) === sysNameCleaned;
           });
 
           const isOff = offDutyStamps.includes(stamp);
@@ -2120,7 +2134,7 @@
           let filterMatch = false;
 
           if (dcRecord) {
-              // 🌟 พยายามให้แสดงผลตรงกับเวลาปัจจุบันที่สุด
+              // จัดการเวลาให้เป็นเวลาไทย
               const timeObj = new Date(dcRecord.check_in_time);
               timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               channel = `<span class="text-info fw-bold">🔊 ${dcRecord.channel_name || 'ไม่ระบุห้อง'}</span>`;
@@ -2138,6 +2152,7 @@
           }
 
           if (filterMatch) {
+              // ถ้ามีข้อมูลดิส ให้แสดงชื่อที่ดึงจากดิสคอร์ดเลย (จะได้เห็นตัวเต็ม)
               const displayNick = dcRecord ? dcRecord.nickname : nick;
               html += `<tr>
                   <td class="fw-bold text-white">${displayNick}</td>
@@ -2151,15 +2166,8 @@
 
       // 2. เช็คคนแปลกหน้าที่ไม่มีในระบบ
       allDiscordData.forEach(dc => {
-          const cleanName = (name) => {
-              let cleaned = name.toUpperCase()
-                  .replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').replace('FT-', '')
-                  .replace(/กะดึก/g, '').replace(/กะเช้า/g, '');
-              return cleaned.replace(/[^A-Z0-9]/g, '').trim();
-          };
-
-          const dcNameCleaned = cleanName(dc.nickname);
-          const foundInSys = allUsersData.find(u => cleanName(u[1]) === dcNameCleaned);
+          const dcNameCleaned = extractCoreName(dc.nickname);
+          const foundInSys = allUsersData.find(u => extractCoreName(u[1]) === dcNameCleaned);
           
           if (!foundInSys) {
               hasData = true;
