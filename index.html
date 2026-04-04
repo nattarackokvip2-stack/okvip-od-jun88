@@ -2095,10 +2095,19 @@
           const dept = u[3] ? u[3].split(' ')[0] : '';
           const stamp = dailyScheduleData[nick] || 'ยังไม่ลงกะ';
 
-          // ตัดคำนำหน้าออกให้เกลี้ยงก่อนเอาไปเทียบ
+          // ฟังก์ชันทำความสะอาดชื่อ (ลบเว้นวรรค, ลบอีโมจิ, ลบคำว่ากะดึก/เช้า เอาแค่ตัวอักษร)
+          const cleanName = (name) => {
+              let cleaned = name.toUpperCase()
+                  .replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').replace('FT-', '')
+                  .replace(/กะดึก/g, '').replace(/กะเช้า/g, '');
+              // ลบทุกอย่างที่ไม่ใช่ A-Z หรือตัวเลข
+              return cleaned.replace(/[^A-Z0-9]/g, '').trim();
+          };
+
+          const sysNameCleaned = cleanName(nick);
+
           const dcRecord = allDiscordData.find(d => {
-              const cleanDcName = d.nickname.toUpperCase().replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').trim();
-              return cleanDcName === nick.toUpperCase().trim();
+              return cleanName(d.nickname) === sysNameCleaned;
           });
 
           const isOff = offDutyStamps.includes(stamp);
@@ -2111,8 +2120,9 @@
           let filterMatch = false;
 
           if (dcRecord) {
+              // 🌟 พยายามให้แสดงผลตรงกับเวลาปัจจุบันที่สุด
               const timeObj = new Date(dcRecord.check_in_time);
-              timeIn = timeObj.toLocaleTimeString('th-TH');
+              timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               channel = `<span class="text-info fw-bold">🔊 ${dcRecord.channel_name || 'ไม่ระบุห้อง'}</span>`;
               
               if (dcRecord.status === 'LATE') {
@@ -2141,13 +2151,20 @@
 
       // 2. เช็คคนแปลกหน้าที่ไม่มีในระบบ
       allDiscordData.forEach(dc => {
-          const cleanDcName = dc.nickname.toUpperCase().replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').trim();
-          const foundInSys = allUsersData.find(u => u[1].toUpperCase().trim() === cleanDcName);
+          const cleanName = (name) => {
+              let cleaned = name.toUpperCase()
+                  .replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').replace('FT-', '')
+                  .replace(/กะดึก/g, '').replace(/กะเช้า/g, '');
+              return cleaned.replace(/[^A-Z0-9]/g, '').trim();
+          };
+
+          const dcNameCleaned = cleanName(dc.nickname);
+          const foundInSys = allUsersData.find(u => cleanName(u[1]) === dcNameCleaned);
           
           if (!foundInSys) {
               hasData = true;
               const timeObj = new Date(dc.check_in_time);
-              const timeIn = timeObj.toLocaleTimeString('th-TH');
+              const timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
               const channel = `<span class="text-info fw-bold">🔊 ${dc.channel_name || 'ไม่ระบุห้อง'}</span>`;
               
               let statusHtml = dc.status === 'LATE' ? `<span class="badge bg-danger">🔴 มาสาย</span>` : `<span class="badge bg-success">🟢 ตรงเวลา</span>`;
