@@ -232,7 +232,10 @@
         <div class="hub-card hub-manual" onclick="switchMainTab('manualSection')"><div class="hub-icon">📖</div><div class="hub-title">คู่มือการทำงาน</div></div>
         <div class="hub-card hub-penalty" onclick="switchMainTab('penaltySection')"><div class="hub-icon">⚠️</div><div class="hub-title">ตารางลงโทษพนักงาน</div></div>
         <div class="hub-card hub-portal" onclick="switchMainTab('portalSection')"><div class="hub-icon">🌐</div><div class="hub-title">จัดการเว็บไซต์</div></div>
-      </div>
+        <div class="hub-card" style="border: 1px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(88, 101, 242, 0.4)'; this.style.background='rgba(88, 101, 242, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(88, 101, 242, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('discordSection')">
+           <div class="hub-icon" style="text-shadow: none;">🎧</div>
+           <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);">เช็คชื่อ (Discord)</div>
+        </div>
     </div>
 
     <div id="announceSection" class="content-section">
@@ -487,6 +490,43 @@
       </div>
     </div>
 
+      <div id="discordSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2">
+           <div class="spinner-grow spinner-grow-sm text-primary" role="status" id="discordLiveIndicator"></div>
+           <h4 class="fw-bold mb-0" style="color: #5865F2;">🎧 ระบบเช็คเวลาเข้างาน (Discord Live)</h4>
+        </div>
+        <div class="d-flex align-items-center gap-2" style="background: #111; border: 1px solid #5865F2; border-radius: 8px;">
+            <span class="px-3 text-white small">📅 วันที่:</span>
+            <input type="date" id="discordDatePicker" class="form-control w-auto border-0" style="background: transparent; color: #5865F2;" onchange="loadDiscordAttendance()">
+        </div>
+      </div>
+      
+      <div class="filter-bar mb-3">
+        <div class="dept-badge active" id="dcFilterAll" onclick="filterDiscord('ALL', this)">แสดงทั้งหมด</div>
+        <div class="dept-badge" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
+        <div class="dept-badge" onclick="filterDiscord('LATE', this)">🔴 มาสาย</div>
+        <div class="dept-badge" onclick="filterDiscord('MISSING', this)">⚪ ยังไม่เข้างาน</div>
+      </div>
+
+      <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>ชื่อพนักงาน (ตรงกับใน Discord)</th>
+              <th>แผนก / กะ</th>
+              <th>เวลาที่เข้าห้องเสียง</th>
+              <th>ห้องที่สิงอยู่ปัจจุบัน</th>
+              <th>สถานะเข้างาน</th>
+            </tr>
+          </thead>
+          <tbody id="discordTableBody">
+             <tr><td colspan="5" class="text-center text-muted py-5">กำลังเชื่อมต่อกับ Supabase...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+      
     <div id="portalSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">🌐 จัดการเว็บไซต์ (Websites)</h4>
@@ -980,13 +1020,21 @@
     if(document.getElementById('jobDatePicker')) document.getElementById('jobDatePicker').value = todayStr;
     if(document.getElementById('mealDatePicker')) document.getElementById('mealDatePicker').value = todayStr; 
     
+    // 🌟🌟🌟 โค้ดของระบบ Discord ที่เพิ่มเข้ามาใหม่ครับ 🌟🌟🌟
+    if(document.getElementById('discordDatePicker')) document.getElementById('discordDatePicker').value = todayStr;
+    // 🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟
+    
     renderStampPalette();
-    const sUser = localStorage.getItem('okvip_user'); const sRole = localStorage.getItem('okvip_role'); const sNick = localStorage.getItem('okvip_nick'); const sTime = localStorage.getItem('okvip_time');
+    const sUser = localStorage.getItem('okvip_user'); 
+    const sRole = localStorage.getItem('okvip_role'); 
+    const sNick = localStorage.getItem('okvip_nick'); 
+    const sTime = localStorage.getItem('okvip_time');
     
     if(sUser && sRole && sTime) {
       const diffHours = (now.getTime() - parseInt(sTime)) / (1000 * 60 * 60); 
       if (diffHours >= 12) { handleLogout(); return; }
-      document.getElementById('loginPage').style.display = 'none'; document.getElementById('mainDashboard').style.display = 'block';
+      document.getElementById('loginPage').style.display = 'none'; 
+      document.getElementById('mainDashboard').style.display = 'block';
       document.getElementById('userTable').innerHTML = `<tr><td colspan="8" class="text-center text-muted py-5">⏳ กำลังโหลด...</td></tr>`;
       verifyUserStatus(sUser, sNick, sRole, false); 
     }
@@ -2068,6 +2116,124 @@
   function loadLeavesPage(page) { currentLeavePage = page; const tb = document.getElementById('leaveTableBody'); const pagArea = document.getElementById('leavePaginationArea'); tb.innerHTML = ''; pagArea.innerHTML = ''; const filterMonth = document.getElementById('leaveMonthFilter').value; const myNick = localStorage.getItem('okvip_nick'); let filteredData = allLeavesData.filter(L => { const reqMonth = L.leave_date ? L.leave_date.substring(0, 7) : ''; return !filterMonth || reqMonth === filterMonth; }); if(filteredData.length === 0) { tb.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลการแจ้งลาในเดือนที่เลือก</td></tr>`; return; } const totalPages = Math.ceil(filteredData.length / leavesPerPage); if (currentLeavePage > totalPages) currentLeavePage = totalPages; const startIndex = (currentLeavePage - 1) * leavesPerPage; const paginatedData = filteredData.slice(startIndex, startIndex + leavesPerPage); paginatedData.forEach(L => { let statusBadge = ''; if(L.status === 'Pending') statusBadge = `<span class="badge bg-warning text-dark border">⏳ รออนุมัติ</span>`; else if(L.status === 'Approved') statusBadge = `<span class="badge bg-success border">✅ อนุมัติแล้ว</span>`; else if(L.status === 'Rejected') statusBadge = `<span class="badge bg-danger border">❌ ปฏิเสธ</span>`; let actionBtns = '-'; if(myRole === 'SuperAdmin' && L.status === 'Pending') { actionBtns = `<button class="btn btn-sm btn-outline-success me-1" onclick="updateLeaveStatus('${L.id}', 'Approved')">✔️</button><button class="btn btn-sm btn-outline-danger" onclick="updateLeaveStatus('${L.id}', 'Rejected')">❌</button>`; } else if ((myRole === 'SuperAdmin' || myNick === L.nickname) && L.status === 'Pending') { actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ยกเลิกคำขอ</button>`; } else if (myRole === 'SuperAdmin') { actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ลบประวัติ</button>`; } let displayNick = L.nickname; if (L.nickname === myNick) displayNick = `<span class="text-warning">${L.nickname} (คุณ)</span>`; tb.innerHTML += `<tr><td>${new Date(L.leave_date).toLocaleDateString('th-TH')}</td><td class="fw-bold text-white">${displayNick} <br><small class="text-muted">${L.department.split(' ')[0]}</small></td><td class="text-info">${L.leave_type}</td><td class="small text-muted" style="max-width: 200px; white-space: normal;">${L.reason}</td><td>${statusBadge}</td><td class="text-center">${actionBtns}</td></tr>`; }); if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage - 1})" ${currentLeavePage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) { pageHtml += `<button class="page-btn ${i === currentLeavePage ? 'active' : ''}" onclick="loadLeavesPage(${i})">${i}</button>`; } pageHtml += `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage + 1})" ${currentLeavePage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; pagArea.innerHTML = pageHtml; } }
   function updateLeaveStatus(id, newStatus) { Swal.fire({ title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?', icon: 'question', showCancelButton: true, confirmButtonColor: newStatus === 'Approved' ? '#00ff66' : '#ff3366', confirmButtonText: 'ยืนยัน', background:'#111', color:'#fff' }).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(currentLeavePage); Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
   function deleteLeave(id) { Swal.fire({title: 'ยกเลิกคำขอนี้?', text: 'ข้อมูลจะถูกลบออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').delete().eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(1); Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
+
+  // ==========================================
+  // 🚀 10. ระบบเช็คชื่อ Discord (Real-time)
+  // ==========================================
+  let allDiscordData = [];
+  let currentDiscordFilter = 'ALL';
+
+  function filterDiscord(status, btn) {
+      currentDiscordFilter = status;
+      document.querySelectorAll('#discordSection .dept-badge').forEach(b => {
+          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
+      });
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
+      renderDiscordTable();
+  }
+
+  async function loadDiscordAttendance() {
+      const dateStr = document.getElementById('discordDatePicker').value;
+      if (!dateStr) return;
+
+      // ดึงข้อมูลการเข้างานของวันนี้จาก Supabase (ต้องการ Table: discord_attendance)
+      try {
+          const { data, error } = await supabaseClient
+              .from('discord_attendance')
+              .select('*')
+              .eq('dateStr', dateStr);
+          
+          if (error) throw error;
+          allDiscordData = data || [];
+          renderDiscordTable();
+      } catch (err) {
+          console.error("Discord Load Error:", err);
+      }
+  }
+
+  function renderDiscordTable() {
+      const tbody = document.getElementById('discordTableBody');
+      tbody.innerHTML = '';
+      
+      // ดึงรายชื่อพนักงานทั้งหมดที่มีกะทำงานวันนี้
+      let workingUsers = allUsersData.filter(u => {
+          if (!u || u[7] !== 'Active') return false;
+          const nick = u[1];
+          const curStamp = dailyScheduleData[nick] || '';
+          // เอาเฉพาะคนที่ไม่ได้หยุด
+          return (!offDutyStamps.includes(curStamp) && curStamp !== '');
+      });
+
+      if (workingUsers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่มีพนักงานลงกะทำงานในวันนี้</td></tr>`;
+          return;
+      }
+
+      let html = '';
+      workingUsers.forEach(u => {
+          const nick = u[1];
+          const dept = u[3] ? u[3].split(' ')[0] : '';
+          const stamp = dailyScheduleData[nick] || '';
+          
+          // ค้นหาข้อมูลใน Discord Data ว่าคนนี้เข้าห้องหรือยัง (เทียบชื่อ nick กับชื่อในดิส)
+          const dcRecord = allDiscordData.find(d => d.nickname.toLowerCase() === nick.toLowerCase());
+          
+          let timeIn = '-';
+          let channel = '-';
+          let statusHtml = '';
+          let filterMatch = false;
+
+          if (dcRecord) {
+              // ถ้าเข้างานแล้ว
+              const timeObj = new Date(dcRecord.check_in_time);
+              timeIn = timeObj.toLocaleTimeString('th-TH');
+              channel = `<span class="text-info fw-bold">🔊 ${dcRecord.channel_name || 'ไม่ระบุห้อง'}</span>`;
+              
+              if (dcRecord.status === 'LATE') {
+                  statusHtml = `<span class="badge bg-danger">🔴 มาสาย</span>`;
+                  if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'LATE') filterMatch = true;
+              } else {
+                  statusHtml = `<span class="badge bg-success">🟢 ตรงเวลา</span>`;
+                  if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'ON_TIME') filterMatch = true;
+              }
+          } else {
+              // ถ้ายังไม่เข้า
+              statusHtml = `<span class="badge bg-secondary">⚪ ยังไม่เข้างาน</span>`;
+              if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'MISSING') filterMatch = true;
+          }
+
+          if (filterMatch) {
+              html += `<tr>
+                  <td class="fw-bold text-white">${nick}</td>
+                  <td class="text-muted small">${dept} <span class="badge bg-dark border">${stamp}</span></td>
+                  <td class="text-warning">${timeIn}</td>
+                  <td>${channel}</td>
+                  <td>${statusHtml}</td>
+              </tr>`;
+          }
+      });
+
+      if (html === '') {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่พบพนักงานในสถานะที่เลือก</td></tr>`;
+      } else {
+          tbody.innerHTML = html;
+      }
+  }
+
+  // 🌟 เปิดระบบดักฟัง Real-time จาก Supabase
+  supabaseClient
+      .channel('discord-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'discord_attendance' }, payload => {
+          // ไฟกระพริบเตือนว่ามีข้อมูลอัปเดตแบบสดๆ
+          const indicator = document.getElementById('discordLiveIndicator');
+          if(indicator) {
+              indicator.classList.remove('text-primary');
+              indicator.classList.add('text-success');
+              setTimeout(() => { indicator.classList.remove('text-success'); indicator.classList.add('text-primary'); }, 2000);
+          }
+          loadDiscordAttendance(); // โหลดใหม่ทันทีที่มีคนเข้า/ออกดิสคอร์ด
+      })
+      .subscribe();
 </script>
 
 </body>
