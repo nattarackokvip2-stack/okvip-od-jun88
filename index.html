@@ -2045,20 +2045,25 @@
 
   function switchDiscordTab(tab) {
       currentDiscordTab = tab;
+      
+      // สลับสีปุ่มแท็บหลัก
       document.getElementById('tabBtnDcAttendance').classList.toggle('active', tab === 'attendance');
       document.getElementById('tabBtnDcMonitor').classList.toggle('active', tab === 'monitor');
-      document.getElementById('dcFilterContainer').style.display = (tab === 'attendance') ? 'flex' : 'none';
+      
+      // ซ่อน/โชว์ แถบตัวกรองแบบเด็ดขาด (ใช้ d-none ของ Bootstrap)
+      const filterContainer = document.getElementById('dcFilterContainer');
+      if (filterContainer) {
+          if (tab === 'attendance') {
+              filterContainer.classList.remove('d-none');
+              filterContainer.classList.add('d-flex'); // โชว์ในหน้าเช็คเวลา
+          } else {
+              filterContainer.classList.remove('d-flex');
+              filterContainer.classList.add('d-none'); // ซ่อนในหน้ากล้องวงจรปิด
+          }
+      }
+      
       renderDiscordTable();
-  }
-
-  function filterDiscord(status, btn) {
-      currentDiscordFilter = status;
-      document.querySelectorAll('#dcFilterBar .dept-badge').forEach(b => {
-          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = (b.innerText.includes('วันหยุด')) ? "#ffcc00" : "#ccc";
-      });
-      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
-      renderDiscordTable();
-  }
+  }}
 
   async function loadDiscordAttendance() {
       const dateStr = document.getElementById('discordDatePicker').value;
