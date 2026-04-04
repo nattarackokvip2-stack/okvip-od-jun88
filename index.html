@@ -945,11 +945,11 @@
       }
   }
 
-  // 🌟 1. ฟังก์ชันโหลดตั้งค่า (ดักจับ Error อย่างแน่นหนา) 🌟
+  // 🌟 ฟังก์ชันโหลดตั้งค่า (ซ่อมแซมและล้างข้อมูลที่พังให้ดึงดูดได้) 🌟
   async function loadSupabaseSettings() {
       try {
           const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
-          sysSettings.dutyTypes = { OD: [], ODOL: [] }; // ค่าเริ่มต้นป้องกันพัง
+          sysSettings.dutyTypes = { OD: [], ODOL: [] }; // ค่าเริ่มต้นที่ถูกต้อง
           
           if (jsData && jsData.length > 0) {
               sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : [];
@@ -957,19 +957,19 @@
                   try {
                       let parsedDuties = JSON.parse(jsData[0].dutyTypes);
                       
-                      // ถ้าระบบเจอข้อมูลเก่าที่เป็น Array ธรรมดา ให้แปลงเป็น OD แบบอัตโนมัติ
+                      // ถ้าระบบเจอข้อมูลเก่าที่เป็น Array ธรรมดา ให้จับยัดใส่ OD และ ODOL ไปก่อนชั่วคราว
                       if (Array.isArray(parsedDuties)) {
-                          sysSettings.dutyTypes = { OD: parsedDuties, ODOL: [] };
+                          sysSettings.dutyTypes = { OD: parsedDuties, ODOL: parsedDuties };
                       } 
-                      // ถ้าเป็น Object อยู่แล้ว ให้ดึงข้อมูลมาใส่ได้เลย
+                      // ถ้าเป็น Object อยู่แล้ว ให้เช็คว่ามีค่าครบไหม ถ้าไม่มีให้ใส่ Array เปล่า
                       else if (typeof parsedDuties === 'object' && parsedDuties !== null) {
                           sysSettings.dutyTypes = {
-                              OD: parsedDuties.OD || [],
-                              ODOL: parsedDuties.ODOL || []
+                              OD: Array.isArray(parsedDuties.OD) ? parsedDuties.OD : [],
+                              ODOL: Array.isArray(parsedDuties.ODOL) ? parsedDuties.ODOL : []
                           };
                       }
                   } catch(e) {
-                      console.warn("Parse Error, resetting duty types:", e);
+                      console.warn("ข้อมูลหน้าที่พัง ระบบจะล้างค่าเริ่มต้นให้ใหม่:", e);
                       sysSettings.dutyTypes = { OD: [], ODOL: [] };
                   }
               }
@@ -1369,7 +1369,6 @@
       if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) {
           availableDuties = sysSettings.dutyTypes[myDeptType];
       } else if (Array.isArray(sysSettings.dutyTypes)) {
-          // Fallback เผื่อมันยังเห็นเป็น Array เก่า
           availableDuties = sysSettings.dutyTypes; 
       }
       
@@ -1409,7 +1408,6 @@
               }
               
               const inDuty = u.row.querySelector('.sel-duty');
-              // 🌟 สุ่มหน้าที่ตามแผนก (ป้องกัน Error แบบแน่นหนา) 🌟
               let myDeptType = u.row.getAttribute('data-dept').includes('ODOL') ? 'ODOL' : 'OD';
               let availableDuties = [];
               if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) {
@@ -1488,6 +1486,57 @@
       else { await supabaseClient.from('user_sites').insert([{ nickname: tempSetupNick, capableSites: JSON.stringify(sel) }]); }
       sysSettings.userSites[tempSetupNick] = sel; renderJobTables(); 
       bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).hide(); Swal.fire({toast:true, position:'top', title:'ตั้งค่าเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+  }
+
+  // 🌟 ฟังก์ชันเปิดหน้าต่างตั้งค่า (รับประกันกดติด 100%) 🌟
+  function openJobSettingsModal() { 
+      try {
+          if (!sysSettings.dutyTypes || typeof sysSettings.dutyTypes !== 'object' || Array.isArray(sysSettings.dutyTypes)) {
+              sysSettings.dutyTypes = { OD: [], ODOL: [] }; 
+          }
+          
+          document.getElementById('setWebsites').value = (Array.isArray(sysSettings.websites) ? sysSettings.websites : []).join('\n'); 
+          document.getElementById('setDutiesOD').value = (Array.isArray(sysSettings.dutyTypes.OD) ? sysSettings.dutyTypes.OD : []).join('\n'); 
+          document.getElementById('setDutiesODOL').value = (Array.isArray(sysSettings.dutyTypes.ODOL) ? sysSettings.dutyTypes.ODOL : []).join('\n'); 
+          
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).show(); 
+      } catch(error) {
+          console.error("ปุ่มตั้งค่าพังเพราะ:", error);
+          Swal.fire('เกิดข้อผิดพลาด', 'ระบบโหลดหน้าต่างตั้งค่าไม่สำเร็จ', 'error');
+      }
+  }
+
+  // 🌟 ฟังก์ชันบันทึกตั้งค่า
+  async function saveAdminJobSettings() { 
+      const btn = document.querySelector('#jobSettingsModal button');
+      if(btn) { btn.innerText = '⏳ กำลังบันทึก...'; btn.disabled = true; }
+
+      try {
+          const w = document.getElementById('setWebsites').value.split('\n').map(s=>s.trim()).filter(s=>s); 
+          const d_od = document.getElementById('setDutiesOD').value.split('\n').map(s=>s.trim()).filter(s=>s); 
+          const d_odol = document.getElementById('setDutiesODOL').value.split('\n').map(s=>s.trim()).filter(s=>s); 
+          
+          const payloadDuties = { OD: d_od, ODOL: d_odol };
+          const payload = { websites: JSON.stringify(w), dutyTypes: JSON.stringify(payloadDuties) };
+          
+          const { data: jsData } = await supabaseClient.from('job_settings').select('id').limit(1);
+          if (jsData && jsData.length > 0) { 
+              await supabaseClient.from('job_settings').update(payload).eq('id', jsData[0].id); 
+          } else { 
+              await supabaseClient.from('job_settings').insert([payload]); 
+          }
+          
+          sysSettings.websites = w;
+          sysSettings.dutyTypes = payloadDuties;
+          
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).hide(); 
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกการตั้งค่าสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+          renderJobTables(); 
+      } catch(err) {
+          Swal.fire('Error', err.message, 'error');
+      } finally {
+          if(btn) { btn.innerText = 'บันทึกการตั้งค่าระบบ'; btn.disabled = false; }
+      }
   }
 
   // ==========================================
