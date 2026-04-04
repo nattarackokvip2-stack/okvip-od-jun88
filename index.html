@@ -396,6 +396,7 @@
           </div>
       </div>
     </div>
+
     <div id="mealSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
@@ -446,7 +447,6 @@
         </table>
       </div>
     </div>
-
     <div id="manualSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">📖 คู่มือการทำงาน และ กติกา</h4>
@@ -488,6 +488,7 @@
         </table>
       </div>
     </div>
+
     <div id="discordSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div class="d-flex align-items-center gap-2">
@@ -561,6 +562,7 @@
     </form>
   </div></div></div>
 </div>
+
 <div class="modal fade" id="regModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center text-warning" id="regModalTitle">➕ เพิ่มรายชื่อสมาชิก</h4>
@@ -586,7 +588,6 @@
     </form>
   </div></div></div>
 </div>
-
 <div class="modal fade" id="shiftModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center text-info">🔄 จัดกะการทำงาน (รายเดือน)</h4>
@@ -684,6 +685,7 @@
     </form>
   </div></div></div>
 </div>
+
 <div class="modal fade" id="portalModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center text-info" id="portalModalTitle">🌐 เพิ่มเว็บไซต์</h4>
@@ -729,21 +731,26 @@
         <h4 class="fw-bold mb-4 text-center text-info" id="manualModalTitle">📝 สร้างหมวดหมู่เนื้อหา</h4>
         <form id="addManualForm" onsubmit="handleManualSubmit(event)">
           <input type="hidden" id="editManualId"> 
+          
           <label class="small mb-1 text-white">1. หมวดหมู่หลัก (Tab)</label>
           <select id="manMainType" class="form-select mb-3" required>
             <option value="MANUAL">📖 คู่มือการทำงาน</option>
             <option value="RULE">⚖️ กติกาและเงื่อนไข</option>
           </select>
+
           <label class="small mb-1 text-white">2. แผนกที่เกี่ยวข้อง</label>
           <select id="manDept" class="form-select mb-3" required>
             <option value="ทั่วไป (ALL)">ทั่วไป (ทุกแผนก)</option>
             <option value="ออดิท (OD)">ออดิท (OD)</option>
             <option value="ออดิทออนไลน์ (ODOL)">ออดิทออนไลน์ (ODOL)</option>
           </select>
+          
           <label class="small mb-1 text-white">3. ป้ายกำกับย่อย (Tag)</label>
           <input type="text" id="manCat" class="form-control mb-3" placeholder="เช่น ขั้นตอนการถอน, กฎการลางาน" required>
+          
           <label class="small mb-1 text-white">4. หัวข้อหลัก (Title)</label>
           <input type="text" id="manTitle" class="form-control mb-4" placeholder="เช่น ขั้นตอนการทำงานประจำวัน" required>
+          
           <button type="submit" class="btn btn-neon-blue w-100 py-2">💾 บันทึกและสร้าง</button>
         </form>
       </div>
@@ -820,84 +827,509 @@
         <form id="leaveForm" onsubmit="handleLeaveSubmit(event)">
           <label class="small mb-1 text-white">1. วัน/เดือน/ปี ที่ต้องการลา</label>
           <input type="date" id="leaveDateInput" class="form-control mb-3" required>
+          
           <label class="small mb-1 text-white">2. ประเภทการลา</label>
           <select id="leaveTypeInput" class="form-select mb-3" required>
             <option value="">-- เลือกประเภท --</option>
             <option value="ลากิจ">ลากิจ</option>
             <option value="ลาป่วย">ลาป่วย</option>
           </select>
+          
           <label class="small mb-1 text-white">3. รายละเอียด / สาเหตุ</label>
           <textarea id="leaveReasonInput" class="form-control mb-4" rows="3" required placeholder="ระบุเหตุผลการลา..."></textarea>
+          
           <button type="submit" class="btn btn-warning w-100 py-2 fw-bold text-dark">ส่งคำขอลา</button>
         </form>
       </div>
     </div>
   </div>
 </div>
+
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-<script>
-  let myRole = ""; let currentUsername = ""; let allUsersData = []; let allPortalsData = []; let allBackendsData = []; let allManualsData = []; let allAnnouncements = []; let currentDeptFilter = 'ALL'; let currentSearchTerm = ''; let currentPage = 1; const itemsPerPage = 10; let currentManualFilter = 'ALL'; let currentlyViewingManualId = null; let currentlyViewingSteps = []; let manualSearchTerm = ''; let isDraggingStamp = false; let unsavedChanges = {}; let scheduleSearchTerm = ''; let currentScheduleFilter = 'ALL'; let sysSettings = { websites: [], dutyTypes: { OD: [], ODOL: [] }, statMetrics: [], userSites: {} }; let dailyDutiesData = {}; let dailyStatsData = {}; let dailyScheduleData = {}; let dailyMealData = {}; let currentJobTab = 'duty'; let currentJobFilter = 'ALL'; let currentJobShiftSet = 'ALL'; let jobSearchTerm = ''; let isShowingHiddenUsers = false; let mealSearchTerm = ''; let allPenalties = []; let tempSetupNick = "";
 
+<script>
+  // ==========================================
+  // ⚡ เริ่มต้นระบบ JavaScript
+  // ==========================================
+  let myRole = ""; 
+  let currentUsername = ""; 
+  let allUsersData = []; 
+  let allPortalsData = []; 
+  let allBackendsData = []; 
+  let allManualsData = []; 
+  let allAnnouncements = []; 
+  let currentDeptFilter = 'ALL'; 
+  let currentSearchTerm = ''; 
+  let currentPage = 1; 
+  const itemsPerPage = 10;
+  
+  let currentManualFilter = 'ALL'; 
+  let currentlyViewingManualId = null; 
+  let currentlyViewingSteps = []; 
+  let manualSearchTerm = '';
+  
+  let isDraggingStamp = false; 
+  let unsavedChanges = {}; 
+  let scheduleSearchTerm = ''; 
+  let currentScheduleFilter = 'ALL';
+  
+  // 🌟 ปรับโครงสร้าง sysSettings ให้ dutyTypes แยก OD กับ ODOL 🌟
+  let sysSettings = { websites: [], dutyTypes: { OD: [], ODOL: [] }, statMetrics: [], userSites: {} };
+  let dailyDutiesData = {}; 
+  let dailyStatsData = {}; 
+  let dailyScheduleData = {}; 
+  let dailyMealData = {}; 
+  
+  let currentJobTab = 'duty'; 
+  let currentJobFilter = 'ALL'; 
+  let currentJobShiftSet = 'ALL';
+  let jobSearchTerm = ''; 
+  let isShowingHiddenUsers = false;
+  
+  let mealSearchTerm = ''; 
+  let allPenalties = []; 
+  let tempSetupNick = "";
+
+  // ==========================================
+  // 🚀 1. ตั้งค่า Supabase และคอนฟิกต่างๆ
+  // ==========================================
   const supabaseUrl = 'https://codroyfpjhybvmispvzg.supabase.co';
   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvZHJveWZwamh5YnZtaXNwdnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjQ2NzIsImV4cCI6MjA5MDY0MDY3Mn0.jakTDxsIOCbdsbjXMBdO6cGKvgvj6IoWk_foXELRA84';
   const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-  const stampConfig = { 'X': { bg: 'rgba(255, 51, 102, 0.2)', text: '#ff3366', label: 'X (หยุด)', limit: 4 }, 'XX': { bg: 'rgba(255, 204, 0, 0.2)', text: '#ffcc00', label: 'XX (หยุดพิเศษ)', limit: 2 }, 'TX': { bg: 'rgba(0, 85, 255, 0.3)', text: '#4da6ff', label: 'TX (สลับหยุด)', limit: 4 }, 'PN': { bg: 'rgba(139, 69, 19, 0.2)', text: '#d2691e', label: 'PN (พักร้อน)', limit: 15 }, 'KP': { bg: 'rgba(255, 153, 51, 0.2)', text: '#ff9933', label: 'KP (ขาดงาน)', limit: 99 }, 'L': { bg: 'rgba(255, 204, 0, 0.8)', text: '#ff0000', label: 'L (สาย)', limit: 99 }, 'X4': { bg: 'rgba(204, 102, 255, 0.2)', text: '#cc66ff', label: 'X4 (ปจด.)', limit: 1 }, 'D': { bg: 'rgba(0, 255, 102, 0.2)', text: '#00ff66', label: 'D (ดึก)', limit: 99 }, 'N': { bg: 'rgba(0, 240, 255, 0.2)', text: '#00f0ff', label: 'N (เช้า)', limit: 99 }, 'M': { bg: 'rgba(255, 253, 208, 0.2)', text: '#ffffe0', label: 'M (อื่นๆ)', limit: 99 }, '': { bg: 'transparent', text: '#aaaaaa', label: 'ลบ (ยางลบ)', limit: 99 } };
+  const stampConfig = {
+    'X':  { bg: 'rgba(255, 51, 102, 0.2)', text: '#ff3366', label: 'X (หยุด)', limit: 4 },
+    'XX': { bg: 'rgba(255, 204, 0, 0.2)', text: '#ffcc00', label: 'XX (หยุดพิเศษ)', limit: 2 },
+    'TX': { bg: 'rgba(0, 85, 255, 0.3)', text: '#4da6ff', label: 'TX (สลับหยุด)', limit: 4 }, 
+    'PN': { bg: 'rgba(139, 69, 19, 0.2)', text: '#d2691e', label: 'PN (พักร้อน)', limit: 15 }, 
+    'KP': { bg: 'rgba(255, 153, 51, 0.2)', text: '#ff9933', label: 'KP (ขาดงาน)', limit: 99 }, 
+    'L':  { bg: 'rgba(255, 204, 0, 0.8)', text: '#ff0000', label: 'L (สาย)', limit: 99 }, 
+    'X4': { bg: 'rgba(204, 102, 255, 0.2)', text: '#cc66ff', label: 'X4 (ปจด.)', limit: 1 }, 
+    'D':  { bg: 'rgba(0, 255, 102, 0.2)', text: '#00ff66', label: 'D (ดึก)', limit: 99 }, 
+    'N':  { bg: 'rgba(0, 240, 255, 0.2)', text: '#00f0ff', label: 'N (เช้า)', limit: 99 }, 
+    'M':  { bg: 'rgba(255, 253, 208, 0.2)', text: '#ffffe0', label: 'M (อื่นๆ)', limit: 99 }, 
+    '':   { bg: 'transparent', text: '#aaaaaa', label: 'ลบ (ยางลบ)', limit: 99 }
+  };
   const offDutyStamps = ['X', 'XX', 'TX', 'PN', 'KP'];
-  const mealTimeBlocks = [ { name: "OD ปอยเปต / ODOL (รอบ 1) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD_POIPET" }, { name: "OD ปอยเปต / ODOL (รอบ 2) [07:00-10:00]", start: "07:00", end: "10:00", type: "OD_POIPET" }, { name: "OD ปอยเปต / ODOL (รอบ 3) [12:00-14:00]", start: "12:00", end: "14:00", type: "OD_POIPET" }, { name: "OD ปอยเปต / ODOL (รอบ 4) [16:30-18:30]", start: "16:30", end: "18:30", type: "OD_POIPET" }, { name: "OD ปอยเปต / ODOL (รอบ 5) [21:00-23:00]", start: "21:00", end: "23:00", type: "OD_POIPET" }, { name: "OD ลาว (รอบ 1) [04:00-07:00]", start: "04:00", end: "07:00", type: "OD_LAOS" }, { name: "OD ลาว (รอบ 2) [10:00-13:00]", start: "10:00", end: "13:00", type: "OD_LAOS" }, { name: "OD ลาว (รอบ 3) [16:00-18:00]", start: "16:00", end: "18:00", type: "OD_LAOS" }, { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD_LAOS" } ];
 
-  function generateTimeSlots(start, end) { let slots = []; let [sH, sM] = start.split(':').map(Number); let [eH, eM] = end.split(':').map(Number); let currentMins = sH * 60 + sM; let endMins = eH * 60 + eM; if (endMins <= currentMins) endMins += 24 * 60; while (currentMins < endMins) { let nextMins = currentMins + 30; let cStr = `${String(Math.floor(currentMins / 60) % 24).padStart(2, '0')}:${String(currentMins % 60).padStart(2, '0')}`; let nStr = `${String(Math.floor(nextMins / 60) % 24).padStart(2, '0')}:${String(nextMins % 60).padStart(2, '0')}`; if(nStr === "00:00" && currentMins >= 23 * 60) nStr = "24:00"; slots.push(`${cStr}-${nStr}`); currentMins = nextMins; } return slots; }
-  function compressImage(file, callback) { Swal.fire({ title: 'กำลังประมวลผลรูปภาพ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } }); const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 1920; let width = img.width; let height = img.height; if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height); const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); Swal.close(); callback(compressedBase64); }; }; }
-  function compressImageHQ(file, callback) { Swal.fire({ title: 'กำลังโหลดรูปภาพ (โหมดคมชัด)...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } }); const reader = new FileReader(); reader.readAsDataURL(file); reader.onload = event => { const img = new Image(); img.src = event.target.result; img.onload = () => { const canvas = document.createElement('canvas'); const MAX_WIDTH = 2500; let width = img.width; let height = img.height; if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; } canvas.width = width; canvas.height = height; const ctx = canvas.getContext('2d'); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high"; ctx.drawImage(img, 0, 0, width, height); const compressedBase64 = canvas.toDataURL('image/jpeg', 0.98); Swal.close(); callback(compressedBase64); }; }; }
-  function setupPasteArea(areaId, fileId, processCallback, isHighQuality = false) { const area = document.getElementById(areaId); const fileInput = document.getElementById(fileId); if(area && fileInput) { area.addEventListener('click', () => fileInput.click()); fileInput.addEventListener('change', function(e) { if(e.target.files && e.target.files[0]) { if(isHighQuality) compressImageHQ(e.target.files[0], processCallback); else compressImage(e.target.files[0], processCallback); } }); area.addEventListener('paste', function(e) { e.preventDefault(); const items = (e.clipboardData || e.originalEvent.clipboardData).items; let imageFound = false; for (let i = 0; i < items.length; i++) { if (items[i].kind === 'file' && items[i].type.includes('image/')) { if(isHighQuality) compressImageHQ(items[i].getAsFile(), processCallback); else compressImage(items[i].getAsFile(), processCallback); imageFound = true; break; } } if (!imageFound) Swal.fire({ toast: true, position: 'top-end', title: 'ไม่พบรูปภาพ!', icon: 'error', showConfirmButton: false, timer: 3000, background: '#111', color: '#fff' }); }); } }
+  const mealTimeBlocks = [
+      { name: "OD ปอยเปต / ODOL (รอบ 1) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD_POIPET" },
+      { name: "OD ปอยเปต / ODOL (รอบ 2) [07:00-10:00]", start: "07:00", end: "10:00", type: "OD_POIPET" },
+      { name: "OD ปอยเปต / ODOL (รอบ 3) [12:00-14:00]", start: "12:00", end: "14:00", type: "OD_POIPET" },
+      { name: "OD ปอยเปต / ODOL (รอบ 4) [16:30-18:30]", start: "16:30", end: "18:30", type: "OD_POIPET" },
+      { name: "OD ปอยเปต / ODOL (รอบ 5) [21:00-23:00]", start: "21:00", end: "23:00", type: "OD_POIPET" },
+      { name: "OD ลาว (รอบ 1) [04:00-07:00]", start: "04:00", end: "07:00", type: "OD_LAOS" },
+      { name: "OD ลาว (รอบ 2) [10:00-13:00]", start: "10:00", end: "13:00", type: "OD_LAOS" },
+      { name: "OD ลาว (รอบ 3) [16:00-18:00]", start: "16:00", end: "18:00", type: "OD_LAOS" },
+      { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD_LAOS" }
+  ];
+
+  function generateTimeSlots(start, end) {
+      let slots = []; let [sH, sM] = start.split(':').map(Number); let [eH, eM] = end.split(':').map(Number);
+      let currentMins = sH * 60 + sM; let endMins = eH * 60 + eM;
+      if (endMins <= currentMins) endMins += 24 * 60; 
+      while (currentMins < endMins) {
+          let nextMins = currentMins + 30;
+          let cStr = `${String(Math.floor(currentMins / 60) % 24).padStart(2, '0')}:${String(currentMins % 60).padStart(2, '0')}`;
+          let nStr = `${String(Math.floor(nextMins / 60) % 24).padStart(2, '0')}:${String(nextMins % 60).padStart(2, '0')}`;
+          if(nStr === "00:00" && currentMins >= 23 * 60) nStr = "24:00";
+          slots.push(`${cStr}-${nStr}`); currentMins = nextMins;
+      }
+      return slots;
+  }
+
+  function compressImage(file, callback) {
+      Swal.fire({ title: 'กำลังประมวลผลรูปภาพ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+      const reader = new FileReader(); reader.readAsDataURL(file);
+      reader.onload = event => {
+          const img = new Image(); img.src = event.target.result;
+          img.onload = () => {
+              const canvas = document.createElement('canvas'); const MAX_WIDTH = 1920; 
+              let width = img.width; let height = img.height;
+              if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+              canvas.width = width; canvas.height = height; 
+              const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); Swal.close(); callback(compressedBase64);
+          };
+      };
+  }
+
+  function compressImageHQ(file, callback) {
+      Swal.fire({ title: 'กำลังโหลดรูปภาพ (โหมดคมชัด)...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+      const reader = new FileReader(); reader.readAsDataURL(file);
+      reader.onload = event => {
+          const img = new Image(); img.src = event.target.result;
+          img.onload = () => {
+              const canvas = document.createElement('canvas'); 
+              const MAX_WIDTH = 2500;
+              let width = img.width; let height = img.height;
+              if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+              canvas.width = width; canvas.height = height; 
+              const ctx = canvas.getContext('2d'); 
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = "high";
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.98); 
+              Swal.close(); callback(compressedBase64);
+          };
+      };
+  }
+
+  function setupPasteArea(areaId, fileId, processCallback, isHighQuality = false) {
+      const area = document.getElementById(areaId); const fileInput = document.getElementById(fileId);
+      if(area && fileInput) {
+          area.addEventListener('click', () => fileInput.click());
+          fileInput.addEventListener('change', function(e) { 
+              if(e.target.files && e.target.files[0]) {
+                  if(isHighQuality) compressImageHQ(e.target.files[0], processCallback);
+                  else compressImage(e.target.files[0], processCallback);
+              }
+          });
+          area.addEventListener('paste', function(e) {
+              e.preventDefault(); const items = (e.clipboardData || e.originalEvent.clipboardData).items; let imageFound = false;
+              for (let i = 0; i < items.length; i++) { 
+                  if (items[i].kind === 'file' && items[i].type.includes('image/')) { 
+                      if(isHighQuality) compressImageHQ(items[i].getAsFile(), processCallback);
+                      else compressImage(items[i].getAsFile(), processCallback);
+                      imageFound = true; break; 
+                  } 
+              }
+              if (!imageFound) Swal.fire({ toast: true, position: 'top-end', title: 'ไม่พบรูปภาพ!', icon: 'error', showConfirmButton: false, timer: 3000, background: '#111', color: '#fff' });
+          });
+      }
+  }
 
   window.onload = function() {
-    setupPasteArea('stepPasteArea', 'stepMediaFile', processStepImage, true); setupPasteArea('portalPasteArea', 'portalMediaFile', processPortalImage, false); setupPasteArea('backendPasteArea', 'backendMediaFile', processBackendImage, false);
-    const now = new Date(); const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0') + "-" + String(now.getDate()).padStart(2, '0'); const thisMonthStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0'); 
-    document.getElementById('monthPicker').value = thisMonthStr; if(document.getElementById('penaltyMonthFilter')) document.getElementById('penaltyMonthFilter').value = thisMonthStr; if(document.getElementById('jobDatePicker')) document.getElementById('jobDatePicker').value = todayStr; if(document.getElementById('mealDatePicker')) document.getElementById('mealDatePicker').value = todayStr; if(document.getElementById('discordDatePicker')) document.getElementById('discordDatePicker').value = todayStr;
-    renderStampPalette(); const sUser = localStorage.getItem('okvip_user'); const sRole = localStorage.getItem('okvip_role'); const sNick = localStorage.getItem('okvip_nick'); const sTime = localStorage.getItem('okvip_time');
-    if(sUser && sRole && sTime) { const diffHours = (now.getTime() - parseInt(sTime)) / (1000 * 60 * 60); if (diffHours >= 12) { handleLogout(); return; } document.getElementById('loginPage').style.display = 'none'; document.getElementById('mainDashboard').style.display = 'block'; document.getElementById('userTable').innerHTML = `<tr><td colspan="8" class="text-center text-muted py-5">⏳ กำลังโหลด...</td></tr>`; verifyUserStatus(sUser, sNick, sRole, false); }
+    setupPasteArea('stepPasteArea', 'stepMediaFile', processStepImage, true); 
+    setupPasteArea('portalPasteArea', 'portalMediaFile', processPortalImage, false);
+    setupPasteArea('backendPasteArea', 'backendMediaFile', processBackendImage, false);
+    
+    const now = new Date();
+    const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0') + "-" + String(now.getDate()).padStart(2, '0');
+    const thisMonthStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0'); 
+    
+    document.getElementById('monthPicker').value = thisMonthStr;
+    if(document.getElementById('penaltyMonthFilter')) document.getElementById('penaltyMonthFilter').value = thisMonthStr; 
+    if(document.getElementById('jobDatePicker')) document.getElementById('jobDatePicker').value = todayStr;
+    if(document.getElementById('mealDatePicker')) document.getElementById('mealDatePicker').value = todayStr; 
+    if(document.getElementById('discordDatePicker')) document.getElementById('discordDatePicker').value = todayStr;
+    
+    renderStampPalette();
+    const sUser = localStorage.getItem('okvip_user'); 
+    const sRole = localStorage.getItem('okvip_role'); 
+    const sNick = localStorage.getItem('okvip_nick'); 
+    const sTime = localStorage.getItem('okvip_time');
+    
+    if(sUser && sRole && sTime) {
+      const diffHours = (now.getTime() - parseInt(sTime)) / (1000 * 60 * 60); 
+      if (diffHours >= 12) { handleLogout(); return; }
+      document.getElementById('loginPage').style.display = 'none'; 
+      document.getElementById('mainDashboard').style.display = 'block';
+      document.getElementById('userTable').innerHTML = `<tr><td colspan="8" class="text-center text-muted py-5">⏳ กำลังโหลด...</td></tr>`;
+      verifyUserStatus(sUser, sNick, sRole, false); 
+    }
   }
-  async function refreshData(btn, isLoginEvent = false) { if(btn) { btn.disabled = true; btn.innerHTML = '⏳...'; } try { await Promise.all([ loadSupabaseUsers(), loadSupabaseSettings(), loadSupabaseWebsites(), loadSupabasePenalties(), loadSupabaseManuals(), loadSupabaseAnnouncements(), loadSupabaseLeaves() ]); await loadScheduleTable(); await loadDailyJobData(); await loadDailyMealData(); if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; } if(isLoginEvent) showLoginAnnouncement(); else if(btn) Swal.fire({toast: true, position: 'top-end', title: '🚀 โหลดข้อมูลสำเร็จ', icon: 'success', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff'}); } catch (err) { console.error("Refresh Error:", err); Swal.fire('Error', 'โหลดข้อมูลล้มเหลว', 'error'); if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; } } }
-  async function loadSupabaseSettings() { try { const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1); sysSettings.dutyTypes = { OD: [], ODOL: [] }; if (jsData && jsData.length > 0) { sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : []; if (jsData[0].dutyTypes) { try { let parsedDuties = JSON.parse(jsData[0].dutyTypes); if (Array.isArray(parsedDuties)) { sysSettings.dutyTypes = { OD: parsedDuties, ODOL: parsedDuties }; } else if (typeof parsedDuties === 'object' && parsedDuties !== null) { sysSettings.dutyTypes = { OD: Array.isArray(parsedDuties.OD) ? parsedDuties.OD : [], ODOL: Array.isArray(parsedDuties.ODOL) ? parsedDuties.ODOL : [] }; } } catch(e) { sysSettings.dutyTypes = { OD: [], ODOL: [] }; } } } const { data: usData } = await supabaseClient.from('user_sites').select('*'); sysSettings.userSites = {}; if (usData) usData.forEach(r => sysSettings.userSites[r.nickname] = r.capableSites ? JSON.parse(r.capableSites) : []); } catch(err) {} }
-  async function loadSupabaseUsers() { const { data, error } = await supabaseClient.from('users').select('*').order('id', { ascending: true }); if (error) throw error; allUsersData = (data || []).map(item => [ item.id || '', item.nickname || '', item.workGroup || '', item.department || '', item.username || '', item.password || '', item.role || 'Member', item.status || 'Active', item.telegram || '', item.shiftSet || '' ]); loadUsers(); updatePenaltySelect(); setupJobFilters(); }
-  function setupJobFilters() { const myNick = localStorage.getItem('okvip_nick'); const myRole = localStorage.getItem('okvip_role'); const me = allUsersData.find(u => u[1] === myNick); if (!me) return; const myDept = me[3] || ''; const badgeOD = document.getElementById('badgeJobOD'); const badgeODOL = document.getElementById('badgeJobODOL'); const shiftSelect = document.getElementById('jobShiftSetFilter'); currentJobShiftSet = ''; if (myRole !== 'SuperAdmin') { if (myDept.includes('ODOL')) { if(badgeOD) badgeOD.style.display = 'none'; if(badgeODOL) { badgeODOL.style.display = 'inline-block'; badgeODOL.click(); } if(shiftSelect) { shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกกะ (ODOL) --</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`; } } else if (myDept.includes('OD') && !myDept.includes('ODOL')) { if(badgeODOL) badgeODOL.style.display = 'none'; if(badgeOD) { badgeOD.style.display = 'inline-block'; badgeOD.click(); } if(shiftSelect) { shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกกะ (OD) --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option>`; } } } else { if(badgeOD) badgeOD.click(); if(shiftSelect) { shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกเซ็ตกะ --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`; } } }
-  async function loadSupabaseManuals() { const { data } = await supabaseClient.from('manuals').select('*').order('id', { ascending: true }); allManualsData = (data || []).map(r => [r.id, r.department, r.category, r.title, r.stepsData || "[]"]); renderManualGrid(); }
-  async function loadSupabaseAnnouncements() { const { data } = await supabaseClient.from('announcements').select('*').order('id', { ascending: false }); allAnnouncements = data || []; renderAnnouncementsTable(); }
-  function renderAnnouncementsTable() { const tb = document.getElementById('announceTableBody'); tb.innerHTML = ''; if(allAnnouncements.length === 0) { tb.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีประกาศ</td></tr>`; return; } allAnnouncements.forEach(a => { let statusBadge = (a.is_active === 'true' || a.is_active === true) ? `<span class="badge bg-success border border-success px-3 py-2">✅ กำลังโชว์</span>` : `<span class="badge bg-secondary border border-secondary px-3 py-2">ปิด</span>`; let contentPreview = a.content.substring(0, 50) + (a.content.length > 50 ? '...' : ''); let dateStr = new Date(a.created_at).toLocaleDateString('th-TH'); let tools = (myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-info me-1" onclick="editAnnouncement('${a.id}')">✏️</button><button class="btn btn-sm btn-outline-danger" onclick="deleteAnnouncement('${a.id}')">✖</button>` : '-'; tb.innerHTML += `<tr><td>${statusBadge}</td><td class="fw-bold text-warning">${a.title}</td><td class="small text-muted">${contentPreview}</td><td class="text-muted small">${dateStr}</td><td class="text-center">${tools}</td></tr>`; }); }
-  function showLoginAnnouncement() { const activeAnn = allAnnouncements.find(a => a.is_active === true || a.is_active === 'true' || a.is_active === 't'); if(activeAnn) { Swal.fire({ title: '📢 ประกาศจากระบบ', html: `<h5 class="text-warning mt-2 mb-3 fw-bold">${activeAnn.title}</h5><div class="text-start" style="white-space: pre-wrap; color: #ddd; font-size: 0.95rem; background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333;">${activeAnn.content}</div>`, icon: 'info', background: '#151518', color: '#fff', confirmButtonText: 'รับทราบ (เข้าสู่ระบบ)', confirmButtonColor: '#ff9900', allowOutsideClick: false }); } }
+
+  async function refreshData(btn, isLoginEvent = false) {
+      if(btn) { btn.disabled = true; btn.innerHTML = '⏳...'; }
+      try {
+          await Promise.all([
+              loadSupabaseUsers(), loadSupabaseSettings(), loadSupabaseWebsites(),
+              loadSupabasePenalties(), loadSupabaseManuals(), loadSupabaseAnnouncements(), loadSupabaseLeaves() 
+          ]);
+          await loadScheduleTable();
+          await loadDailyJobData();
+          await loadDailyMealData(); 
+
+          if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
+          if(isLoginEvent) showLoginAnnouncement();
+          else if(btn) Swal.fire({toast: true, position: 'top-end', title: '🚀 โหลดข้อมูลสำเร็จ', icon: 'success', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff'});
+      } catch (err) {
+          console.error("Refresh Error:", err); Swal.fire('Error', 'โหลดข้อมูลล้มเหลว', 'error');
+          if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
+      }
+  }
+
+  async function loadSupabaseSettings() {
+      try {
+          const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
+          sysSettings.dutyTypes = { OD: [], ODOL: [] };
+          
+          if (jsData && jsData.length > 0) {
+              sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : [];
+              if (jsData[0].dutyTypes) {
+                  try {
+                      let parsedDuties = JSON.parse(jsData[0].dutyTypes);
+                      if (Array.isArray(parsedDuties)) {
+                          sysSettings.dutyTypes = { OD: parsedDuties, ODOL: parsedDuties };
+                      } 
+                      else if (typeof parsedDuties === 'object' && parsedDuties !== null) {
+                          sysSettings.dutyTypes = {
+                              OD: Array.isArray(parsedDuties.OD) ? parsedDuties.OD : [],
+                              ODOL: Array.isArray(parsedDuties.ODOL) ? parsedDuties.ODOL : []
+                          };
+                      }
+                  } catch(e) {
+                      console.warn("ข้อมูลหน้าที่พัง ระบบจะล้างค่าเริ่มต้นให้ใหม่:", e);
+                      sysSettings.dutyTypes = { OD: [], ODOL: [] };
+                  }
+              }
+          }
+          const { data: usData } = await supabaseClient.from('user_sites').select('*'); 
+          sysSettings.userSites = {};
+          if (usData) usData.forEach(r => sysSettings.userSites[r.nickname] = r.capableSites ? JSON.parse(r.capableSites) : []);
+      } catch(err) {
+          console.error("Settings Load Error:", err);
+      }
+  }
+
+  async function loadSupabaseUsers() {
+      const { data, error } = await supabaseClient.from('users').select('*').order('id', { ascending: true });
+      if (error) throw error;
+      allUsersData = (data || []).map(item => [ 
+          item.id || '', item.nickname || '', item.workGroup || '', item.department || '', 
+          item.username || '', item.password || '', item.role || 'Member', item.status || 'Active', 
+          item.telegram || '', item.shiftSet || '' 
+      ]);
+      loadUsers(); updatePenaltySelect(); setupJobFilters();
+  }
+
+  function setupJobFilters() {
+      const myNick = localStorage.getItem('okvip_nick');
+      const myRole = localStorage.getItem('okvip_role');
+      const me = allUsersData.find(u => u[1] === myNick);
+      if (!me) return;
+      const myDept = me[3] || ''; 
+
+      const badgeOD = document.getElementById('badgeJobOD');
+      const badgeODOL = document.getElementById('badgeJobODOL');
+      const shiftSelect = document.getElementById('jobShiftSetFilter');
+      currentJobShiftSet = '';
+
+      if (myRole !== 'SuperAdmin') {
+          if (myDept.includes('ODOL')) {
+              if(badgeOD) badgeOD.style.display = 'none'; 
+              if(badgeODOL) { badgeODOL.style.display = 'inline-block'; badgeODOL.click(); }
+              if(shiftSelect) {
+                  shiftSelect.innerHTML = `<option value="ALL">-- ทุกเซ็ตกะ --</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`;
+              }
+          } 
+          else if (myDept.includes('OD') && !myDept.includes('ODOL')) {
+              if(badgeODOL) badgeODOL.style.display = 'none'; 
+              if(badgeOD) { badgeOD.style.display = 'inline-block'; badgeOD.click(); }
+              if(shiftSelect) {
+                  shiftSelect.innerHTML = `<option value="ALL">-- ทุกเซ็ตกะ --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option>`;
+              }
+          }
+      } else {
+          if(badgeOD) badgeOD.click();
+          if(shiftSelect) {
+              shiftSelect.innerHTML = `<option value="ALL">-- ทุกเซ็ตกะ --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`;
+          }
+      }
+  }
+
+  async function loadSupabaseManuals() {
+      const { data } = await supabaseClient.from('manuals').select('*').order('id', { ascending: true });
+      allManualsData = (data || []).map(r => [r.id, r.department, r.category, r.title, r.stepsData || "[]"]);
+      renderManualGrid();
+  }
+
+  async function loadSupabaseAnnouncements() {
+      const { data } = await supabaseClient.from('announcements').select('*').order('id', { ascending: false });
+      allAnnouncements = data || []; renderAnnouncementsTable();
+  }
+  function renderAnnouncementsTable() {
+      const tb = document.getElementById('announceTableBody'); tb.innerHTML = '';
+      if(allAnnouncements.length === 0) { tb.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีประกาศ</td></tr>`; return; }
+      allAnnouncements.forEach(a => {
+          let statusBadge = (a.is_active === 'true' || a.is_active === true) ? `<span class="badge bg-success border border-success px-3 py-2">✅ กำลังโชว์</span>` : `<span class="badge bg-secondary border border-secondary px-3 py-2">ปิด</span>`;
+          let contentPreview = a.content.substring(0, 50) + (a.content.length > 50 ? '...' : ''); let dateStr = new Date(a.created_at).toLocaleDateString('th-TH');
+          let tools = (myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-info me-1" onclick="editAnnouncement('${a.id}')">✏️</button><button class="btn btn-sm btn-outline-danger" onclick="deleteAnnouncement('${a.id}')">✖</button>` : '-';
+          tb.innerHTML += `<tr><td>${statusBadge}</td><td class="fw-bold text-warning">${a.title}</td><td class="small text-muted">${contentPreview}</td><td class="text-muted small">${dateStr}</td><td class="text-center">${tools}</td></tr>`;
+      });
+  }
+  function showLoginAnnouncement() {
+      const activeAnn = allAnnouncements.find(a => a.is_active === true || a.is_active === 'true' || a.is_active === 't');
+      if(activeAnn) { Swal.fire({ title: '📢 ประกาศจากระบบ', html: `<h5 class="text-warning mt-2 mb-3 fw-bold">${activeAnn.title}</h5><div class="text-start" style="white-space: pre-wrap; color: #ddd; font-size: 0.95rem; background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333;">${activeAnn.content}</div>`, icon: 'info', background: '#151518', color: '#fff', confirmButtonText: 'รับทราบ (เข้าสู่ระบบ)', confirmButtonColor: '#ff9900', allowOutsideClick: false }); }
+  }
   function openAnnounceModal() { document.getElementById('announceForm').reset(); document.getElementById('editAnnounceId').value = ''; document.getElementById('announceModalTitle').innerText = '📢 สร้างประกาศใหม่'; bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).show(); }
-  function editAnnouncement(id) { const ann = allAnnouncements.find(a => a.id.toString() === id.toString()); if(!ann) return; document.getElementById('editAnnounceId').value = ann.id; document.getElementById('annTitle').value = ann.title; document.getElementById('annContent').value = ann.content; document.getElementById('annActive').checked = (ann.is_active === true || ann.is_active === 'true'); document.getElementById('announceModalTitle').innerText = '✏️ แก้ไขประกาศ'; bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).show(); }
-  async function handleAnnounceSubmit(e) { e.preventDefault(); const id = document.getElementById('editAnnounceId').value; const title = document.getElementById('annTitle').value; const content = document.getElementById('annContent').value; const isActive = document.getElementById('annActive').checked; const btn = document.querySelector('#announceForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...'; try { if (isActive) await supabaseClient.from('announcements').update({ is_active: 'false' }).neq('id', '0'); if (id) await supabaseClient.from('announcements').update({ title, content, is_active: isActive.toString() }).eq('id', id); else await supabaseClient.from('announcements').insert([{ title, content, is_active: isActive.toString() }]); bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).hide(); await loadSupabaseAnnouncements(); Swal.fire({toast:true, position:'top-end', title:'บันทึกประกาศสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกประกาศ'; } }
+  function editAnnouncement(id) {
+      const ann = allAnnouncements.find(a => a.id.toString() === id.toString()); if(!ann) return;
+      document.getElementById('editAnnounceId').value = ann.id; document.getElementById('annTitle').value = ann.title; document.getElementById('annContent').value = ann.content; document.getElementById('annActive').checked = (ann.is_active === true || ann.is_active === 'true');
+      document.getElementById('announceModalTitle').innerText = '✏️ แก้ไขประกาศ'; bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).show(); 
+  }
+  async function handleAnnounceSubmit(e) {
+      e.preventDefault(); const id = document.getElementById('editAnnounceId').value; const title = document.getElementById('annTitle').value; const content = document.getElementById('annContent').value; const isActive = document.getElementById('annActive').checked;
+      const btn = document.querySelector('#announceForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
+      try {
+          if (isActive) await supabaseClient.from('announcements').update({ is_active: 'false' }).neq('id', '0');
+          if (id) await supabaseClient.from('announcements').update({ title, content, is_active: isActive.toString() }).eq('id', id); else await supabaseClient.from('announcements').insert([{ title, content, is_active: isActive.toString() }]);
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).hide(); await loadSupabaseAnnouncements(); Swal.fire({toast:true, position:'top-end', title:'บันทึกประกาศสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกประกาศ'; }
+  }
   async function deleteAnnouncement(id) { Swal.fire({title:'ลบประกาศนี้?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('announcements').delete().eq('id', id); await loadSupabaseAnnouncements(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
-  async function handleLogin() { const u = document.getElementById('user').value; const p = document.getElementById('pass').value; const btn = document.getElementById('loginBtn'); if(!u || !p) { Swal.fire({title:'เตือน', text:'กรอกข้อมูลให้ครบ', icon:'warning', background:'#111', color:'#fff'}); return; } btn.disabled = true; btn.innerText = 'Checking...'; try { const { data, error } = await supabaseClient.from('users').select('*').eq('username', u).eq('password', p).single(); if (error || !data) { Swal.fire({title:'Error', text:'ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; return; } if (data.status === 'Blocked') { Swal.fire({title:'Error', text:'บัญชีนี้ถูกระงับการใช้งาน', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; return; } localStorage.setItem('okvip_user', u); localStorage.setItem('okvip_role', data.role); localStorage.setItem('okvip_nick', data.nickname); localStorage.setItem('okvip_time', new Date().getTime().toString()); currentUsername = u; document.getElementById('loginPage').style.display = 'none'; document.getElementById('mainDashboard').style.display = 'block'; verifyUserStatus(u, data.nickname, data.role, true); } catch (err) { Swal.fire({title:'Error', text:'เกิดข้อผิดพลาดในการล็อคอิน', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; } }
+  async function handleLogin() {
+      const u = document.getElementById('user').value; const p = document.getElementById('pass').value; const btn = document.getElementById('loginBtn');
+      if(!u || !p) { Swal.fire({title:'เตือน', text:'กรอกข้อมูลให้ครบ', icon:'warning', background:'#111', color:'#fff'}); return; }
+      btn.disabled = true; btn.innerText = 'Checking...';
+      try {
+          const { data, error } = await supabaseClient.from('users').select('*').eq('username', u).eq('password', p).single();
+          if (error || !data) { Swal.fire({title:'Error', text:'ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; return; }
+          if (data.status === 'Blocked') { Swal.fire({title:'Error', text:'บัญชีนี้ถูกระงับการใช้งาน', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; return; }
+          
+          localStorage.setItem('okvip_user', u); localStorage.setItem('okvip_role', data.role); localStorage.setItem('okvip_nick', data.nickname); localStorage.setItem('okvip_time', new Date().getTime().toString());
+          currentUsername = u; document.getElementById('loginPage').style.display = 'none'; document.getElementById('mainDashboard').style.display = 'block';
+          verifyUserStatus(u, data.nickname, data.role, true); 
+      } catch (err) { Swal.fire({title:'Error', text:'เกิดข้อผิดพลาดในการล็อคอิน', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; }
+  }
+
   function handleLogout() { localStorage.clear(); document.getElementById('mainDashboard').style.display = 'none'; document.getElementById('loginPage').style.display = 'flex'; document.getElementById('user').value = ''; document.getElementById('pass').value = ''; const loginBtn = document.getElementById('loginBtn'); if(loginBtn) { loginBtn.disabled = false; loginBtn.innerText = 'เข้าสู่ระบบ'; } }
-  function verifyUserStatus(user, nick, role, isLoginEvent = false) { myRole = role; currentUsername = user; document.getElementById('userDisplay').innerText = nick; document.getElementById('roleLabel').innerText = role; document.getElementById('roleLabel').className = `role-${role}`; document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important'); if(myRole !== 'Member') { document.getElementById('btnClearSchedule').style.display = 'inline-block'; document.getElementById('btnAssignShift').style.display = 'inline-block'; document.getElementById('addBtn').style.display = 'block'; document.getElementById('addPenaltyBtn').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; document.getElementById('addManualBtn').style.display = 'block'; document.getElementById('btnJobSettings').style.display = 'block'; document.getElementById('addAnnounceBtn').style.display = 'block'; const isFrontend = document.getElementById('tabFrontEnd').classList.contains('active'); document.getElementById('addPortalBtn').style.display = isFrontend ? 'block' : 'none'; document.getElementById('addBackendBtn').style.display = isFrontend ? 'none' : 'block'; document.getElementById('thAnnounceManage').style.display = 'table-cell'; document.getElementById('mealActionBtns').style.display = 'flex'; } else { document.getElementById('btnClearSchedule').style.display = 'none'; document.getElementById('btnAssignShift').style.display = 'none'; document.getElementById('addAnnounceBtn').style.display = 'none'; document.getElementById('thAnnounceManage').style.display = 'none'; document.getElementById('mealActionBtns').style.display = 'none'; } renderStampPalette(); switchMainTab('hubSection'); refreshData(document.getElementById('refreshBtn'), isLoginEvent); }
-  function switchMainTab(sectionId) { try { if (unsavedChanges && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); return; } document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); const target = document.getElementById(sectionId); if (target) target.classList.add('active'); const nav = document.getElementById('topNavBar'); if (nav) nav.style.display = (sectionId === 'hubSection') ? 'none' : 'flex'; } catch(e) {} }
+
+  function verifyUserStatus(user, nick, role, isLoginEvent = false) {
+    myRole = role; currentUsername = user; document.getElementById('userDisplay').innerText = nick; document.getElementById('roleLabel').innerText = role; document.getElementById('roleLabel').className = `role-${role}`;
+    document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
+    if(myRole !== 'Member') { 
+        document.getElementById('btnClearSchedule').style.display = 'inline-block'; document.getElementById('btnAssignShift').style.display = 'inline-block'; document.getElementById('addBtn').style.display = 'block'; 
+        document.getElementById('addPenaltyBtn').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; document.getElementById('addManualBtn').style.display = 'block'; document.getElementById('btnJobSettings').style.display = 'block'; 
+        document.getElementById('addAnnounceBtn').style.display = 'block'; 
+        const isFrontend = document.getElementById('tabFrontEnd').classList.contains('active'); 
+        document.getElementById('addPortalBtn').style.display = isFrontend ? 'block' : 'none'; document.getElementById('addBackendBtn').style.display = isFrontend ? 'none' : 'block'; document.getElementById('thAnnounceManage').style.display = 'table-cell'; document.getElementById('mealActionBtns').style.display = 'flex';
+    } else { 
+        document.getElementById('btnClearSchedule').style.display = 'none'; document.getElementById('btnAssignShift').style.display = 'none'; document.getElementById('addAnnounceBtn').style.display = 'none'; document.getElementById('thAnnounceManage').style.display = 'none'; document.getElementById('mealActionBtns').style.display = 'none';
+    }
+    renderStampPalette(); switchMainTab('hubSection'); refreshData(document.getElementById('refreshBtn'), isLoginEvent);
+  }
+
+  function switchMainTab(sectionId) { 
+      try {
+          if (unsavedChanges && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); return; } 
+          document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); const target = document.getElementById(sectionId); if (target) target.classList.add('active'); 
+          const nav = document.getElementById('topNavBar'); if (nav) nav.style.display = (sectionId === 'hubSection') ? 'none' : 'flex'; 
+      } catch(e) { console.error(e); }
+  }
   function goToHub() { switchMainTab('hubSection'); }
+
   function getRoleWeight(roleStr) { if (!roleStr) return 3; const r = roleStr.toString().trim(); if (r === 'SuperAdmin') return 1; if (r === 'Admin') return 2; return 3; }
   function filterStaffDept(dept, btn) { currentDeptFilter = dept; currentPage = 1; document.querySelectorAll('#staffSection .dept-badge').forEach(b => { b.classList.remove('active'); b.style.borderColor = "#444"; b.style.boxShadow = "none"; b.style.color = "#ccc"; }); btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.5)"; btn.style.color = "#fff"; loadUsers(); }
   function handleSearch(term) { currentSearchTerm = term.toLowerCase().trim(); currentPage = 1; loadUsers(); }
   function changePage(page) { currentPage = page; loadUsers(); }
-  function loadUsers() { const tbody = document.getElementById('userTable'); const paginationArea = document.getElementById('paginationArea'); tbody.innerHTML = ''; paginationArea.innerHTML = ''; let filteredData = allUsersData.filter(row => { if (!row || !row[1]) return false; const dept = row[3] ? row[3].toString() : ''; const nick = row[1] ? row[1].toString().toLowerCase() : ''; const user = row[4] ? row[4].toString().toLowerCase() : ''; if(currentDeptFilter !== 'ALL' && dept !== currentDeptFilter) return false; if(currentSearchTerm && !nick.includes(currentSearchTerm) && !user.includes(currentSearchTerm)) return false; return true; }); if (filteredData.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่พบรายชื่อที่ค้นหา</td></tr>`; return; } filteredData.sort((a, b) => getRoleWeight(a[6]) - getRoleWeight(b[6])); const totalPages = Math.ceil(filteredData.length / itemsPerPage); if (currentPage > totalPages) currentPage = totalPages; const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage); paginatedData.forEach(row => { const origIdx = allUsersData.findIndex(r => r[0] === row[0] && r[1] === row[1]); const sClass = row[7] === 'Active' ? 'status-active' : 'status-blocked'; const tgData = row[8] ? row[8] : ''; const tgDisp = tgData ? `<span class="text-info fw-bold">${tgData}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`; const setBadge = row[9] ? `<span class="badge border border-info text-info">${row[9]}</span>` : '-'; let toolsTd = ''; if (row[4] === currentUsername) { toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-secondary border border-secondary px-3 py-2">บัญชีของฉัน</span><button class="tool-btn telegram" onclick="changeTelegram(${origIdx}, '${tgData}', '${row[1]}')">💬</button><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button></div></td>`; } else if (myRole === 'SuperAdmin' || myRole === 'Admin') { if (getRoleWeight(myRole) < getRoleWeight(row[6])) toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button><button class="tool-btn settings" onclick="changeStatus(${origIdx},'${row[7]}')">⚙️</button><button class="tool-btn delete" onclick="confirmDeleteUser(${origIdx}, '${row[1]}')">🗑️</button></div></td>`; else toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-danger border border-danger opacity-75 px-3 py-2">🔒 ไม่มีสิทธิ์</span></div></td>`; } else { toolsTd = `<td></td>`; } tbody.innerHTML += `<tr><td class="fw-bold">${row[1]}</td><td>${setBadge}</td><td>${row[3]}</td><td>${row[4]}</td><td class="role-${row[6]}">${row[6]}</td><td><span class="${sClass}">${row[7]}</span></td><td>${tgDisp}</td>${toolsTd}</tr>`; }); if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) pageHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`; pageHtml += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; paginationArea.innerHTML = pageHtml; } }
+
+  function loadUsers() {
+    const tbody = document.getElementById('userTable'); const paginationArea = document.getElementById('paginationArea'); tbody.innerHTML = ''; paginationArea.innerHTML = '';
+    let filteredData = allUsersData.filter(row => {
+        if (!row || !row[1]) return false; 
+        const dept = row[3] ? row[3].toString() : ''; const nick = row[1] ? row[1].toString().toLowerCase() : ''; const user = row[4] ? row[4].toString().toLowerCase() : '';
+        if(currentDeptFilter !== 'ALL' && dept !== currentDeptFilter) return false;
+        if(currentSearchTerm && !nick.includes(currentSearchTerm) && !user.includes(currentSearchTerm)) return false;
+        return true;
+    });
+    if (filteredData.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่พบรายชื่อที่ค้นหา</td></tr>`; return; }
+    filteredData.sort((a, b) => getRoleWeight(a[6]) - getRoleWeight(b[6]));
+    const totalPages = Math.ceil(filteredData.length / itemsPerPage); if (currentPage > totalPages) currentPage = totalPages;
+    const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+    paginatedData.forEach(row => {
+      const origIdx = allUsersData.findIndex(r => r[0] === row[0] && r[1] === row[1]); const sClass = row[7] === 'Active' ? 'status-active' : 'status-blocked'; const tgData = row[8] ? row[8] : ''; const tgDisp = tgData ? `<span class="text-info fw-bold">${tgData}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`; const setBadge = row[9] ? `<span class="badge border border-info text-info">${row[9]}</span>` : '-';
+      let toolsTd = ''; 
+      if (row[4] === currentUsername) { toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-secondary border border-secondary px-3 py-2">บัญชีของฉัน</span><button class="tool-btn telegram" onclick="changeTelegram(${origIdx}, '${tgData}', '${row[1]}')">💬</button><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button></div></td>`; } 
+      else if (myRole === 'SuperAdmin' || myRole === 'Admin') {
+          if (getRoleWeight(myRole) < getRoleWeight(row[6])) toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button><button class="tool-btn settings" onclick="changeStatus(${origIdx},'${row[7]}')">⚙️</button><button class="tool-btn delete" onclick="confirmDeleteUser(${origIdx}, '${row[1]}')">🗑️</button></div></td>`;
+          else toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-danger border border-danger opacity-75 px-3 py-2">🔒 ไม่มีสิทธิ์</span></div></td>`;
+      } else { toolsTd = `<td></td>`; }
+      tbody.innerHTML += `<tr><td class="fw-bold">${row[1]}</td><td>${setBadge}</td><td>${row[3]}</td><td>${row[4]}</td><td class="role-${row[6]}">${row[6]}</td><td><span class="${sClass}">${row[7]}</span></td><td>${tgDisp}</td>${toolsTd}</tr>`;
+    });
+    if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) pageHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`; pageHtml += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; paginationArea.innerHTML = pageHtml; }
+  }
+
   function changeTelegram(idx, currentTelegram, name) { Swal.fire({ title: `อัปเดตช่องทางติดต่อ`, html: `<div class="small text-muted mb-3 text-start">ตั้งค่า Telegram ให้กับ: <b class="text-white">${name}</b></div>`, input: 'text', inputPlaceholder: '@username', inputValue: currentTelegram, showCancelButton: true, confirmButtonText: 'บันทึก', confirmButtonColor: '#0088cc', background: '#111', color: '#fff', inputValidator: (value) => { if (!value) return 'กรุณาระบุ Telegram!'; } }).then(async (result) => { if (result.isConfirmed) { let tg = result.value.trim(); if (!tg.startsWith('@')) tg = '@' + tg; const userId = allUsersData[idx][0]; await supabaseClient.from('users').update({ telegram: tg }).eq('id', userId); Swal.fire({toast:true, position:'top-end', title:'อัปเดตสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); refreshData(document.getElementById('refreshBtn')); } }); }
   function changeStatus(idx, current) { const optionsHtml = `<div class="text-start mb-2" style="font-size:0.9rem; color:#aaa;">เลือกสถานะใหม่:</div><select id="swal-status-select" class="swal2-select mx-0"><option value="Active" ${current === 'Active' ? 'selected' : ''}>🟢 Active</option><option value="Blocked" ${current === 'Blocked' ? 'selected' : ''}>🔴 Blocked</option></select>`; Swal.fire({ html: optionsHtml, showCancelButton: true, confirmButtonText: 'บันทึก', background:'#111', color:'#fff', preConfirm: () => { return document.getElementById('swal-status-select').value; } }).then(async r => { if(r.isConfirmed) { const userId = allUsersData[idx][0]; await supabaseClient.from('users').update({ status: r.value }).eq('id', userId); refreshData(document.getElementById('refreshBtn')); } }); }
   function confirmDeleteUser(idx, name) { Swal.fire({ title: `ลบ "${name}" ?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff' }).then(async (r) => { if (r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); const userId = allUsersData[idx][0]; await supabaseClient.from('users').delete().eq('id', userId); refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); } }); }
-  function updateRoleDropdown(currentRoleValue = '') { const roleSelect = document.getElementById('uRole'); roleSelect.innerHTML = ''; roleSelect.innerHTML += '<option value="Member">Member</option>'; roleSelect.innerHTML += '<option value="Admin">Admin</option>'; if (myRole === 'SuperAdmin') { roleSelect.innerHTML += '<option value="SuperAdmin">SuperAdmin</option>'; } if (currentRoleValue) { if(roleSelect.querySelector(`option[value="${currentRoleValue}"]`)) { roleSelect.value = currentRoleValue; } else { roleSelect.value = 'Admin'; } } else { roleSelect.value = 'Member'; } }
+
+  function updateRoleDropdown(currentRoleValue = '') {
+      const roleSelect = document.getElementById('uRole'); roleSelect.innerHTML = '';
+      roleSelect.innerHTML += '<option value="Member">Member</option>'; roleSelect.innerHTML += '<option value="Admin">Admin</option>';
+      if (myRole === 'SuperAdmin') { roleSelect.innerHTML += '<option value="SuperAdmin">SuperAdmin</option>'; }
+      if (currentRoleValue) { if(roleSelect.querySelector(`option[value="${currentRoleValue}"]`)) { roleSelect.value = currentRoleValue; } else { roleSelect.value = 'Admin'; } } else { roleSelect.value = 'Member'; }
+  }
+
   function openRegModal() { document.getElementById('adminRegForm').reset(); document.getElementById('editUserIdx').value = ''; document.getElementById('regModalTitle').innerText = '➕ เพิ่มรายชื่อสมาชิก'; document.getElementById('uPass').required = true; document.getElementById('otherWork').style.display = 'none'; document.getElementById('uSet').value = ""; updateRoleDropdown(''); bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).show(); }
-  function openEditUserModal(idx) { const user = allUsersData[idx]; document.getElementById('adminRegForm').reset(); document.getElementById('editUserIdx').value = idx; document.getElementById('regModalTitle').innerText = '📝 แก้ไขข้อมูลสมาชิก'; document.getElementById('nick').value = user[1]; const workSel = document.getElementById('work'); const otherW = document.getElementById('otherWork'); if (Array.from(workSel.options).some(opt => opt.value === user[2])) { workSel.value = user[2]; otherW.style.display = 'none'; } else { workSel.value = 'OTHER'; otherW.value = user[2]; otherW.style.display = 'block'; } const deptSel = document.getElementById('dept'); let deptFound = false; const safeDept = user[3] ? user[3].toString() : ''; Array.from(deptSel.options).forEach(opt => { if (opt.value.includes(safeDept) || safeDept.includes(opt.value)) { deptSel.value = opt.value; deptFound = true; } }); if (!deptFound) deptSel.value = "อื่นๆ (OTHER)"; document.getElementById('uName').value = user[4]; document.getElementById('uPass').value = ''; document.getElementById('uPass').required = false; updateRoleDropdown(user[6]); document.getElementById('uSet').value = user[9] || ""; bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).show(); }
-  async function handleRegSubmit(e) { e.preventDefault(); const btn = document.getElementById('btnSubmitReg'); btn.innerText = '⏳ กำลังบันทึก...'; const idx = document.getElementById('editUserIdx').value; const payload = { nickname: document.getElementById('nick').value, workGroup: document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value, department: document.getElementById('dept').value, username: document.getElementById('uName').value, role: document.getElementById('uRole').value, shiftSet: document.getElementById('uSet').value }; const passVal = document.getElementById('uPass').value; if(passVal) payload.password = passVal; try { if (idx !== "") { const userId = allUsersData[idx][0]; const { data: dupCheck } = await supabaseClient.from('users').select('id').eq('username', payload.username).neq('id', userId); if (dupCheck && dupCheck.length > 0) { Swal.fire('Error', 'ยูสเซอร์เนมนี้มีคนใช้แล้ว', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } await supabaseClient.from('users').update(payload).eq('id', userId); } else { if(!payload.password) { Swal.fire('Error', 'กรุณาตั้งรหัสผ่าน', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } payload.status = 'Active'; const { data: dupCheck } = await supabaseClient.from('users').select('id, nickname, username').or(`nickname.eq.${payload.nickname},username.eq.${payload.username}`); if (dupCheck && dupCheck.length > 0) { Swal.fire('Error', 'ชื่อเล่น หรือ ยูสเซอร์เนม นี้มีในระบบแล้ว', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } await supabaseClient.from('users').insert([payload]); } bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); btn.innerText = 'บันทึกข้อมูล'; refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'บันทึกพนักงานสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); } catch (err) { Swal.fire('Error', err.message, 'error'); btn.innerText = 'บันทึกข้อมูล'; } }
-  async function loadSupabasePenalties() { const { data } = await supabaseClient.from('penalties').select('*').order('id', { ascending: false }); allPenalties = (data || []).map(item => [ item.id, item.date || item.created_at, item.nickname, item.department, item.reason, item.penaltyType, item.damageAmt || 0, item.finePct || "-", item.deductAmt || 0, item.monthYear || "", item.status || "บันทึกแล้ว" ]); loadPenaltiesTable(); }
-  function updatePenaltySelect() { const deptFilter = document.getElementById('penDeptFilter') ? document.getElementById('penDeptFilter').value : 'ALL'; const searchTerm = document.getElementById('penNickSearch') ? document.getElementById('penNickSearch').value.toLowerCase().trim() : ''; let html = '<option value="">-- เลือกพนักงาน --</option>'; allUsersData.forEach(u => { if(u[7] === 'Active') { const nick = u[1] || ''; const dept = u[3] || ''; const val = `${nick}|${dept}`; const txt = `${nick} (${dept})`; let deptMatch = false; if (deptFilter === 'ALL') deptMatch = true; else if (deptFilter === 'OD' && dept.includes('OD') && !dept.includes('ODOL')) deptMatch = true; else if (deptFilter === 'ODOL' && dept.includes('ODOL')) deptMatch = true; else if (deptFilter === 'OTHER' && !dept.includes('ODOL') && !dept.includes('OD')) deptMatch = true; let searchMatch = true; if (searchTerm !== '') searchMatch = nick.toLowerCase().includes(searchTerm); if (deptMatch && searchMatch) html += `<option value="${val}">${txt}</option>`; } }); document.getElementById('penNick').innerHTML = html; }
+
+  function openEditUserModal(idx) { 
+      const user = allUsersData[idx]; document.getElementById('adminRegForm').reset(); document.getElementById('editUserIdx').value = idx; document.getElementById('regModalTitle').innerText = '📝 แก้ไขข้อมูลสมาชิก'; document.getElementById('nick').value = user[1]; 
+      const workSel = document.getElementById('work'); const otherW = document.getElementById('otherWork'); 
+      if (Array.from(workSel.options).some(opt => opt.value === user[2])) { workSel.value = user[2]; otherW.style.display = 'none'; } else { workSel.value = 'OTHER'; otherW.value = user[2]; otherW.style.display = 'block'; } 
+      const deptSel = document.getElementById('dept'); let deptFound = false; const safeDept = user[3] ? user[3].toString() : ''; 
+      Array.from(deptSel.options).forEach(opt => { if (opt.value.includes(safeDept) || safeDept.includes(opt.value)) { deptSel.value = opt.value; deptFound = true; } }); 
+      if (!deptFound) deptSel.value = "อื่นๆ (OTHER)"; 
+      document.getElementById('uName').value = user[4]; document.getElementById('uPass').value = ''; document.getElementById('uPass').required = false; 
+      updateRoleDropdown(user[6]); document.getElementById('uSet').value = user[9] || ""; 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).show(); 
+  }
+
+  async function handleRegSubmit(e) {
+      e.preventDefault(); const btn = document.getElementById('btnSubmitReg'); btn.innerText = '⏳ กำลังบันทึก...'; const idx = document.getElementById('editUserIdx').value;
+      const payload = { nickname: document.getElementById('nick').value, workGroup: document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value, department: document.getElementById('dept').value, username: document.getElementById('uName').value, role: document.getElementById('uRole').value, shiftSet: document.getElementById('uSet').value };
+      const passVal = document.getElementById('uPass').value; if(passVal) payload.password = passVal;
+      try {
+          if (idx !== "") { const userId = allUsersData[idx][0]; const { data: dupCheck } = await supabaseClient.from('users').select('id').eq('username', payload.username).neq('id', userId); if (dupCheck && dupCheck.length > 0) { Swal.fire('Error', 'ยูสเซอร์เนมนี้มีคนใช้แล้ว', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } await supabaseClient.from('users').update(payload).eq('id', userId); } 
+          else { if(!payload.password) { Swal.fire('Error', 'กรุณาตั้งรหัสผ่าน', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } payload.status = 'Active'; const { data: dupCheck } = await supabaseClient.from('users').select('id, nickname, username').or(`nickname.eq.${payload.nickname},username.eq.${payload.username}`); if (dupCheck && dupCheck.length > 0) { Swal.fire('Error', 'ชื่อเล่น หรือ ยูสเซอร์เนม นี้มีในระบบแล้ว', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } await supabaseClient.from('users').insert([payload]); }
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); btn.innerText = 'บันทึกข้อมูล'; refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'บันทึกพนักงานสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
+      } catch (err) { Swal.fire('Error', err.message, 'error'); btn.innerText = 'บันทึกข้อมูล'; }
+  }
+
+  async function loadSupabasePenalties() {
+      const { data } = await supabaseClient.from('penalties').select('*').order('id', { ascending: false });
+      allPenalties = (data || []).map(item => [ item.id, item.date || item.created_at, item.nickname, item.department, item.reason, item.penaltyType, item.damageAmt || 0, item.finePct || "-", item.deductAmt || 0, item.monthYear || "", item.status || "บันทึกแล้ว" ]);
+      loadPenaltiesTable();
+  }
+  function updatePenaltySelect() { 
+      const deptFilter = document.getElementById('penDeptFilter') ? document.getElementById('penDeptFilter').value : 'ALL'; const searchTerm = document.getElementById('penNickSearch') ? document.getElementById('penNickSearch').value.toLowerCase().trim() : ''; let html = '<option value="">-- เลือกพนักงาน --</option>'; 
+      allUsersData.forEach(u => { 
+          if(u[7] === 'Active') { 
+              const nick = u[1] || ''; const dept = u[3] || ''; const val = `${nick}|${dept}`; const txt = `${nick} (${dept})`; 
+              let deptMatch = false; if (deptFilter === 'ALL') deptMatch = true; else if (deptFilter === 'OD' && dept.includes('OD') && !dept.includes('ODOL')) deptMatch = true; else if (deptFilter === 'ODOL' && dept.includes('ODOL')) deptMatch = true; else if (deptFilter === 'OTHER' && !dept.includes('ODOL') && !dept.includes('OD')) deptMatch = true;
+              let searchMatch = true; if (searchTerm !== '') searchMatch = nick.toLowerCase().includes(searchTerm);
+              if (deptMatch && searchMatch) html += `<option value="${val}">${txt}</option>`;
+          } 
+      }); 
+      document.getElementById('penNick').innerHTML = html; 
+  }
   function openPenaltyModal() { document.getElementById('penaltyForm').reset(); if(document.getElementById('penDeptFilter')) document.getElementById('penDeptFilter').value = 'ALL'; if(document.getElementById('penNickSearch')) document.getElementById('penNickSearch').value = ''; updatePenaltySelect(); const now = new Date(); document.getElementById('penMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; togglePenaltyFields(); bootstrap.Modal.getOrCreateInstance(document.getElementById('penaltyModal')).show(); }
   function togglePenaltyFields() { const type = document.getElementById('penType').value; const extra = document.getElementById('penaltyExtraFields'); if (type === '3. ใบปรับตามข้อและเกิดความเสียหาย') { extra.style.display = 'block'; checkPenaltyLimits(); } else { extra.style.display = 'none'; } }
-  function checkPenaltyLimits() { const type = document.getElementById('penType').value; if (type !== '3. ใบปรับตามข้อและเกิดความเสียหาย') return; const monthYear = document.getElementById('penMonth').value; const nickVal = document.getElementById('penNick').value; if (!monthYear || !nickVal) return; const nick = nickVal.split('|')[0]; let count20 = 0; allPenalties.forEach(p => { if (p[2] === nick && p[9] === monthYear && p[7] === "20" && p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย') count20++; }); const pctSelect = document.getElementById('penPercent'); const alertMsg = document.getElementById('penAlertMsg'); if (count20 >= 3) { alertMsg.innerHTML = `⚠️ เดือนนี้คุณ ${nick} โดนหัก 20% ครบ 3 ครั้งแล้ว! ระบบบังคับหัก 100%`; pctSelect.value = "100"; pctSelect.options[0].disabled = true; } else { alertMsg.innerHTML = `ℹ️ เดือนนี้คุณ ${nick} โดนหัก 20% ไปแล้ว ${count20} / 3 ครั้ง`; pctSelect.options[0].disabled = false; pctSelect.value = "20"; } calculateDeduction(); }
+  function checkPenaltyLimits() {
+      const type = document.getElementById('penType').value; if (type !== '3. ใบปรับตามข้อและเกิดความเสียหาย') return; const monthYear = document.getElementById('penMonth').value; const nickVal = document.getElementById('penNick').value; if (!monthYear || !nickVal) return; const nick = nickVal.split('|')[0];
+      let count20 = 0; allPenalties.forEach(p => { if (p[2] === nick && p[9] === monthYear && p[7] === "20" && p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย') count20++; });
+      const pctSelect = document.getElementById('penPercent'); const alertMsg = document.getElementById('penAlertMsg');
+      if (count20 >= 3) { alertMsg.innerHTML = `⚠️ เดือนนี้คุณ ${nick} โดนหัก 20% ครบ 3 ครั้งแล้ว! ระบบบังคับหัก 100%`; pctSelect.value = "100"; pctSelect.options[0].disabled = true; } else { alertMsg.innerHTML = `ℹ️ เดือนนี้คุณ ${nick} โดนหัก 20% ไปแล้ว ${count20} / 3 ครั้ง`; pctSelect.options[0].disabled = false; pctSelect.value = "20"; }
+      calculateDeduction();
+  }
   function calculateDeduction() { const amt = parseFloat(document.getElementById('penDamageAmt').value) || 0; const pct = parseFloat(document.getElementById('penPercent').value) || 0; document.getElementById('penDeductAmt').value = (amt * (pct / 100)).toFixed(2); }
-  async function handlePenaltySubmit(e) { e.preventDefault(); const val = document.getElementById('penNick').value.split('|'); if (!val[0]) { Swal.fire({toast:true, position:'top', title:'เลือกพนักงานก่อน!', icon:'warning', showConfirmButton:false, timer:2000, background:'#111', color:'#fff'}); return; } const pType = document.getElementById('penType').value; let dAmt = 0, fPct = "-", dDeduct = 0; if (pType === '3. ใบปรับตามข้อและเกิดความเสียหาย') { dAmt = document.getElementById('penDamageAmt').value; fPct = document.getElementById('penPercent').value; dDeduct = document.getElementById('penDeductAmt').value; if(!dAmt || dAmt <= 0) { Swal.fire({toast:true, position:'top', title:'ระบุยอดความเสียหายด้วยครับ', icon:'warning', showConfirmButton:false, timer:2000, background:'#111', color:'#fff'}); return; } } const payload = { nickname: val[0], department: val[1], date: new Date().toISOString(), monthYear: document.getElementById('penMonth').value, reason: document.getElementById('penReason').value, penaltyType: pType, damageAmt: dAmt.toString(), finePct: fPct.toString(), deductAmt: dDeduct.toString(), status: "บันทึกแล้ว" }; const btn = document.querySelector('#penaltyForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...'; try { await supabaseClient.from('penalties').insert([payload]); bootstrap.Modal.getOrCreateInstance(document.getElementById('penaltyModal')).hide(); await loadSupabasePenalties(); Swal.fire({toast:true, position:'top-end', title:'บันทึกความผิดแล้ว', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = 'บันทึกข้อมูลการลงโทษ'; } }
+  async function handlePenaltySubmit(e) {
+    e.preventDefault(); const val = document.getElementById('penNick').value.split('|'); if (!val[0]) { Swal.fire({toast:true, position:'top', title:'เลือกพนักงานก่อน!', icon:'warning', showConfirmButton:false, timer:2000, background:'#111', color:'#fff'}); return; }
+    const pType = document.getElementById('penType').value; let dAmt = 0, fPct = "-", dDeduct = 0;
+    if (pType === '3. ใบปรับตามข้อและเกิดความเสียหาย') { dAmt = document.getElementById('penDamageAmt').value; fPct = document.getElementById('penPercent').value; dDeduct = document.getElementById('penDeductAmt').value; if(!dAmt || dAmt <= 0) { Swal.fire({toast:true, position:'top', title:'ระบุยอดความเสียหายด้วยครับ', icon:'warning', showConfirmButton:false, timer:2000, background:'#111', color:'#fff'}); return; } }
+    const payload = { nickname: val[0], department: val[1], date: new Date().toISOString(), monthYear: document.getElementById('penMonth').value, reason: document.getElementById('penReason').value, penaltyType: pType, damageAmt: dAmt.toString(), finePct: fPct.toString(), deductAmt: dDeduct.toString(), status: "บันทึกแล้ว" };
+    const btn = document.querySelector('#penaltyForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
+    try { await supabaseClient.from('penalties').insert([payload]); bootstrap.Modal.getOrCreateInstance(document.getElementById('penaltyModal')).hide(); await loadSupabasePenalties(); Swal.fire({toast:true, position:'top-end', title:'บันทึกความผิดแล้ว', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = 'บันทึกข้อมูลการลงโทษ'; }
+  }
   async function deleteSupabasePenalty(id) { Swal.fire({title:'ลบประวัติลงโทษ?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('penalties').delete().eq('id', id); await loadSupabasePenalties(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); } }); }
-  function loadPenaltiesTable() { const tb = document.getElementById('penaltyTableBody'); tb.innerHTML = ''; const filterMonth = document.getElementById('penaltyMonthFilter') ? document.getElementById('penaltyMonthFilter').value : ''; const searchTerm = document.getElementById('penaltySearchInput') ? document.getElementById('penaltySearchInput').value.toLowerCase().trim() : ''; const myNick = localStorage.getItem('okvip_nick') || ''; if(allPenalties.length === 0) { tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีประวัติการลงโทษ</td></tr>`; return; } let hasData = false; allPenalties.forEach(p => { const nickName = p[2] || ''; const matchMonth = (!filterMonth || p[9] === filterMonth); const matchSearch = (!searchTerm || nickName.toLowerCase().includes(searchTerm)); if (matchMonth && matchSearch) { hasData = true; let btn = (myRole === 'SuperAdmin') ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button>` : '-'; let deductStr = p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย' ? `<span class="text-danger fw-bold">${p[8]} ฿</span> <br><small class="text-muted">(${p[7]}% จาก ${p[6]}฿)</small>` : '-'; let displayNick = nickName; if (nickName === myNick) displayNick = `<span style="color: var(--neon-red); text-shadow: 0 0 10px rgba(255,51,102,0.8); font-weight: bold; border: 1px solid var(--neon-red); padding: 4px 10px; border-radius: 6px;">${nickName} (ฉัน)</span>`; tb.innerHTML += `<tr><td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td><td class="fw-bold">${displayNick}</td><td>${p[3]}</td><td>${p[4]}</td><td class="text-warning">${p[5]}</td><td>${deductStr}</td><td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td><td class="text-center">${btn}</td></tr>`; } }); if (!hasData) tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลที่ค้นหา</td></tr>`; }
+  function loadPenaltiesTable() {
+    const tb = document.getElementById('penaltyTableBody'); tb.innerHTML = ''; const filterMonth = document.getElementById('penaltyMonthFilter') ? document.getElementById('penaltyMonthFilter').value : ''; const searchTerm = document.getElementById('penaltySearchInput') ? document.getElementById('penaltySearchInput').value.toLowerCase().trim() : ''; const myNick = localStorage.getItem('okvip_nick') || ''; 
+    if(allPenalties.length === 0) { tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีประวัติการลงโทษ</td></tr>`; return; }
+    let hasData = false;
+    allPenalties.forEach(p => { 
+        const nickName = p[2] || ''; const matchMonth = (!filterMonth || p[9] === filterMonth); const matchSearch = (!searchTerm || nickName.toLowerCase().includes(searchTerm));
+        if (matchMonth && matchSearch) {
+            hasData = true; let btn = (myRole === 'SuperAdmin') ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button>` : '-'; 
+            let deductStr = p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย' ? `<span class="text-danger fw-bold">${p[8]} ฿</span> <br><small class="text-muted">(${p[7]}% จาก ${p[6]}฿)</small>` : '-'; 
+            let displayNick = nickName; if (nickName === myNick) displayNick = `<span style="color: var(--neon-red); text-shadow: 0 0 10px rgba(255,51,102,0.8); font-weight: bold; border: 1px solid var(--neon-red); padding: 4px 10px; border-radius: 6px;">${nickName} (ฉัน)</span>`;
+            tb.innerHTML += `<tr><td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td><td class="fw-bold">${displayNick}</td><td>${p[3]}</td><td>${p[4]}</td><td class="text-warning">${p[5]}</td><td>${deductStr}</td><td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td><td class="text-center">${btn}</td></tr>`; 
+        }
+    });
+    if (!hasData) tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลที่ค้นหา</td></tr>`;
+  }
 
   function renderStampPalette() { let html = ''; for (const [code, style] of Object.entries(stampConfig)) { let isDisabled = ""; let opacityStyle = ""; if (myRole === 'Member' && code !== 'X' && code !== '') { isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; } html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; } document.getElementById('stampPalette').innerHTML = html; }
   function selectStamp(code, btn) { if (myRole === 'Member' && code !== 'X' && code !== '') { Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); return; } currentStamp = code; document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); }
@@ -907,33 +1339,318 @@
   document.addEventListener('mouseup', function() { isDraggingStamp = false; })
   async function confirmClearSchedule() { const ym = document.getElementById('monthPicker').value; Swal.fire({ title: `ไม่บันทึก ${ym}?`, text: "ข้อมูลของเดือนนี้จะถูกลบทั้งหมด!", icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', confirmButtonText: 'ล้างทั้งหมด', background: '#111', color: '#fff' }).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังล้าง...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('schedules').delete().eq('yearMonth', ym); unsavedChanges = {}; document.getElementById('btnSaveSchedule').style.display = 'none'; await loadScheduleTable(); Swal.fire({toast:true, position:'top-end', title:'ล้างข้อมูลเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
   
-  async function loadScheduleTable() { unsavedChanges = {}; document.getElementById('btnSaveSchedule').style.display = 'none'; const ym = document.getElementById('monthPicker').value; if(!ym || allUsersData.length === 0) { document.getElementById('scheduleLoading').style.display = 'none'; return; } document.getElementById('scheduleTable').style.display = 'none'; document.getElementById('scheduleLoading').style.display = 'block'; document.getElementById('scheduleLoading').innerText = 'กำลังโหลดข้อมูลตาราง...'; const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); const dataMap = {}; if (schData) { schData.forEach(r => dataMap[r.nickname] = r.daysData ? JSON.parse(r.daysData) : {}); } const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate); document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table'; let th = '<tr><th class="name-col">ชื่อพนักงาน</th><th class="dept-col">แผนก</th>'; for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th += `<th class="${c}">${d}</th>`; } th += '</tr>'; document.getElementById('schThead').innerHTML = th; let tb = ''; let hasData = false; allUsersData.forEach(u => { if(!u || u[7] !== 'Active') return; const nick = u[1] ? u[1].toString() : ''; const dept = u[3] ? u[3].toString() : 'ไม่ระบุ'; if (currentScheduleFilter !== 'ALL') { const filterBase = currentScheduleFilter.split(' ')[0]; const deptBase = dept.split(' ')[0]; if (dept !== currentScheduleFilter && filterBase !== deptBase) return; } if (scheduleSearchTerm && !nick.toLowerCase().includes(scheduleSearchTerm.toLowerCase())) return; hasData = true; const isMyRow = (nick === localStorage.getItem('okvip_nick')); const canEdit = (myRole !== 'Member') || (isMyRow && isNextMonthOrFuture); const nameClass = isMyRow ? 'name-col highlight-me' : 'name-col'; const rowBg = isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : ''; tb += `<tr data-nick="${nick}" data-dept="${dept}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`; const userDays = dataMap[nick] || {}; for(let d=1; d<=daysInMonth; d++) { const val = userDays[d] || ''; const style = stampConfig[val] || { bg:'transparent', text:'#eee' }; const mouse = canEdit ? `onmousedown="startStampDrag(this,'${nick}','${dept}',${d})" onmouseenter="enterStampDrag(event, this,'${nick}','${dept}',${d})"` : ''; const c = (isCurMonth && d === curD) ? 'today-column' : ''; const curClass = canEdit ? 'admin-mode cell-day' : 'cell-day'; tb += `<td class="${curClass} ${c}" data-day="${d}" data-original="${val}" style="background-color:${style.bg}; color:${style.text};" ${mouse}>${val}</td>`; } tb += '</tr>'; }); if (!hasData) tb = `<tr><td colspan="${daysInMonth + 2}" class="text-center py-5 text-muted">ไม่พบข้อมูลพนักงานในกลุ่มนี้</td></tr>`; document.getElementById('schTbody').innerHTML = tb; }
+  async function loadScheduleTable() {
+    unsavedChanges = {}; document.getElementById('btnSaveSchedule').style.display = 'none'; const ym = document.getElementById('monthPicker').value; if(!ym || allUsersData.length === 0) { document.getElementById('scheduleLoading').style.display = 'none'; return; } 
+    document.getElementById('scheduleTable').style.display = 'none'; document.getElementById('scheduleLoading').style.display = 'block'; document.getElementById('scheduleLoading').innerText = 'กำลังโหลดข้อมูลตาราง...';
+    const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); const dataMap = {}; if (schData) { schData.forEach(r => dataMap[r.nickname] = r.daysData ? JSON.parse(r.daysData) : {}); }
+    const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate);
+    document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table';
+    let th = '<tr><th class="name-col">ชื่อพนักงาน</th><th class="dept-col">แผนก</th>'; for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th += `<th class="${c}">${d}</th>`; } th += '</tr>'; document.getElementById('schThead').innerHTML = th;
+    let tb = ''; let hasData = false;
+    allUsersData.forEach(u => {
+        if(!u || u[7] !== 'Active') return; const nick = u[1] ? u[1].toString() : ''; const dept = u[3] ? u[3].toString() : 'ไม่ระบุ';
+        if (currentScheduleFilter !== 'ALL') { const filterBase = currentScheduleFilter.split(' ')[0]; const deptBase = dept.split(' ')[0]; if (dept !== currentScheduleFilter && filterBase !== deptBase) return; }
+        if (scheduleSearchTerm && !nick.toLowerCase().includes(scheduleSearchTerm.toLowerCase())) return; hasData = true;
+        const isMyRow = (nick === localStorage.getItem('okvip_nick')); const canEdit = (myRole !== 'Member') || (isMyRow && isNextMonthOrFuture);
+        const nameClass = isMyRow ? 'name-col highlight-me' : 'name-col'; const rowBg = isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : '';
+        tb += `<tr data-nick="${nick}" data-dept="${dept}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`;
+        const userDays = dataMap[nick] || {};
+        for(let d=1; d<=daysInMonth; d++) { const val = userDays[d] || ''; const style = stampConfig[val] || { bg:'transparent', text:'#eee' }; const mouse = canEdit ? `onmousedown="startStampDrag(this,'${nick}','${dept}',${d})" onmouseenter="enterStampDrag(event, this,'${nick}','${dept}',${d})"` : ''; const c = (isCurMonth && d === curD) ? 'today-column' : ''; const curClass = canEdit ? 'admin-mode cell-day' : 'cell-day'; tb += `<td class="${curClass} ${c}" data-day="${d}" data-original="${val}" style="background-color:${style.bg}; color:${style.text};" ${mouse}>${val}</td>`; } tb += '</tr>';
+    }); 
+    if (!hasData) tb = `<tr><td colspan="${daysInMonth + 2}" class="text-center py-5 text-muted">ไม่พบข้อมูลพนักงานในกลุ่มนี้</td></tr>`;
+    document.getElementById('schTbody').innerHTML = tb;
+  }
   function startStampDrag(cell, nick, dept, day) { if(currentStamp===null){ Swal.fire({toast:true, position:'top', title:'เลือกตรายางก่อนครับ', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return;} isDraggingStamp = true; applyStamp(cell, nick, dept, day); }
   function enterStampDrag(e, cell, nick, dept, day) { if(isDraggingStamp && currentStamp !== null && e.buttons === 1) { applyStamp(cell, nick, dept, day); } else { isDraggingStamp = false; } }
-  function applyStamp(cell, nick, dept, day) { if(currentStamp===null || cell.innerText===currentStamp) return; const conf = stampConfig[currentStamp]; if(myRole === 'Member' && currentStamp === 'X') { let count = 0; cell.parentElement.querySelectorAll('.cell-day').forEach(c => { if(c.innerText === 'X') count++; }); if(count >= conf.limit) { isDraggingStamp = false; Swal.fire({toast:true, position:'top', title:'โควต้าเต็ม!', text:`ใช้ X ได้ไม่เกิน ${conf.limit} ครั้งต่อเดือน`, icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); return; } } cell.innerText = currentStamp; cell.style.backgroundColor = conf.bg; cell.style.color = conf.text; if (cell.getAttribute('data-original') !== currentStamp) cell.classList.add('unsaved-mark'); else cell.classList.remove('unsaved-mark'); if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; unsavedChanges[nick][day] = currentStamp; unsavedChanges[nick]['dept'] = dept; document.getElementById('btnSaveSchedule').style.display = 'flex'; }
-  async function saveAllScheduleChanges() { if (Object.keys(unsavedChanges).length === 0) return; const btn = document.getElementById('btnSaveSchedule'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...'; const ym = document.getElementById('monthPicker').value; const { data: existingSchedules } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); const existingMap = {}; if (existingSchedules) { existingSchedules.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); } for (const nick in unsavedChanges) { const changes = unsavedChanges[nick]; const dept = changes['dept'] || ''; delete changes['dept']; let currentDays = {}; let rowId = null; if (existingMap[nick]) { currentDays = existingMap[nick].days; rowId = existingMap[nick].id; } for (const d in changes) { if (changes[d] === '') delete currentDays[d]; else currentDays[d] = changes[d]; } if (rowId) { await supabaseClient.from('schedules').update({ daysData: JSON.stringify(currentDays) }).eq('id', rowId); } else { await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); } } btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูลตาราง'; btn.style.display = 'none'; unsavedChanges = {}; document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางเรียบร้อย!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); }
+  function applyStamp(cell, nick, dept, day) {
+    if(currentStamp===null || cell.innerText===currentStamp) return; const conf = stampConfig[currentStamp];
+    if(myRole === 'Member' && currentStamp === 'X') { let count = 0; cell.parentElement.querySelectorAll('.cell-day').forEach(c => { if(c.innerText === 'X') count++; }); if(count >= conf.limit) { isDraggingStamp = false; Swal.fire({toast:true, position:'top', title:'โควต้าเต็ม!', text:`ใช้ X ได้ไม่เกิน ${conf.limit} ครั้งต่อเดือน`, icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); return; } }
+    cell.innerText = currentStamp; cell.style.backgroundColor = conf.bg; cell.style.color = conf.text; 
+    if (cell.getAttribute('data-original') !== currentStamp) cell.classList.add('unsaved-mark'); else cell.classList.remove('unsaved-mark');
+    if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; unsavedChanges[nick][day] = currentStamp; unsavedChanges[nick]['dept'] = dept; document.getElementById('btnSaveSchedule').style.display = 'flex';
+  }
+  async function saveAllScheduleChanges() {
+    if (Object.keys(unsavedChanges).length === 0) return; const btn = document.getElementById('btnSaveSchedule'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...'; const ym = document.getElementById('monthPicker').value;
+    const { data: existingSchedules } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
+    const existingMap = {}; if (existingSchedules) { existingSchedules.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); }
+    for (const nick in unsavedChanges) { const changes = unsavedChanges[nick]; const dept = changes['dept'] || ''; delete changes['dept']; let currentDays = {}; let rowId = null; if (existingMap[nick]) { currentDays = existingMap[nick].days; rowId = existingMap[nick].id; } for (const d in changes) { if (changes[d] === '') delete currentDays[d]; else currentDays[d] = changes[d]; } if (rowId) { await supabaseClient.from('schedules').update({ daysData: JSON.stringify(currentDays) }).eq('id', rowId); } else { await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); } }
+    btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูลตาราง'; btn.style.display = 'none'; unsavedChanges = {}; document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางเรียบร้อย!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+  }
   function openShiftModal() { bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).show(); }
-  function applyShiftToSet(e) { e.preventDefault(); const targetSet = document.getElementById('shiftSetSelect').value; const targetStamp = document.getElementById('shiftStampSelect').value; let appliedCount = 0; document.querySelectorAll('#schTbody tr').forEach(tr => { const nick = tr.getAttribute('data-nick'); const user = allUsersData.find(u => u[1] === nick); if(user && user[9] === targetSet) { tr.querySelectorAll('.cell-day').forEach(cell => { const currentVal = cell.innerText.trim(); if(currentVal === '' || currentVal === 'N' || currentVal === 'D' || currentVal === 'M') { const day = cell.getAttribute('data-day'); const conf = stampConfig[targetStamp]; cell.innerText = targetStamp; cell.style.backgroundColor = conf.bg; cell.style.color = conf.text; cell.classList.add('unsaved-mark'); if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; unsavedChanges[nick][day] = targetStamp; unsavedChanges[nick]['dept'] = tr.getAttribute('data-dept'); appliedCount++; } }); } }); bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).hide(); if(appliedCount > 0) { document.getElementById('btnSaveSchedule').style.display = 'flex'; Swal.fire({toast:true, position:'top', title:`ลงกะสำเร็จ!`, text:'กรุณากดบันทึกข้อมูลตาราง', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); } else { Swal.fire({toast:true, position:'top', title:'ไม่มีการเปลี่ยนแปลง', icon:'info', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); } }
+  function applyShiftToSet(e) {
+    e.preventDefault(); const targetSet = document.getElementById('shiftSetSelect').value; const targetStamp = document.getElementById('shiftStampSelect').value; let appliedCount = 0;
+    document.querySelectorAll('#schTbody tr').forEach(tr => {
+      const nick = tr.getAttribute('data-nick'); const user = allUsersData.find(u => u[1] === nick);
+      if(user && user[9] === targetSet) { 
+        tr.querySelectorAll('.cell-day').forEach(cell => { const currentVal = cell.innerText.trim(); if(currentVal === '' || currentVal === 'N' || currentVal === 'D' || currentVal === 'M') { const day = cell.getAttribute('data-day'); const conf = stampConfig[targetStamp]; cell.innerText = targetStamp; cell.style.backgroundColor = conf.bg; cell.style.color = conf.text; cell.classList.add('unsaved-mark'); if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; unsavedChanges[nick][day] = targetStamp; unsavedChanges[nick]['dept'] = tr.getAttribute('data-dept'); appliedCount++; } });
+      }
+    });
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).hide();
+    if(appliedCount > 0) { document.getElementById('btnSaveSchedule').style.display = 'flex'; Swal.fire({toast:true, position:'top', title:`ลงกะสำเร็จ!`, text:'กรุณากดบันทึกข้อมูลตาราง', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); } else { Swal.fire({toast:true, position:'top', title:'ไม่มีการเปลี่ยนแปลง', icon:'info', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); }
+  }
   // ==========================================
   // 🚀 6. หน้าที่ & สถิติ (Jobs & Stats)
   // ==========================================
-  function toggleJobTab(tabName) { currentJobTab = tabName; document.getElementById('tabBtnDuty').classList.toggle('active', tabName==='duty'); document.getElementById('tabBtnStat').classList.toggle('active', tabName==='stat'); document.getElementById('dutyWorkspace').style.display = tabName==='duty' ? 'block' : 'none'; document.getElementById('statWorkspace').style.display = tabName==='stat' ? 'block' : 'none'; if(tabName==='duty') document.getElementById('searchJob').value = jobSearchTerm; else document.getElementById('searchStat').value = jobSearchTerm; renderJobTables(); }
+  function toggleJobTab(tabName) { 
+      currentJobTab = tabName; 
+      document.getElementById('tabBtnDuty').classList.toggle('active', tabName==='duty'); 
+      document.getElementById('tabBtnStat').classList.toggle('active', tabName==='stat'); 
+      
+      document.getElementById('dutyWorkspace').style.display = tabName==='duty' ? 'block' : 'none'; 
+      document.getElementById('statWorkspace').style.display = tabName==='stat' ? 'block' : 'none'; 
+      
+      if(tabName==='duty') document.getElementById('searchJob').value = jobSearchTerm;
+      else document.getElementById('searchStat').value = jobSearchTerm;
+      
+      renderJobTables(); 
+  }
   function filterJobDept(dept, btn) { currentJobFilter = dept; document.querySelectorAll('#jobSection .dept-badge').forEach(b => { if(b.id!=='tabBtnDuty'&&b.id!=='tabBtnStat') { b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc"; }}); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderJobTables(); }
   function handleJobSearch(term) { jobSearchTerm = term.toLowerCase().trim(); renderJobTables(); }
   function handleJobShiftSetFilter(val) { currentJobShiftSet = val; renderJobTables(); }
   function toggleShowHidden(checkbox) { isShowingHiddenUsers = checkbox.checked; renderJobTables(); }
   function renderJobTables() { if(currentJobTab === 'duty') buildDutyTable(); else buildStatTable(); }
 
-  async function loadDailyJobData() { const dateStr = document.getElementById('jobDatePicker').value; if(!dateStr) return; const { data: dData } = await supabaseClient.from('daily_duties').select('*').eq('dateStr', dateStr); dailyDutiesData = {}; if(dData) dData.forEach(r => dailyDutiesData[r.nickname] = { site: r.assignedSite, duty: r.assignedDuty }); const { data: sData } = await supabaseClient.from('daily_stats').select('*').eq('dateStr', dateStr); dailyStatsData = {}; if(sData) sData.forEach(r => dailyStatsData[r.nickname] = r.statsData ? JSON.parse(r.statsData) : {}); const [y, m, d] = dateStr.split('-'); const ym = `${y}-${m}`; const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); dailyScheduleData = {}; if (schData) { schData.forEach(r => { const days = r.daysData ? JSON.parse(r.daysData) : {}; dailyScheduleData[r.nickname] = days[parseInt(d)] || ''; }); } if(currentJobShiftSet === 'ALL') currentJobShiftSet = ''; renderJobTables(); }
-  function buildDutyTable() { const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = ''; if(!currentJobShiftSet || currentJobShiftSet === '') { tbody.innerHTML=`<tr><td colspan="6" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; document.getElementById('siteSummaryArea').style.display='none'; return; } let filteredUsers = allUsersData.filter(u => { if(!u || u[7]!=='Active') return false; const nick = u[1] ? u[1].toString().toLowerCase() : ''; const dept = u[3] ? u[3].toString() : ''; const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; if(currentJobFilter !== 'ALL' && dept !== currentJobFilter) return false; if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false; const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; }); if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="6" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; document.getElementById('siteSummaryArea').style.display='none'; return;} filteredUsers.forEach(u => { const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>'; const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; let mainSite = ''; let subSite = ''; if(curData.site) { let parts = curData.site.split(','); parts.forEach(p => { if(p.includes('(หลัก)')) mainSite = p.replace('(หลัก)', '').trim(); else if(p.includes('(รอง)')) subSite = p.replace('(รอง)', '').trim(); }); if(!mainSite && !subSite) mainSite = curData.site.trim(); } let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD'; let availableDuties = []; if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType]; else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; }); let siteMainOptions = `<option value="">- เว็บหลัก -</option>`; let siteSubOptions = `<option value="">- เว็บรอง -</option>`; (sysSettings.websites || []).forEach(w => { siteMainOptions += `<option value="${w}" ${mainSite===w?'selected':''}>${w}</option>`; siteSubOptions += `<option value="${w}" ${subSite===w?'selected':''}>${w}</option>`; }); let siteDropdowns = `<div class="d-flex flex-column gap-1"><select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="updateSiteSummary()">${siteMainOptions}</select><select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="updateSiteSummary()">${siteSubOptions}</select></div>`; const adminBtn = myRole!=='Member' ? `<button class="btn btn-sm btn-outline-info" onclick="openUserSiteModal('${nick}')">⚙️</button>` : '-'; if (capable.includes('EXCLUDE_DUTY')) { tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="true" style="opacity: 0.4;"><td class="fw-bold text-white"><del>${nick}</del></td><td class="text-muted small">${dept.split(' ')[0]}</td><td colspan="3" class="text-center text-danger small">🚫 ถูกซ่อนจากตาราง</td><td class="text-center">${adminBtn}</td></tr>`; return; } if (offDutyStamps.includes(curStamp) || curStamp === '') { const sConf = stampConfig[curStamp] || stampConfig['']; tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="false"><td class="fw-bold text-white">${nick}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td colspan="2" class="text-center bg-dark" style="opacity:0.8"><span class="badge px-3 py-2" style="background-color:${sConf.bg}; color:${sConf.text}; border: 1px solid ${sConf.text};">🛏️ ${sConf.label}</span></td><td class="text-center">${adminBtn}</td></tr>`; } else { let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<span class="badge ms-2" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span>`; } tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="false" data-excluded="false"><td class="fw-bold text-white">${nick} ${stampHtml}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td>${siteDropdowns}</td><td><select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select></td><td class="text-center">${adminBtn}</td></tr>`; } }); updateSiteSummary(); }
-  function updateSiteSummary() { let counts = {}; (sysSettings.websites || []).forEach(w => counts[w] = { main: 0, sub: 0 }); document.querySelectorAll('#dutyTableBody tr').forEach(r => { if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; const mainSel = r.querySelector('.sel-site-main'); const subSel = r.querySelector('.sel-site-sub'); if(mainSel && mainSel.value && counts[mainSel.value]) counts[mainSel.value].main++; if(subSel && subSel.value && counts[subSel.value]) counts[subSel.value].sub++; }); let html = ''; for(let w in counts) { if(counts[w].main > 0 || counts[w].sub > 0) { html += `<div class="badge" style="background: #151518; border: 1px solid #444; padding: 8px 12px; font-size: 0.85rem; font-weight: normal;"><span class="text-white fw-bold me-2">${w}</span><span class="text-info me-1">หลัก: ${counts[w].main}</span> | <span class="text-warning ms-1">รอง: ${counts[w].sub}</span></div>`; } } const summaryArea = document.getElementById('siteSummaryArea'); if (currentJobTab !== 'duty') { summaryArea.style.display = 'none'; return; } const titleDept = currentJobFilter.split(' ')[0]; document.getElementById('siteSummaryTitle').innerText = `📊 สรุปกำลังคนกะปัจจุบัน (${titleDept} - ${currentJobShiftSet}):`; if(html === '') { document.getElementById('siteSummaryBadges').innerHTML = '<span class="text-muted small mt-1">ยังไม่มีการลงงานพนักงานในกะนี้</span>'; } else { document.getElementById('siteSummaryBadges').innerHTML = html; } summaryArea.style.display = 'flex'; }
-  function confirmClearDuty() { Swal.fire({ title: 'ล้างตารางหน้าที่?', text: 'ข้อมูลหน้าที่ของทุกคนในกะนี้จะถูกรีเซ็ต', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff' }).then((r) => { if (r.isConfirmed) { document.querySelectorAll('#dutyTableBody tr').forEach(row => { if(row.getAttribute('data-leave')==='true' || row.getAttribute('data-excluded')==='true') return; const mSel = row.querySelector('.sel-site-main'); if(mSel) mSel.value = ''; const sSel = row.querySelector('.sel-site-sub'); if(sSel) sSel.value = ''; const dSel = row.querySelector('.sel-duty'); if(dSel) dSel.value = ''; const nick = row.getAttribute('data-nick'); if(dailyDutiesData[nick]) { dailyDutiesData[nick].site = ''; dailyDutiesData[nick].duty = ''; } }); updateSiteSummary(); Swal.fire({toast:true, position:'top', title:'เคลียร์เรียบร้อย!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
-  function randomizeDuties() { Swal.fire({title:'กำลังคำนวณสุ่มหน้าที่...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()}); setTimeout(() => { let allAvailableSites = {}; let availableUsers = []; document.querySelectorAll('#dutyTableBody tr').forEach(r => { if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; const nick = r.getAttribute('data-nick'); const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY'); if(capableSites.length > 0) { availableUsers.push({ row: r, nick: nick, capableSites: capableSites }); capableSites.forEach(site => { if(!allAvailableSites[site]) allAvailableSites[site] = 0; allAvailableSites[site]++; }); } }); let siteAssignmentCount = {}; sysSettings.websites.forEach(s => siteAssignmentCount[s] = 0); availableUsers.sort(() => 0.5 - Math.random()); availableUsers.forEach(u => { let assignedPrimary = null; let assignedSecondary = null; let possiblePrimarySites = u.capableSites.sort((a, b) => (siteAssignmentCount[a] || 0) - (siteAssignmentCount[b] || 0)); if (possiblePrimarySites.length > 0) { assignedPrimary = possiblePrimarySites[0]; if(siteAssignmentCount[assignedPrimary] !== undefined) siteAssignmentCount[assignedPrimary]++; } if (possiblePrimarySites.length > 1) { let remainingSites = possiblePrimarySites.slice(1).sort(() => 0.5 - Math.random()); assignedSecondary = remainingSites[0]; } const inSiteMain = u.row.querySelector('.sel-site-main'); const inSiteSub = u.row.querySelector('.sel-site-sub'); if(inSiteMain) inSiteMain.value = assignedPrimary || ""; if(inSiteSub) inSiteSub.value = assignedSecondary || ""; let displayStr = ""; if (assignedPrimary && assignedSecondary) displayStr = `${assignedPrimary} (หลัก), ${assignedSecondary} (รอง)`; else if (assignedPrimary) displayStr = `${assignedPrimary} (หลัก)`; else if (assignedSecondary) displayStr = `${assignedSecondary} (รอง)`; if(!dailyDutiesData[u.nick]) dailyDutiesData[u.nick] = {}; dailyDutiesData[u.nick].site = displayStr; const inDuty = u.row.querySelector('.sel-duty'); let myDeptType = u.row.getAttribute('data-dept').includes('ODOL') ? 'ODOL' : 'OD'; let availableDuties = []; if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType]; else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; if(inDuty && availableDuties.length > 0) { let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)]; inDuty.value = randomDuty; dailyDutiesData[u.nick].duty = randomDuty; } }); updateSiteSummary(); renderMealTable(); Swal.fire({toast:true, position:'top-end', title:'สุ่มและบาลานซ์เว็บสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 500); }
-  async function saveDutyTable() { const dateStr = document.getElementById('jobDatePicker').value; const payload = []; document.querySelectorAll('#dutyTableBody tr').forEach(r => { if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; const n = r.getAttribute('data-nick'); const d = r.getAttribute('data-dept'); const sMain = r.querySelector('.sel-site-main')?.value || ''; const sSub = r.querySelector('.sel-site-sub')?.value || ''; let s = ''; if (sMain && sSub) s = `${sMain} (หลัก), ${sSub} (รอง)`; else if (sMain) s = `${sMain} (หลัก)`; else if (sSub) s = `${sSub} (รอง)`; const dt = r.querySelector('.sel-duty')?.value || ''; if(s || dt) payload.push({ dateStr: dateStr, nickname: n, department: d, assignedSite: s, assignedDuty: dt }); }); const btn = document.querySelector('#dutyActionBtns .btn-neon-green'); btn.innerText = '⏳...'; btn.disabled=true; await supabaseClient.from('daily_duties').delete().eq('dateStr', dateStr); if (payload.length > 0) await supabaseClient.from('daily_duties').insert(payload); btn.innerText = '💾 บันทึกหน้าที่'; btn.disabled=false; await loadDailyJobData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกหน้าที่สำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); }
+  async function loadDailyJobData() { 
+      const dateStr = document.getElementById('jobDatePicker').value; if(!dateStr) return; 
+      const { data: dData } = await supabaseClient.from('daily_duties').select('*').eq('dateStr', dateStr); dailyDutiesData = {}; if(dData) dData.forEach(r => dailyDutiesData[r.nickname] = { site: r.assignedSite, duty: r.assignedDuty });
+      const { data: sData } = await supabaseClient.from('daily_stats').select('*').eq('dateStr', dateStr); dailyStatsData = {}; if(sData) sData.forEach(r => dailyStatsData[r.nickname] = r.statsData ? JSON.parse(r.statsData) : {});
+      const [y, m, d] = dateStr.split('-'); const ym = `${y}-${m}`;
+      const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); dailyScheduleData = {}; if (schData) { schData.forEach(r => { const days = r.daysData ? JSON.parse(r.daysData) : {}; dailyScheduleData[r.nickname] = days[parseInt(d)] || ''; }); }
+      
+      // เซ็ตค่าเริ่มต้นของตัวแปรบังคับเลือกกะ (ถ้ายังไม่เคยเลือก)
+      if(currentJobShiftSet === 'ALL') currentJobShiftSet = '';
+      renderJobTables(); 
+  }
 
-  function buildStatTable() { const thead = document.getElementById('statTableHeader'); const tbody = document.getElementById('statTableBody'); let thHtml = `<th class="col-sticky-name">ชื่อพนักงาน</th><th class="col-sticky-dept">แผนก</th>`; sysSettings.websites.forEach(s => thHtml += `<th class="stat-input-cell text-center text-muted">${s}</th>`); thHtml += `<th style="width:120px; color: var(--neon-yellow);" class="text-center">จำนวนรายการถอนจริง</th>`; thead.innerHTML = thHtml; tbody.innerHTML = ''; if(!currentJobShiftSet || currentJobShiftSet === '') { tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; return; } let filteredUsers = allUsersData.filter(u => { if(!u || u[7]!=='Active') return false; const nick = u[1]?u[1].toString().toLowerCase():''; const dept = u[3]?u[3].toString():''; const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; if(currentJobFilter!=='ALL' && dept !== currentJobFilter) return false; if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false; const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; }); if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; return;} filteredUsers.forEach(u => { const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; if (capable.includes('EXCLUDE_DUTY')) { let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="true" style="opacity: 0.4;"><td class="col-sticky-name fw-bold text-white"><del>${nick}</del></td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => tdHtml += `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="ซ่อน"></td>`); tbody.innerHTML += tdHtml + `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="-"></td></tr>`; return; } let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<div class="mt-1"><span class="badge" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span></div>`; } let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="false"><td class="col-sticky-name fw-bold text-white">${nick} ${stampHtml}</td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => { const val = curStats[s]||''; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-dark text-white stat-input text-center" data-site="${s}" value="${val}" oninput="calcRowTotal(this)"></td>`; }); const total = curStats['Total']||0; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-black text-warning row-total text-center fw-bold" value="${total}" readonly></td></tr>`; tbody.innerHTML += tdHtml; }); }
+  function buildDutyTable() {
+    const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = '';
+    
+    // 🌟 ดักจับถ้ายังไม่ได้เลือกกะ ให้หยุดและโชว์แจ้งเตือน
+    if(!currentJobShiftSet || currentJobShiftSet === '') {
+        tbody.innerHTML=`<tr><td colspan="6" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; 
+        document.getElementById('siteSummaryArea').style.display='none'; return;
+    }
+
+    let filteredUsers = allUsersData.filter(u => { 
+        if(!u || u[7]!=='Active') return false; const nick = u[1] ? u[1].toString().toLowerCase() : ''; const dept = u[3] ? u[3].toString() : ''; const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
+        if(currentJobFilter !== 'ALL' && dept !== currentJobFilter) return false;
+        if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; 
+        if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false;
+        const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; 
+    });
+    
+    if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="6" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; document.getElementById('siteSummaryArea').style.display='none'; return;}
+    
+    filteredUsers.forEach(u => {
+      const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
+      const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; 
+      
+      // 🌟 แยกเว็บหลัก / เว็บรอง จากข้อมูลเก่า
+      let mainSite = ''; let subSite = '';
+      if(curData.site) {
+          let parts = curData.site.split(',');
+          parts.forEach(p => {
+              if(p.includes('(หลัก)')) mainSite = p.replace('(หลัก)', '').trim();
+              else if(p.includes('(รอง)')) subSite = p.replace('(รอง)', '').trim();
+          });
+          if(!mainSite && !subSite) mainSite = curData.site.trim(); 
+      }
+
+      let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
+      let availableDuties = [];
+      if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
+      else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
+      
+      let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
+      availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
+
+      // 🌟 Dropdown เลือกเว็บเอง
+      let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
+      let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
+      (sysSettings.websites || []).forEach(w => {
+          siteMainOptions += `<option value="${w}" ${mainSite===w?'selected':''}>${w}</option>`;
+          siteSubOptions += `<option value="${w}" ${subSite===w?'selected':''}>${w}</option>`;
+      });
+      let siteDropdowns = `
+          <div class="d-flex flex-column gap-1">
+              <select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="updateSiteSummary()">${siteMainOptions}</select>
+              <select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="updateSiteSummary()">${siteSubOptions}</select>
+          </div>
+      `;
+      
+      const adminBtn = myRole!=='Member' ? `<button class="btn btn-sm btn-outline-info" onclick="openUserSiteModal('${nick}')">⚙️</button>` : '-';
+      if (capable.includes('EXCLUDE_DUTY')) { tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="true" style="opacity: 0.4;"><td class="fw-bold text-white"><del>${nick}</del></td><td class="text-muted small">${dept.split(' ')[0]}</td><td colspan="3" class="text-center text-danger small">🚫 ถูกซ่อนจากตาราง</td><td class="text-center">${adminBtn}</td></tr>`; return; }
+      if (offDutyStamps.includes(curStamp) || curStamp === '') { const sConf = stampConfig[curStamp] || stampConfig['']; tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="false"><td class="fw-bold text-white">${nick}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td colspan="2" class="text-center bg-dark" style="opacity:0.8"><span class="badge px-3 py-2" style="background-color:${sConf.bg}; color:${sConf.text}; border: 1px solid ${sConf.text};">🛏️ ${sConf.label}</span></td><td class="text-center">${adminBtn}</td></tr>`; } 
+      else { let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<span class="badge ms-2" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span>`; } tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="false" data-excluded="false"><td class="fw-bold text-white">${nick} ${stampHtml}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td>${siteDropdowns}</td><td><select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select></td><td class="text-center">${adminBtn}</td></tr>`; }
+    });
+    updateSiteSummary();
+  }
+
+  // 🌟 ฟังก์ชันสรุปยอดเว็บหลัก/รอง แบบ Realtime
+  function updateSiteSummary() {
+      let counts = {};
+      (sysSettings.websites || []).forEach(w => counts[w] = { main: 0, sub: 0 });
+
+      document.querySelectorAll('#dutyTableBody tr').forEach(r => {
+          if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
+          const mainSel = r.querySelector('.sel-site-main');
+          const subSel = r.querySelector('.sel-site-sub');
+          if(mainSel && mainSel.value && counts[mainSel.value]) counts[mainSel.value].main++;
+          if(subSel && subSel.value && counts[subSel.value]) counts[subSel.value].sub++;
+      });
+
+      let html = '';
+      for(let w in counts) {
+          if(counts[w].main > 0 || counts[w].sub > 0) {
+              html += `<div class="badge" style="background: #151518; border: 1px solid #444; padding: 8px 12px; font-size: 0.85rem; font-weight: normal;">
+                  <span class="text-white fw-bold me-2">${w}</span>
+                  <span class="text-info me-1">หลัก: ${counts[w].main}</span> | 
+                  <span class="text-warning ms-1">รอง: ${counts[w].sub}</span>
+              </div>`;
+          }
+      }
+      const summaryArea = document.getElementById('siteSummaryArea');
+      if (currentJobTab !== 'duty') { summaryArea.style.display = 'none'; return; }
+      
+      const titleDept = currentJobFilter.split(' ')[0];
+      document.getElementById('siteSummaryTitle').innerText = `📊 สรุปกำลังคนกะปัจจุบัน (${titleDept} - ${currentJobShiftSet}):`;
+
+      if(html === '') { document.getElementById('siteSummaryBadges').innerHTML = '<span class="text-muted small mt-1">ยังไม่มีการลงงานพนักงานในกะนี้</span>'; } 
+      else { document.getElementById('siteSummaryBadges').innerHTML = html; }
+      summaryArea.style.display = 'flex';
+  }
+
+  // 🌟 ฟังก์ชันล้างข้อมูลหน้างาน (Clear)
+  function confirmClearDuty() {
+      Swal.fire({
+          title: 'ล้างตารางหน้าที่?', text: 'ข้อมูลหน้าที่ของทุกคนในกะนี้จะถูกรีเซ็ต (หากต้องการลบออกจากระบบ ต้องกดปุ่ม "บันทึกหน้าที่" ด้วย)', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+      }).then((r) => {
+          if (r.isConfirmed) {
+              document.querySelectorAll('#dutyTableBody tr').forEach(row => {
+                  if(row.getAttribute('data-leave')==='true' || row.getAttribute('data-excluded')==='true') return;
+                  const mSel = row.querySelector('.sel-site-main'); if(mSel) mSel.value = '';
+                  const sSel = row.querySelector('.sel-site-sub'); if(sSel) sSel.value = '';
+                  const dSel = row.querySelector('.sel-duty'); if(dSel) dSel.value = '';
+                  const nick = row.getAttribute('data-nick');
+                  if(dailyDutiesData[nick]) { dailyDutiesData[nick].site = ''; dailyDutiesData[nick].duty = ''; }
+              });
+              updateSiteSummary();
+              Swal.fire({toast:true, position:'top', title:'เคลียร์เรียบร้อย! (อย่าลืมกดบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+      });
+  }
+  
+  function randomizeDuties() {
+      Swal.fire({title:'กำลังคำนวณสุ่มหน้าที่...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()});
+      setTimeout(() => {
+          let allAvailableSites = {}; let availableUsers = [];
+          document.querySelectorAll('#dutyTableBody tr').forEach(r => {
+              if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
+              const nick = r.getAttribute('data-nick'); const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
+              if(capableSites.length > 0) { availableUsers.push({ row: r, nick: nick, capableSites: capableSites }); capableSites.forEach(site => { if(!allAvailableSites[site]) allAvailableSites[site] = 0; allAvailableSites[site]++; }); }
+          });
+          let siteAssignmentCount = {}; sysSettings.websites.forEach(s => siteAssignmentCount[s] = 0);
+          availableUsers.sort(() => 0.5 - Math.random());
+
+          availableUsers.forEach(u => {
+              let assignedPrimary = null; let assignedSecondary = null;
+              let possiblePrimarySites = u.capableSites.sort((a, b) => (siteAssignmentCount[a] || 0) - (siteAssignmentCount[b] || 0));
+              if (possiblePrimarySites.length > 0) { assignedPrimary = possiblePrimarySites[0]; if(siteAssignmentCount[assignedPrimary] !== undefined) siteAssignmentCount[assignedPrimary]++; }
+              if (possiblePrimarySites.length > 1) { let remainingSites = possiblePrimarySites.slice(1).sort(() => 0.5 - Math.random()); assignedSecondary = remainingSites[0]; }
+              
+              const inSiteMain = u.row.querySelector('.sel-site-main'); const inSiteSub = u.row.querySelector('.sel-site-sub');
+              if(inSiteMain) inSiteMain.value = assignedPrimary || "";
+              if(inSiteSub) inSiteSub.value = assignedSecondary || "";
+              
+              let displayStr = ""; 
+              if (assignedPrimary && assignedSecondary) displayStr = `${assignedPrimary} (หลัก), ${assignedSecondary} (รอง)`; 
+              else if (assignedPrimary) displayStr = `${assignedPrimary} (หลัก)`;
+              else if (assignedSecondary) displayStr = `${assignedSecondary} (รอง)`;
+              if(!dailyDutiesData[u.nick]) dailyDutiesData[u.nick] = {}; dailyDutiesData[u.nick].site = displayStr;
+              
+              const inDuty = u.row.querySelector('.sel-duty');
+              let myDeptType = u.row.getAttribute('data-dept').includes('ODOL') ? 'ODOL' : 'OD';
+              let availableDuties = [];
+              if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
+              else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
+              
+              if(inDuty && availableDuties.length > 0) {
+                  let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)];
+                  inDuty.value = randomDuty;
+                  dailyDutiesData[u.nick].duty = randomDuty;
+              }
+          });
+          updateSiteSummary();
+          renderMealTable(); 
+          Swal.fire({toast:true, position:'top-end', title:'สุ่มและบาลานซ์เว็บสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+      }, 500);
+  }
+  
+  async function saveDutyTable() { 
+      const dateStr = document.getElementById('jobDatePicker').value; const payload = []; 
+      document.querySelectorAll('#dutyTableBody tr').forEach(r => { 
+          if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; 
+          const n = r.getAttribute('data-nick'); const d = r.getAttribute('data-dept'); 
+          
+          const sMain = r.querySelector('.sel-site-main')?.value || '';
+          const sSub = r.querySelector('.sel-site-sub')?.value || '';
+          let s = '';
+          if (sMain && sSub) s = `${sMain} (หลัก), ${sSub} (รอง)`;
+          else if (sMain) s = `${sMain} (หลัก)`;
+          else if (sSub) s = `${sSub} (รอง)`;
+          
+          const dt = r.querySelector('.sel-duty')?.value || ''; 
+          if(s || dt) payload.push({ dateStr: dateStr, nickname: n, department: d, assignedSite: s, assignedDuty: dt }); 
+      }); 
+      const btn = document.querySelector('#dutyActionBtns .btn-neon-green'); btn.innerText = '⏳...'; btn.disabled=true; 
+      await supabaseClient.from('daily_duties').delete().eq('dateStr', dateStr);
+      if (payload.length > 0) await supabaseClient.from('daily_duties').insert(payload);
+      btn.innerText = '💾 บันทึกหน้าที่'; btn.disabled=false; 
+      await loadDailyJobData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกหน้าที่สำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+  }
+
+  function buildStatTable() {
+    const thead = document.getElementById('statTableHeader'); const tbody = document.getElementById('statTableBody'); let thHtml = `<th class="col-sticky-name">ชื่อพนักงาน</th><th class="col-sticky-dept">แผนก</th>`; sysSettings.websites.forEach(s => thHtml += `<th class="stat-input-cell text-center text-muted">${s}</th>`); thHtml += `<th style="width:120px; color: var(--neon-yellow);" class="text-center">จำนวนรายการถอนจริง</th>`; thead.innerHTML = thHtml; tbody.innerHTML = '';
+    
+    if(!currentJobShiftSet || currentJobShiftSet === '') {
+        tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; return;
+    }
+
+    let filteredUsers = allUsersData.filter(u => { 
+        if(!u || u[7]!=='Active') return false; const nick = u[1]?u[1].toString().toLowerCase():''; const dept = u[3]?u[3].toString():''; const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
+        if(currentJobFilter!=='ALL' && dept !== currentJobFilter) return false; 
+        if(currentJobShiftSet !== 'ALL' && !shiftSet.includes(currentJobShiftSet)) return false; 
+        if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false; 
+        const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; 
+    });
+    
+    if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; return;}
+    
+    filteredUsers.forEach(u => {
+      const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; 
+      if (capable.includes('EXCLUDE_DUTY')) { let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="true" style="opacity: 0.4;"><td class="col-sticky-name fw-bold text-white"><del>${nick}</del></td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => tdHtml += `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="ซ่อน"></td>`); tbody.innerHTML += tdHtml + `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="-"></td></tr>`; return; }
+      let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<div class="mt-1"><span class="badge" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span></div>`; }
+      let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="false"><td class="col-sticky-name fw-bold text-white">${nick} ${stampHtml}</td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => { const val = curStats[s]||''; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-dark text-white stat-input text-center" data-site="${s}" value="${val}" oninput="calcRowTotal(this)"></td>`; }); const total = curStats['Total']||0; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-black text-warning row-total text-center fw-bold" value="${total}" readonly></td></tr>`; tbody.innerHTML += tdHtml;
+    });
+  }
+
   function calcRowTotal(input) { let total = 0; input.closest('tr').querySelectorAll('.stat-input').forEach(i => total += Number(i.value)||0); input.closest('tr').querySelector('.row-total').value = total; }
-  async function saveStatTable() { const dateStr = document.getElementById('jobDatePicker').value; const payload = []; document.querySelectorAll('#statTableBody tr').forEach(r => { if(r.getAttribute('data-excluded')==='true') return; const n=r.getAttribute('data-nick'); const d=r.getAttribute('data-dept'); let data={}; r.querySelectorAll('.stat-input').forEach(i => data[i.getAttribute('data-site')] = i.value); data['Total'] = r.querySelector('.row-total').value; payload.push({ dateStr: dateStr, nickname: n, department: d, statsData: JSON.stringify(data) }); }); const btn = document.querySelector('#statActionBtns .btn-neon-yellow'); btn.innerText = '⏳...'; btn.disabled=true; await supabaseClient.from('daily_stats').delete().eq('dateStr', dateStr); if(payload.length > 0) await supabaseClient.from('daily_stats').insert(payload); btn.innerText = '💾 บันทึกสถิติทั้งหมด'; btn.disabled=false; await loadDailyJobData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกสถิติสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); }
+
+  async function saveStatTable() { 
+      const dateStr = document.getElementById('jobDatePicker').value; const payload = []; 
+      document.querySelectorAll('#statTableBody tr').forEach(r => { 
+          if(r.getAttribute('data-excluded')==='true') return; 
+          const n=r.getAttribute('data-nick'); const d=r.getAttribute('data-dept'); let data={}; 
+          r.querySelectorAll('.stat-input').forEach(i => data[i.getAttribute('data-site')] = i.value); 
+          data['Total'] = r.querySelector('.row-total').value; 
+          payload.push({ dateStr: dateStr, nickname: n, department: d, statsData: JSON.stringify(data) }); 
+      }); 
+      const btn = document.querySelector('#statActionBtns .btn-neon-yellow'); btn.innerText = '⏳...'; btn.disabled=true; 
+      await supabaseClient.from('daily_stats').delete().eq('dateStr', dateStr);
+      if(payload.length > 0) await supabaseClient.from('daily_stats').insert(payload);
+      btn.innerText = '💾 บันทึกสถิติทั้งหมด'; btn.disabled=false; 
+      await loadDailyJobData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกสถิติสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+  }
 
   // ==========================================
   // 🍽️ 6.5 ระบบตารางทานข้าว (Meal Schedule)
@@ -941,31 +1658,346 @@
   function syncMealDate() { document.getElementById('jobDatePicker').value = document.getElementById('mealDatePicker').value; loadDailyJobData().then(() => loadDailyMealData()); }
   function handleMealSearch(term) { mealSearchTerm = term.toLowerCase().trim(); renderMealTable(); }
   async function loadDailyMealData() { const dateStr = document.getElementById('mealDatePicker').value; if(!dateStr) return; const { data } = await supabaseClient.from('meal_schedules').select('*').eq('dateStr', dateStr).limit(1); dailyMealData = {}; if (data && data.length > 0) { dailyMealData = data[0].mealData ? JSON.parse(data[0].mealData) : {}; } renderMealTable(); }
-  function renderMealTable() { const tbody = document.getElementById('mealTableBody'); tbody.innerHTML = ''; const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : ''; const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL'; const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL'; const myNick = localStorage.getItem('okvip_nick') || ''; let workingUsers = []; allUsersData.forEach(u => { if(!u || u[7] !== 'Active') return; const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; const stamp = dailyScheduleData[nick] || ''; const isOff = offDutyStamps.includes(stamp) || stamp === ''; const isExcluded = (sysSettings.userSites[nick] || []).includes('EXCLUDE_DUTY'); if (!isOff && !isExcluded) { const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ'; let shiftType = 'OTHER'; if (stamp === 'N' || stamp.includes('เช้า')) shiftType = 'N'; else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D'; let matchSearch = !searchT || nick.toLowerCase().includes(searchT); let matchShift = shiftF === 'ALL' || shiftType === shiftF; let matchDept = deptF === 'ALL' || dept.includes(deptF); if (matchSearch && matchShift && matchDept) { workingUsers.push({ nick, dept, site, stamp, shiftType, shiftSet }); } } }); if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; } let optionsForODOL = `<option value="">-- เลือกเวลา --</option>`; let optionsForOD = `<option value="">-- เลือกเวลา --</option>`; mealTimeBlocks.forEach(block => { let groupHtml = `<optgroup label="${block.name}">`; let slots = generateTimeSlots(block.start, block.end); slots.forEach(slot => { groupHtml += `<option value="${slot}" data-type="${block.type}">${slot}</option>`; }); groupHtml += `</optgroup>`; if (block.type === 'OD_POIPET') { optionsForODOL += groupHtml; optionsForOD += groupHtml; } else if (block.type === 'OD_LAOS') { optionsForOD += groupHtml; } }); workingUsers.forEach(u => { let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (เช้า)</span>`; if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (ดึก)</span>`; const curMeal = dailyMealData[u.nick] || {}; const m1 = curMeal.slot1 || ''; const m2 = curMeal.slot2 || ''; const isMyRow = (u.nick === myNick); const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin'); let nameDisplay = u.nick; let rowStyle = ''; if (isMyRow) { nameDisplay = `<span style="color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.8); font-weight: bold; border: 1px solid var(--neon-green); padding: 4px 10px; border-radius: 6px;">${u.nick} (ฉัน)</span>`; rowStyle = 'background-color: rgba(0, 255, 102, 0.05);'; } let coworkersList = []; if (u.site !== 'ยังไม่ระบุเว็บ') { let mySites = u.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== ''); workingUsers.forEach(otherUser => { if (otherUser.nick !== u.nick && otherUser.site !== 'ยังไม่ระบุเว็บ' && otherUser.dept === u.dept && otherUser.shiftSet === u.shiftSet) { let otherSites = otherUser.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== ''); let isShared = mySites.some(mySite => otherSites.includes(mySite)); if (isShared) { coworkersList.push(`<span class="text-warning">${otherUser.nick}</span>`); } } }); } let coworkersDisplay = '<span class="text-muted small">-</span>'; if (coworkersList.length > 0) { coworkersDisplay = `<div class="small" style="max-width: 150px; white-space: normal; line-height: 1.4;">${coworkersList.join(', ')}</div>`; } let mealControlHtml = ''; if (isAdmin || isMyRow) { let myOptions = u.dept.includes('ODOL') ? optionsForODOL : optionsForOD; let select1 = myOptions.replace(`value="${m1}"`, `value="${m1}" selected`); let select2 = myOptions.replace(`value="${m2}"`, `value="${m2}" selected`); mealControlHtml = `<div class="d-flex gap-2"><select class="form-select form-select-sm bg-dark text-white sel-meal-1" onchange="checkMealOverlap()">${select1}</select><select class="form-select form-select-sm bg-dark text-white sel-meal-2" onchange="checkMealOverlap()">${select2}</select></div>`; } else { let t1 = m1 ? `<span class="badge bg-secondary">${m1}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`; let t2 = m2 ? `<span class="badge bg-secondary">${m2}</span>` : ``; mealControlHtml = `<div class="d-flex gap-2 align-items-center">${t1} ${t2}<select class="sel-meal-1" style="display:none;"><option value="${m1}">${m1}</option></select><select class="sel-meal-2" style="display:none;"><option value="${m2}">${m2}</option></select></div>`; } tbody.innerHTML += `<tr data-nick="${u.nick}" style="${rowStyle}"><td class="fw-bold text-white">${nameDisplay}</td><td class="text-muted small">${u.dept.split(' ')[0]}</td><td>${stampBadge}</td><td class="text-info site-cell">${u.site}</td><td>${coworkersDisplay}</td><td style="width: 320px;">${mealControlHtml}</td></tr>`; }); const actionBtnsContainer = document.getElementById('mealActionBtns'); actionBtnsContainer.style.display = 'flex'; if (myRole === 'Member') { actionBtnsContainer.innerHTML = `<button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>`; } else { actionBtnsContainer.innerHTML = `<button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button><button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>`; } setTimeout(checkMealOverlap, 500); }
-  function checkMealOverlap() { let siteTimes = {}; document.querySelectorAll('#mealTableBody tr').forEach(tr => { let site = tr.querySelector('.site-cell').innerText; let sel1 = tr.querySelector('.sel-meal-1'); let sel2 = tr.querySelector('.sel-meal-2'); let time1 = sel1.value; let time2 = sel2.value; if(sel1.style.display !== 'none') { sel1.style.border = "1px solid #444"; sel1.style.color = "white"; } if(sel2.style.display !== 'none') { sel2.style.border = "1px solid #444"; sel2.style.color = "white"; } if(site !== 'ยังไม่ระบุเว็บ') { if(!siteTimes[site]) siteTimes[site] = []; if(time1) siteTimes[site].push({sel: sel1, time: time1}); if(time2) siteTimes[site].push({sel: sel2, time: time2}); } }); for(let site in siteTimes) { let timesCount = {}; siteTimes[site].forEach(item => { timesCount[item.time] = (timesCount[item.time] || 0) + 1; }); siteTimes[site].forEach(item => { if(timesCount[item.time] > 1 && item.sel.style.display !== 'none') { item.sel.style.border = "1px solid #ff3366"; item.sel.style.color = "#ff3366"; } }); } }
-  function autoBalanceMeals() { Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()}); let workingUsers = []; document.querySelectorAll('#mealTableBody tr').forEach(tr => { const nick = tr.getAttribute('data-nick'); if(!nick) return; const site = tr.querySelector('.site-cell').innerText; const stampText = tr.querySelector('td:nth-child(3)').innerText; const stamp = stampText.includes('เช้า') || stampText.includes('N') ? 'N' : (stampText.includes('ดึก') || stampText.includes('D') ? 'D' : 'OTHER'); workingUsers.push({ tr, nick, site, stamp }); }); let siteGroups = {}; workingUsers.forEach(u => { if(!siteGroups[u.site]) siteGroups[u.site] = []; siteGroups[u.site].push(u); }); for(let site in siteGroups) { let users = siteGroups[site]; let nUsers = users.filter(u => u.stamp === 'N'); let dUsers = users.filter(u => u.stamp === 'D'); let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D'); let nSlots = []; let dSlots = []; mealTimeBlocks.forEach(b => { let slots = generateTimeSlots(b.start, b.end); if(b.type === 'N') nSlots = nSlots.concat(slots); else dSlots = dSlots.concat(slots); }); let allSlots = nSlots.concat(dSlots); nUsers.sort(() => Math.random() - 0.5); dUsers.sort(() => Math.random() - 0.5); nUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = nSlots[i % nSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = nSlots[(i + 3) % nSlots.length] || ''; } }); dUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = dSlots[i % dSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = dSlots[(i + 3) % dSlots.length] || ''; } }); otherUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = allSlots[i % allSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = allSlots[(i + 3) % allSlots.length] || ''; } }); } setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาสำเร็จ (โปรดตรวจสอบและบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000); }
-  async function saveMealData() { const dateStr = document.getElementById('mealDatePicker').value; let hasOverlap = false; document.querySelectorAll('#mealTableBody tr').forEach(tr => { const nick = tr.getAttribute('data-nick'); if(!nick) return; const sel1 = tr.querySelector('.sel-meal-1'); const sel2 = tr.querySelector('.sel-meal-2'); if(sel1.style.display !== 'none' && (sel1.style.borderColor === "rgb(255, 51, 102)" || sel2.style.borderColor === "rgb(255, 51, 102)")) hasOverlap = true; dailyMealData[nick] = { slot1: sel1.value, slot2: sel2.value }; }); if (hasOverlap) { Swal.fire({title:'ระวัง!', text:'มีพนักงานที่ดูแลเว็บเดียวกันทานข้าวพร้อมกัน (กรอบสีแดง) ยืนยันที่จะบันทึกหรือไม่?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ffcc00', background:'#111', color:'#fff'}).then(r => { if(r.isConfirmed) executeSaveMeal(dateStr, dailyMealData); }); } else { executeSaveMeal(dateStr, dailyMealData); } }
-  async function executeSaveMeal(dateStr, payloadData) { const btnGroup = document.getElementById('mealActionBtns'); const btns = btnGroup.getElementsByTagName('button'); const saveBtn = btns[btns.length - 1]; if(saveBtn) { saveBtn.innerText = '⏳...'; saveBtn.disabled = true; } try { const { data: existing, error: e1 } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1); if (e1) throw e1; if(existing && existing.length > 0) { const { error: e2 } = await supabaseClient.from('meal_schedules').update({ mealData: JSON.stringify(payloadData) }).eq('id', existing[0].id); if (e2) throw e2; } else { const { error: e3 } = await supabaseClient.from('meal_schedules').insert([{ dateStr: dateStr, mealData: JSON.stringify(payloadData) }]); if (e3) throw e3; } await loadDailyMealData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางทานข้าวสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch (err) { console.error("Save Meal Error:", err); Swal.fire('Error', 'ระบบปฏิเสธการบันทึก: ' + (err.message || 'เช็ค Console'), 'error'); } finally { if(saveBtn) { saveBtn.innerText = myRole === 'Member' ? '💾 บันทึกเวลาทานข้าวของฉัน' : '💾 บันทึกตารางทานข้าว'; saveBtn.disabled = false; } } }
+
+  function renderMealTable() {
+      const tbody = document.getElementById('mealTableBody'); tbody.innerHTML = '';
+      const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : ''; 
+      const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL'; 
+      const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL';
+      
+      const myNick = localStorage.getItem('okvip_nick') || ''; 
+
+      let workingUsers = [];
+      allUsersData.forEach(u => {
+          if(!u || u[7] !== 'Active') return; 
+          const nick = u[1]; 
+          const dept = u[3] ? u[3].toString() : ''; 
+          const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
+          const stamp = dailyScheduleData[nick] || ''; 
+          const isOff = offDutyStamps.includes(stamp) || stamp === ''; 
+          const isExcluded = (sysSettings.userSites[nick] || []).includes('EXCLUDE_DUTY');
+          
+          if (!isOff && !isExcluded) {
+              const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ'; let shiftType = 'OTHER';
+              if (stamp === 'N' || stamp.includes('เช้า')) shiftType = 'N'; else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
+              let matchSearch = !searchT || nick.toLowerCase().includes(searchT); let matchShift = shiftF === 'ALL' || shiftType === shiftF; let matchDept = deptF === 'ALL' || dept.includes(deptF);
+              
+              if (matchSearch && matchShift && matchDept) { 
+                  workingUsers.push({ nick, dept, site, stamp, shiftType, shiftSet }); 
+              }
+          }
+      });
+      
+      const tableHead = document.querySelector('#mealSection table thead tr');
+      if(tableHead) {
+          tableHead.innerHTML = `
+            <th>ชื่อพนักงาน</th>
+            <th>แผนก</th>
+            <th>กะงานวันนี้</th>
+            <th>เว็บที่รับผิดชอบวันนี้</th>
+            <th>เพื่อนร่วมงานเว็บเดียวกัน</th>
+            <th>จัดรอบทานข้าว</th>
+          `;
+      }
+
+      if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
+      
+      let optionsForODOL = `<option value="">-- เลือกเวลา --</option>`;
+      let optionsForOD = `<option value="">-- เลือกเวลา --</option>`;
+
+      mealTimeBlocks.forEach(block => { 
+          let groupHtml = `<optgroup label="${block.name}">`; 
+          let slots = generateTimeSlots(block.start, block.end); 
+          slots.forEach(slot => { groupHtml += `<option value="${slot}" data-type="${block.type}">${slot}</option>`; }); 
+          groupHtml += `</optgroup>`; 
+
+          if (block.type === 'OD_POIPET') { optionsForODOL += groupHtml; optionsForOD += groupHtml; } 
+          else if (block.type === 'OD_LAOS') { optionsForOD += groupHtml; }
+      });
+      
+      workingUsers.forEach(u => {
+          let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; 
+          if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (เช้า)</span>`; 
+          if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (ดึก)</span>`;
+          
+          const curMeal = dailyMealData[u.nick] || {}; 
+          const m1 = curMeal.slot1 || ''; 
+          const m2 = curMeal.slot2 || '';
+
+          const isMyRow = (u.nick === myNick);
+          const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
+          
+          let nameDisplay = u.nick;
+          let rowStyle = '';
+          if (isMyRow) {
+              nameDisplay = `<span style="color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.8); font-weight: bold; border: 1px solid var(--neon-green); padding: 4px 10px; border-radius: 6px;">${u.nick} (ฉัน)</span>`;
+              rowStyle = 'background-color: rgba(0, 255, 102, 0.05);';
+          }
+
+          let coworkersList = [];
+          if (u.site !== 'ยังไม่ระบุเว็บ') {
+              let mySites = u.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+              
+              workingUsers.forEach(otherUser => {
+                  if (otherUser.nick !== u.nick && 
+                      otherUser.site !== 'ยังไม่ระบุเว็บ' &&
+                      otherUser.dept === u.dept && 
+                      otherUser.shiftSet === u.shiftSet) { 
+                      
+                      let otherSites = otherUser.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+                      let isShared = mySites.some(mySite => otherSites.includes(mySite));
+                      
+                      if (isShared) {
+                          coworkersList.push(`<span class="text-warning">${otherUser.nick}</span>`);
+                      }
+                  }
+              });
+          }
+          
+          let coworkersDisplay = '<span class="text-muted small">-</span>';
+          if (coworkersList.length > 0) {
+              coworkersDisplay = `<div class="small" style="max-width: 150px; white-space: normal; line-height: 1.4;">${coworkersList.join(', ')}</div>`;
+          }
+
+          let mealControlHtml = '';
+          if (isAdmin || isMyRow) {
+              let myOptions = u.dept.includes('ODOL') ? optionsForODOL : optionsForOD;
+              let select1 = myOptions.replace(`value="${m1}"`, `value="${m1}" selected`); 
+              let select2 = myOptions.replace(`value="${m2}"`, `value="${m2}" selected`);
+              mealControlHtml = `
+                  <div class="d-flex gap-2">
+                      <select class="form-select form-select-sm bg-dark text-white sel-meal-1" onchange="checkMealOverlap()">${select1}</select>
+                      <select class="form-select form-select-sm bg-dark text-white sel-meal-2" onchange="checkMealOverlap()">${select2}</select>
+                  </div>
+              `;
+          } else {
+              let t1 = m1 ? `<span class="badge bg-secondary">${m1}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`;
+              let t2 = m2 ? `<span class="badge bg-secondary">${m2}</span>` : ``;
+              mealControlHtml = `
+                  <div class="d-flex gap-2 align-items-center">
+                      ${t1} ${t2}
+                      <select class="sel-meal-1" style="display:none;"><option value="${m1}">${m1}</option></select>
+                      <select class="sel-meal-2" style="display:none;"><option value="${m2}">${m2}</option></select>
+                  </div>
+              `;
+          }
+
+          tbody.innerHTML += `
+              <tr data-nick="${u.nick}" style="${rowStyle}">
+                  <td class="fw-bold text-white">${nameDisplay}</td>
+                  <td class="text-muted small">${u.dept.split(' ')[0]}</td>
+                  <td>${stampBadge}</td>
+                  <td class="text-info site-cell">${u.site}</td>
+                  <td>${coworkersDisplay}</td>
+                  <td style="width: 320px;">${mealControlHtml}</td>
+              </tr>
+          `;
+      });
+
+      const actionBtnsContainer = document.getElementById('mealActionBtns');
+      actionBtnsContainer.style.display = 'flex'; 
+      
+      if (myRole === 'Member') {
+          actionBtnsContainer.innerHTML = `
+              <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>
+          `;
+      } else {
+          actionBtnsContainer.innerHTML = `
+              <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
+              <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
+          `;
+      }
+
+      setTimeout(checkMealOverlap, 500);
+  }
+
+  function checkMealOverlap() {
+      let siteTimes = {};
+      document.querySelectorAll('#mealTableBody tr').forEach(tr => {
+          let site = tr.querySelector('.site-cell').innerText; let sel1 = tr.querySelector('.sel-meal-1'); let sel2 = tr.querySelector('.sel-meal-2'); let time1 = sel1.value; let time2 = sel2.value;
+          if(sel1.style.display !== 'none') { sel1.style.border = "1px solid #444"; sel1.style.color = "white"; }
+          if(sel2.style.display !== 'none') { sel2.style.border = "1px solid #444"; sel2.style.color = "white"; }
+          if(site !== 'ยังไม่ระบุเว็บ') { if(!siteTimes[site]) siteTimes[site] = []; if(time1) siteTimes[site].push({sel: sel1, time: time1}); if(time2) siteTimes[site].push({sel: sel2, time: time2}); }
+      });
+      for(let site in siteTimes) { let timesCount = {}; siteTimes[site].forEach(item => { timesCount[item.time] = (timesCount[item.time] || 0) + 1; }); siteTimes[site].forEach(item => { if(timesCount[item.time] > 1 && item.sel.style.display !== 'none') { item.sel.style.border = "1px solid #ff3366"; item.sel.style.color = "#ff3366"; } }); }
+  }
+
+  function autoBalanceMeals() {
+      Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
+      let workingUsers = [];
+      document.querySelectorAll('#mealTableBody tr').forEach(tr => {
+          const nick = tr.getAttribute('data-nick'); if(!nick) return;
+          const site = tr.querySelector('.site-cell').innerText;
+          const stampText = tr.querySelector('td:nth-child(3)').innerText;
+          const stamp = stampText.includes('เช้า') || stampText.includes('N') ? 'N' : (stampText.includes('ดึก') || stampText.includes('D') ? 'D' : 'OTHER');
+          workingUsers.push({ tr, nick, site, stamp });
+      });
+      let siteGroups = {};
+      workingUsers.forEach(u => { if(!siteGroups[u.site]) siteGroups[u.site] = []; siteGroups[u.site].push(u); });
+      for(let site in siteGroups) {
+          let users = siteGroups[site]; let nUsers = users.filter(u => u.stamp === 'N'); let dUsers = users.filter(u => u.stamp === 'D'); let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
+          let nSlots = []; let dSlots = [];
+          mealTimeBlocks.forEach(b => { let slots = generateTimeSlots(b.start, b.end); if(b.type === 'N') nSlots = nSlots.concat(slots); else dSlots = dSlots.concat(slots); });
+          let allSlots = nSlots.concat(dSlots);
+          nUsers.sort(() => Math.random() - 0.5); dUsers.sort(() => Math.random() - 0.5);
+          nUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = nSlots[i % nSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = nSlots[(i + 3) % nSlots.length] || ''; } });
+          dUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = dSlots[i % dSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = dSlots[(i + 3) % dSlots.length] || ''; } });
+          otherUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = allSlots[i % allSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = allSlots[(i + 3) % allSlots.length] || ''; } });
+      }
+      setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาสำเร็จ (โปรดตรวจสอบและบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
+  }
+
+  async function saveMealData() {
+      const dateStr = document.getElementById('mealDatePicker').value; let hasOverlap = false;
+      document.querySelectorAll('#mealTableBody tr').forEach(tr => { 
+          const nick = tr.getAttribute('data-nick'); if(!nick) return; 
+          const sel1 = tr.querySelector('.sel-meal-1'); const sel2 = tr.querySelector('.sel-meal-2'); 
+          if(sel1.style.display !== 'none' && (sel1.style.borderColor === "rgb(255, 51, 102)" || sel2.style.borderColor === "rgb(255, 51, 102)")) hasOverlap = true; 
+          dailyMealData[nick] = { slot1: sel1.value, slot2: sel2.value }; 
+      });
+      if (hasOverlap) { Swal.fire({title:'ระวัง!', text:'มีพนักงานที่ดูแลเว็บเดียวกันทานข้าวพร้อมกัน (กรอบสีแดง) ยืนยันที่จะบันทึกหรือไม่?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ffcc00', background:'#111', color:'#fff'}).then(r => { if(r.isConfirmed) executeSaveMeal(dateStr, dailyMealData); }); } else { executeSaveMeal(dateStr, dailyMealData); }
+  }
+
+  async function executeSaveMeal(dateStr, payloadData) { 
+      const btnGroup = document.getElementById('mealActionBtns');
+      const btns = btnGroup.getElementsByTagName('button');
+      const saveBtn = btns[btns.length - 1]; 
+      
+      if(saveBtn) { saveBtn.innerText = '⏳...'; saveBtn.disabled = true; }
+      
+      try { 
+          const { data: existing, error: e1 } = await supabaseClient.from('meal_schedules').select('id').eq('dateStr', dateStr).limit(1); 
+          if (e1) throw e1;
+
+          if(existing && existing.length > 0) {
+              const { error: e2 } = await supabaseClient.from('meal_schedules').update({ mealData: JSON.stringify(payloadData) }).eq('id', existing[0].id); 
+              if (e2) throw e2;
+          } else {
+              const { error: e3 } = await supabaseClient.from('meal_schedules').insert([{ dateStr: dateStr, mealData: JSON.stringify(payloadData) }]); 
+              if (e3) throw e3;
+          }
+          
+          await loadDailyMealData(); 
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางทานข้าวสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch (err) { 
+          console.error("Save Meal Error:", err);
+          Swal.fire('Error', 'ระบบปฏิเสธการบันทึก: ' + (err.message || 'เช็ค Console'), 'error'); 
+      } finally { 
+          if(saveBtn) { saveBtn.innerText = myRole === 'Member' ? '💾 บันทึกเวลาทานข้าวของฉัน' : '💾 บันทึกตารางทานข้าว'; saveBtn.disabled = false; }
+      } 
+  }
 
   // ==========================================
   // 🚀 7. คู่มือการทำงานและกติกา (Manuals)
   // ==========================================
-  function switchManualTab(tab, btn) { currentManualMainTab = tab; document.getElementById('tabManual').classList.remove('active'); document.getElementById('tabRule').classList.remove('active'); document.getElementById('tabManual').style.borderColor = "#444"; document.getElementById('tabManual').style.color = "#ccc"; document.getElementById('tabRule').style.borderColor = "#444"; document.getElementById('tabRule').style.color = "#ccc"; btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; renderManualGrid(); }
+  let currentManualMainTab = 'MANUAL'; // เก็บค่าแท็บหลัก (คู่มือ / กติกา)
+  
+  function switchManualTab(tab, btn) {
+      currentManualMainTab = tab;
+      document.getElementById('tabManual').classList.remove('active');
+      document.getElementById('tabRule').classList.remove('active');
+      document.getElementById('tabManual').style.borderColor = "#444";
+      document.getElementById('tabManual').style.color = "#ccc";
+      document.getElementById('tabRule').style.borderColor = "#444";
+      document.getElementById('tabRule').style.color = "#ccc";
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
+      renderManualGrid();
+  }
+
   function handleManualSearch(term) { manualSearchTerm = term.toLowerCase().trim(); renderManualGrid(); }
   function processStepImage(b64) { document.getElementById('stepImagePreview').src = b64; document.getElementById('stepImagePreview').style.display = 'block'; document.getElementById('stepMediaBase64').value = b64; document.getElementById('stepPasteText').style.display = 'none'; document.getElementById('btnStepClearImage').style.display = 'block'; }
   function clearStepImage() { document.getElementById('stepImagePreview').src = ''; document.getElementById('stepImagePreview').style.display = 'none'; document.getElementById('stepMediaBase64').value = ''; document.getElementById('stepPasteText').style.display = 'block'; document.getElementById('btnStepClearImage').style.display = 'none'; document.getElementById('stepMediaFile').value = ''; }
   function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('imageLightbox').classList.add('active'); }
   function closeLightbox() { document.getElementById('imageLightbox').classList.remove('active'); setTimeout(() => { document.getElementById('lightboxImg').src = ''; }, 300); }
   function resetManualForm() { document.getElementById('addManualForm').reset(); document.getElementById('manualModalTitle').innerText = '📝 สร้างหมวดหมู่เนื้อหาใหม่'; }
-  async function handleManualSubmit(e) { e.preventDefault(); const packedDept = document.getElementById('manMainType').value + "|" + document.getElementById('manDept').value; const payload = { department: packedDept, category: document.getElementById('manCat').value, title: document.getElementById('manTitle').value, stepsData: "[]" }; const btn = document.querySelector('#addManualForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳...'; try { await supabaseClient.from('manuals').insert([payload]); bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).hide(); refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'สร้างสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกและสร้าง'; } }
+  
+  async function handleManualSubmit(e) { 
+      e.preventDefault(); 
+      // 🌟 นำประเภทหลัก (MANUAL/RULE) มารวมกับแผนก เพื่อประหยัดการสร้าง Column ใหม่ใน Database
+      const packedDept = document.getElementById('manMainType').value + "|" + document.getElementById('manDept').value;
+      const payload = { department: packedDept, category: document.getElementById('manCat').value, title: document.getElementById('manTitle').value, stepsData: "[]" }; 
+      
+      const btn = document.querySelector('#addManualForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳...';
+      try {
+          await supabaseClient.from('manuals').insert([payload]); 
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).hide(); 
+          refreshData(document.getElementById('refreshBtn')); 
+          Swal.fire({toast:true, position:'top-end', title:'สร้างสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกและสร้าง'; }
+  }
+
   function filterManualView(dept, btn) { currentManualFilter = dept; document.querySelectorAll('#manualSection .dept-badge').forEach(b => { if(b.id !== 'tabManual' && b.id !== 'tabRule'){ b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc"; } }); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderManualGrid(); }
-  function renderManualGrid() { const area = document.getElementById('manualGridArea'); area.innerHTML = ''; let hasContent = false; allManualsData.forEach(r => { const [mId, rawDept, mCat, mTitle] = r; let mainType = 'MANUAL'; let actualDept = rawDept ? rawDept.toString() : ''; if(actualDept.includes('|')) { const parts = actualDept.split('|'); mainType = parts[0]; actualDept = parts[1]; } if(mainType !== currentManualMainTab) return; if(currentManualFilter !== 'ALL' && actualDept !== currentManualFilter && actualDept !== 'ทั่วไป (ALL)') return; if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; hasContent = true; const admin = myRole !== 'Member' ? `<div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); confirmDeleteManual('${mId}')">✖ ลบ</button></div>` : ''; let icon = mainType === 'RULE' ? "⚖️" : "📁"; if(actualDept.includes("ODOL")) icon = mainType === 'RULE' ? "📜" : "🌐"; else if(actualDept.includes("OD")) icon = mainType === 'RULE' ? "📌" : "🔎"; area.innerHTML += `<div class="manual-card" onclick="openViewManual('${mId}')">${admin}<div class="d-flex align-items-start"><span class="icon">${icon}</span><div><h5 class="title">${mTitle}</h5><div class="small text-muted mt-1">[${actualDept}] ${mCat}</div></div></div><div class="read-more">คลิกเพื่อเข้าดู &rarr;</div></div>`; }); if(!hasContent) area.innerHTML = `<div class="text-center py-5 w-100 text-muted">ไม่พบข้อมูลในหมวดหมู่นี้</div>`; }
-  function openViewManual(id) { const manual = allManualsData.find(r => r[0].toString()===id.toString()); if(!manual) return; currentlyViewingManualId = id; let actualDept = manual[1] ? manual[1].toString() : ''; if(actualDept.includes('|')) actualDept = actualDept.split('|')[1]; document.getElementById('viewManTitle').innerText = manual[3]; document.getElementById('viewManDept').innerText = "📌 " + actualDept; document.getElementById('viewManCat').innerText = "🏷️ " + manual[2]; try { currentlyViewingSteps = JSON.parse(manual[4]); if (!Array.isArray(currentlyViewingSteps)) currentlyViewingSteps = []; } catch(e) { currentlyViewingSteps = []; } renderSteps(); document.getElementById('btnAddStep').style.display = myRole!=='Member' ? 'block' : 'none'; bootstrap.Modal.getOrCreateInstance(document.getElementById('viewManualModal')).show(); }
+  
+  function renderManualGrid() {
+    const area = document.getElementById('manualGridArea'); area.innerHTML = ''; let hasContent = false;
+    allManualsData.forEach(r => {
+      const [mId, rawDept, mCat, mTitle] = r; 
+      
+      // ถอดรหัสข้อมูลแยกประเภทหลัก (ถ้าของเก่าไม่มีขีดคั่น ให้ถือว่าเป็น คู่มือปกติ)
+      let mainType = 'MANUAL';
+      let actualDept = rawDept ? rawDept.toString() : '';
+      if(actualDept.includes('|')) {
+          const parts = actualDept.split('|');
+          mainType = parts[0];
+          actualDept = parts[1];
+      }
+
+      if(mainType !== currentManualMainTab) return; // กรองตามแท็บหลัก
+      if(currentManualFilter !== 'ALL' && actualDept !== currentManualFilter && actualDept !== 'ทั่วไป (ALL)') return; // กรองตามแผนก
+      if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; // ค้นหา
+      
+      hasContent = true; 
+      const admin = myRole !== 'Member' ? `<div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); confirmDeleteManual('${mId}')">✖ ลบ</button></div>` : ''; 
+      
+      let icon = mainType === 'RULE' ? "⚖️" : "📁"; 
+      if(actualDept.includes("ODOL")) icon = mainType === 'RULE' ? "📜" : "🌐"; 
+      else if(actualDept.includes("OD")) icon = mainType === 'RULE' ? "📌" : "🔎"; 
+      
+      area.innerHTML += `<div class="manual-card" onclick="openViewManual('${mId}')">${admin}<div class="d-flex align-items-start"><span class="icon">${icon}</span><div><h5 class="title">${mTitle}</h5><div class="small text-muted mt-1">[${actualDept}] ${mCat}</div></div></div><div class="read-more">คลิกเพื่อเข้าดู &rarr;</div></div>`;
+    });
+    if(!hasContent) area.innerHTML = `<div class="text-center py-5 w-100 text-muted">ไม่พบข้อมูลในหมวดหมู่นี้</div>`;
+  }
+
+  function openViewManual(id) { 
+      const manual = allManualsData.find(r => r[0].toString()===id.toString()); if(!manual) return; 
+      currentlyViewingManualId = id; 
+      
+      let actualDept = manual[1] ? manual[1].toString() : '';
+      if(actualDept.includes('|')) actualDept = actualDept.split('|')[1]; // ถอดรหัสโชว์เฉพาะแผนก
+
+      document.getElementById('viewManTitle').innerText = manual[3]; 
+      document.getElementById('viewManDept').innerText = "📌 " + actualDept; 
+      document.getElementById('viewManCat').innerText = "🏷️ " + manual[2]; 
+      try { currentlyViewingSteps = JSON.parse(manual[4]); if (!Array.isArray(currentlyViewingSteps)) currentlyViewingSteps = []; } catch(e) { currentlyViewingSteps = []; } 
+      renderSteps(); 
+      document.getElementById('btnAddStep').style.display = myRole!=='Member' ? 'block' : 'none'; 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('viewManualModal')).show(); 
+  }
+
   function renderSteps() { const area = document.getElementById('viewManStepsArea'); area.innerHTML = ''; if(currentlyViewingSteps.length===0){ area.innerHTML=`<div class="text-center text-muted py-5">ยังไม่มีข้อมูล</div>`; return; } currentlyViewingSteps.forEach((s, i) => { const imgHtml = s.img ? `<div class="mt-3 text-center"><img src="${s.img}" class="manual-step-img" onclick="openLightbox('${s.img}')"></div>` : ''; const admin = myRole!=='Member' ? `<div class="step-tools"><button class="btn btn-sm btn-outline-info" onclick="editStep(${i})">✏️ แก้ไข</button><button class="btn btn-sm btn-outline-danger" onclick="deleteStep(${i})">✖ ลบ</button></div>` : ''; area.innerHTML += `<div class="manual-step-card">${admin}<div class="manual-step-number">ส่วนที่ ${i+1}</div><div class="manual-step-text">${s.text}</div>${imgHtml}</div>`; }); }
   function openNewManualModal() { resetManualForm(); bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).show(); }
   function openStepModal() { document.getElementById('addStepForm').reset(); document.getElementById('editStepIndex').value = ''; document.getElementById('stepModalTitle').innerText = '➕ เพิ่มเนื้อหา/ขั้นตอน'; clearStepImage(); bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).show(); }
   function editStep(idx) { const step = currentlyViewingSteps[idx]; document.getElementById('addStepForm').reset(); document.getElementById('editStepIndex').value = idx; document.getElementById('stepModalTitle').innerText = '✏️ แก้ไขเนื้อหาส่วนที่ ' + (idx + 1); document.getElementById('stepContent').value = step.text; if (step.img) processStepImage(step.img); else clearStepImage(); bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).show(); }
-  async function handleStepSubmit(e) { e.preventDefault(); const newText = document.getElementById('stepContent').value; const newImg = document.getElementById('stepMediaBase64').value; const idx = document.getElementById('editStepIndex').value; const btn = document.querySelector('#stepModal button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังอัปโหลด...'; try { let uploadedImg = newImg; if (newImg && newImg.startsWith('data:image')) { Swal.fire({title:'กำลังอัปโหลดรูป (HQ)...', didOpen:()=>Swal.showLoading()}); uploadedImg = await uploadToSupabase(newImg, 'manual_hq'); } if(idx !== "") currentlyViewingSteps[idx] = { text: newText, img: uploadedImg }; else currentlyViewingSteps.push({ text: newText, img: uploadedImg }); const { error } = await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); if(error) throw error; bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).hide(); renderSteps(); refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch(err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกขั้นตอน'; } }
+  
+  async function handleStepSubmit(e) { 
+      e.preventDefault(); const newText = document.getElementById('stepContent').value; const newImg = document.getElementById('stepMediaBase64').value; const idx = document.getElementById('editStepIndex').value; const btn = document.querySelector('#stepModal button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังอัปโหลด...'; 
+      try { 
+          let uploadedImg = newImg; 
+          if (newImg && newImg.startsWith('data:image')) { 
+              Swal.fire({title:'กำลังอัปโหลดรูป (HQ)...', didOpen:()=>Swal.showLoading()}); 
+              uploadedImg = await uploadToSupabase(newImg, 'manual_hq'); 
+          } 
+          if(idx !== "") currentlyViewingSteps[idx] = { text: newText, img: uploadedImg }; 
+          else currentlyViewingSteps.push({ text: newText, img: uploadedImg }); 
+          
+          const { error } = await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); 
+          if(error) throw error; 
+          
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).hide(); renderSteps(); refreshData(document.getElementById('refreshBtn')); 
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch(err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกขั้นตอน'; } 
+  }
+  
   function deleteStep(idx) { Swal.fire({title:'ลบส่วนนี้ทิ้ง?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { currentlyViewingSteps.splice(idx, 1); await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); renderSteps(); refreshData(document.getElementById('refreshBtn')); } }); }
   function confirmDeleteManual(id) { Swal.fire({title:'ลบหมวดหมู่นี้?', text:'ข้อมูลด้านในจะหายทั้งหมด', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { await supabaseClient.from('manuals').delete().eq('id', id); refreshData(document.getElementById('refreshBtn')); } }); }
   
@@ -1140,7 +2172,7 @@
       }
   }
 
-  // ดักฟัง Real-time ข้อมูลเข้างานจาก Supabase
+  // 🌟 เปิดระบบดักฟัง Real-time จาก Supabase
   supabaseClient
       .channel('discord-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'discord_attendance' }, payload => {
