@@ -448,7 +448,7 @@
       </div>
     </div>
 
-    <div id="manualSection" class="content-section">
+      <div id="manualSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">📖 คู่มือการทำงาน และ กติกา</h4>
         <div class="d-flex gap-2">
@@ -876,7 +876,6 @@
   let scheduleSearchTerm = ''; 
   let currentScheduleFilter = 'ALL';
   
-  // 🌟 ปรับโครงสร้าง sysSettings ให้ dutyTypes แยก OD กับ ODOL 🌟
   let sysSettings = { websites: [], dutyTypes: { OD: [], ODOL: [] }, statMetrics: [], userSites: {} };
   let dailyDutiesData = {}; 
   let dailyStatsData = {}; 
@@ -941,7 +940,6 @@
       return slots;
   }
 
-  // ระบบบีบอัดรูปภาพทั่วไป (หน้าปกเว็บ)
   function compressImage(file, callback) {
       Swal.fire({ title: 'กำลังประมวลผลรูปภาพ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
       const reader = new FileReader(); reader.readAsDataURL(file);
@@ -958,7 +956,6 @@
       };
   }
 
-  // 🌟 ระบบภาพคมชัดสูง (สำหรับคู่มือการสอน) 🌟
   function compressImageHQ(file, callback) {
       Swal.fire({ title: 'กำลังโหลดรูปภาพ (โหมดคมชัด)...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
       const reader = new FileReader(); reader.readAsDataURL(file);
@@ -966,21 +963,20 @@
           const img = new Image(); img.src = event.target.result;
           img.onload = () => {
               const canvas = document.createElement('canvas'); 
-              const MAX_WIDTH = 2500; // ขยายความกว้างสูงสุดให้ชัดขึ้น
+              const MAX_WIDTH = 2500;
               let width = img.width; let height = img.height;
               if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
               canvas.width = width; canvas.height = height; 
               const ctx = canvas.getContext('2d'); 
               ctx.imageSmoothingEnabled = true;
-              ctx.imageSmoothingQuality = "high"; // สั่งให้เบราว์เซอร์เรนเดอร์ภาพแบบเนียนที่สุด
+              ctx.imageSmoothingQuality = "high";
               ctx.drawImage(img, 0, 0, width, height);
-              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.98); // คงคุณภาพไว้ที่ 98%
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.98); 
               Swal.close(); callback(compressedBase64);
           };
       };
   }
 
-  // ตัวจัดการการแปะรูป
   function setupPasteArea(areaId, fileId, processCallback, isHighQuality = false) {
       const area = document.getElementById(areaId); const fileInput = document.getElementById(fileId);
       if(area && fileInput) {
@@ -1006,7 +1002,6 @@
   }
 
   window.onload = function() {
-    // 🌟 สั่งให้ช่องแปะรูปของคู่มือ ใช้โหมดภาพความละเอียดสูง (HQ = true) 🌟
     setupPasteArea('stepPasteArea', 'stepMediaFile', processStepImage, true); 
     setupPasteArea('portalPasteArea', 'portalMediaFile', processPortalImage, false);
     setupPasteArea('backendPasteArea', 'backendMediaFile', processBackendImage, false);
@@ -1019,10 +1014,7 @@
     if(document.getElementById('penaltyMonthFilter')) document.getElementById('penaltyMonthFilter').value = thisMonthStr; 
     if(document.getElementById('jobDatePicker')) document.getElementById('jobDatePicker').value = todayStr;
     if(document.getElementById('mealDatePicker')) document.getElementById('mealDatePicker').value = todayStr; 
-    
-    // 🌟🌟🌟 โค้ดของระบบ Discord ที่เพิ่มเข้ามาใหม่ครับ 🌟🌟🌟
     if(document.getElementById('discordDatePicker')) document.getElementById('discordDatePicker').value = todayStr;
-    // 🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟🌟
     
     renderStampPalette();
     const sUser = localStorage.getItem('okvip_user'); 
@@ -1063,23 +1055,19 @@
       }
   }
 
-  // 🌟 ฟังก์ชันโหลดตั้งค่า (ซ่อมแซมและล้างข้อมูลที่พังให้ดึงดูดได้) 🌟
   async function loadSupabaseSettings() {
       try {
           const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
-          sysSettings.dutyTypes = { OD: [], ODOL: [] }; // ค่าเริ่มต้นที่ถูกต้อง
+          sysSettings.dutyTypes = { OD: [], ODOL: [] }; 
           
           if (jsData && jsData.length > 0) {
               sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : [];
               if (jsData[0].dutyTypes) {
                   try {
                       let parsedDuties = JSON.parse(jsData[0].dutyTypes);
-                      
-                      // ถ้าระบบเจอข้อมูลเก่าที่เป็น Array ธรรมดา ให้จับยัดใส่ OD และ ODOL ไปก่อนชั่วคราว
                       if (Array.isArray(parsedDuties)) {
                           sysSettings.dutyTypes = { OD: parsedDuties, ODOL: parsedDuties };
                       } 
-                      // ถ้าเป็น Object อยู่แล้ว ให้เช็คว่ามีค่าครบไหม ถ้าไม่มีให้ใส่ Array เปล่า
                       else if (typeof parsedDuties === 'object' && parsedDuties !== null) {
                           sysSettings.dutyTypes = {
                               OD: Array.isArray(parsedDuties.OD) ? parsedDuties.OD : [],
@@ -1129,6 +1117,7 @@
       const badgeOD = document.getElementById('badgeJobOD');
       const badgeODOL = document.getElementById('badgeJobODOL');
       const shiftSelect = document.getElementById('jobShiftSetFilter');
+      currentJobShiftSet = '';
 
       if (myRole !== 'SuperAdmin') {
           if (myDept.includes('ODOL')) {
@@ -1139,7 +1128,7 @@
               }
               if(shiftSelect) {
                   shiftSelect.innerHTML = `
-                      <option value="ALL">-- ทุกเซ็ตกะ --</option>
+                      <option value="" disabled selected>-- ⚠️ กรุณาเลือกกะ (ODOL) --</option>
                       <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
                       <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
                   `;
@@ -1153,7 +1142,7 @@
               }
               if(shiftSelect) {
                   shiftSelect.innerHTML = `
-                      <option value="ALL">-- ทุกเซ็ตกะ --</option>
+                      <option value="" disabled selected>-- ⚠️ กรุณาเลือกกะ (OD) --</option>
                       <option value="OD (A)">เซ็ตกะ: OD (A)</option>
                       <option value="OD (B)">เซ็ตกะ: OD (B)</option>
                   `;
@@ -1163,7 +1152,7 @@
           if(badgeOD) badgeOD.click();
           if(shiftSelect) {
               shiftSelect.innerHTML = `
-                  <option value="ALL">-- ทุกเซ็ตกะ --</option>
+                  <option value="" disabled selected>-- ⚠️ กรุณาเลือกเซ็ตกะ --</option>
                   <option value="OD (A)">เซ็ตกะ: OD (A)</option>
                   <option value="OD (B)">เซ็ตกะ: OD (B)</option>
                   <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
@@ -1476,38 +1465,13 @@
       const [y, m, d] = dateStr.split('-'); const ym = `${y}-${m}`;
       const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); dailyScheduleData = {}; if (schData) { schData.forEach(r => { const days = r.daysData ? JSON.parse(r.daysData) : {}; dailyScheduleData[r.nickname] = days[parseInt(d)] || ''; }); }
       
-      // เซ็ตค่าเริ่มต้นของตัวแปรบังคับเลือกกะ (ถ้ายังไม่เคยเลือก)
       if(currentJobShiftSet === 'ALL') currentJobShiftSet = '';
       renderJobTables(); 
-  }
-
-  // 🌟 ฟังก์ชันแยกตัวเลือก OD/ODOL แบบบังคับเลือก 🌟
-  function setupJobFilters() {
-      const myNick = localStorage.getItem('okvip_nick'); const myRole = localStorage.getItem('okvip_role'); const me = allUsersData.find(u => u[1] === myNick); if (!me) return; const myDept = me[3] || ''; 
-      const badgeOD = document.getElementById('badgeJobOD'); const badgeODOL = document.getElementById('badgeJobODOL'); const shiftSelect = document.getElementById('jobShiftSetFilter');
-      currentJobShiftSet = ''; // บังคับให้เป็นค่าว่างเพื่อต้องเลือกใหม่
-
-      if (myRole !== 'SuperAdmin') {
-          if (myDept.includes('ODOL')) {
-              if(badgeOD) badgeOD.style.display = 'none'; 
-              if(badgeODOL) { badgeODOL.style.display = 'inline-block'; badgeODOL.click(); }
-              if(shiftSelect) shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกกะ (ODOL) --</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`;
-          } 
-          else if (myDept.includes('OD') && !myDept.includes('ODOL')) {
-              if(badgeODOL) badgeODOL.style.display = 'none'; 
-              if(badgeOD) { badgeOD.style.display = 'inline-block'; badgeOD.click(); }
-              if(shiftSelect) shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกกะ (OD) --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option>`;
-          }
-      } else {
-          if(badgeOD) badgeOD.click();
-          if(shiftSelect) shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกเซ็ตกะ --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`;
-      }
   }
 
   function buildDutyTable() {
     const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = '';
     
-    // 🌟 ดักจับถ้ายังไม่ได้เลือกกะ ให้หยุดและโชว์แจ้งเตือน
     if(!currentJobShiftSet || currentJobShiftSet === '') {
         tbody.innerHTML=`<tr><td colspan="6" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; 
         document.getElementById('siteSummaryArea').style.display='none'; return;
@@ -1527,7 +1491,6 @@
       const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
       const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; 
       
-      // 🌟 แยกเว็บหลัก / เว็บรอง จากข้อมูลเก่า
       let mainSite = ''; let subSite = '';
       if(curData.site) {
           let parts = curData.site.split(',');
@@ -1546,7 +1509,6 @@
       let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
       availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
 
-      // 🌟 Dropdown เลือกเว็บเอง
       let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
       let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
       (sysSettings.websites || []).forEach(w => {
@@ -1568,7 +1530,6 @@
     updateSiteSummary();
   }
 
-  // 🌟 ฟังก์ชันสรุปยอดเว็บหลัก/รอง แบบ Realtime
   function updateSiteSummary() {
       let counts = {};
       (sysSettings.websites || []).forEach(w => counts[w] = { main: 0, sub: 0 });
@@ -1602,10 +1563,9 @@
       summaryArea.style.display = 'flex';
   }
 
-  // 🌟 ฟังก์ชันล้างข้อมูลหน้างาน (Clear)
   function confirmClearDuty() {
       Swal.fire({
-          title: 'ล้างตารางหน้าที่?', text: 'ข้อมูลหน้าที่ของทุกคนในกะนี้จะถูกรีเซ็ต (หากต้องการลบออกจากระบบ ต้องกดปุ่ม "บันทึกหน้าที่" ด้วย)', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+          title: 'ล้างตารางหน้าที่?', text: 'ข้อมูลหน้าที่ของทุกคนในกะนี้จะถูกรีเซ็ต', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
       }).then((r) => {
           if (r.isConfirmed) {
               document.querySelectorAll('#dutyTableBody tr').forEach(row => {
@@ -1617,7 +1577,7 @@
                   if(dailyDutiesData[nick]) { dailyDutiesData[nick].site = ''; dailyDutiesData[nick].duty = ''; }
               });
               updateSiteSummary();
-              Swal.fire({toast:true, position:'top', title:'เคลียร์เรียบร้อย! (อย่าลืมกดบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+              Swal.fire({toast:true, position:'top', title:'เคลียร์เรียบร้อย!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
           }
       });
   }
@@ -1770,18 +1730,6 @@
           }
       });
       
-      const tableHead = document.querySelector('#mealSection table thead tr');
-      if(tableHead) {
-          tableHead.innerHTML = `
-            <th>ชื่อพนักงาน</th>
-            <th>แผนก</th>
-            <th>กะงานวันนี้</th>
-            <th>เว็บที่รับผิดชอบวันนี้</th>
-            <th>เพื่อนร่วมงานเว็บเดียวกัน</th>
-            <th>จัดรอบทานข้าว</th>
-          `;
-      }
-
       if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
       
       let optionsForODOL = `<option value="">-- เลือกเวลา --</option>`;
@@ -1972,8 +1920,6 @@
   // ==========================================
   // 🚀 7. คู่มือการทำงานและกติกา (Manuals)
   // ==========================================
-  let currentManualMainTab = 'MANUAL'; // เก็บค่าแท็บหลัก (คู่มือ / กติกา)
-  
   function switchManualTab(tab, btn) {
       currentManualMainTab = tab;
       document.getElementById('tabManual').classList.remove('active');
@@ -1995,7 +1941,6 @@
   
   async function handleManualSubmit(e) { 
       e.preventDefault(); 
-      // 🌟 นำประเภทหลัก (MANUAL/RULE) มารวมกับแผนก เพื่อประหยัดการสร้าง Column ใหม่ใน Database
       const packedDept = document.getElementById('manMainType').value + "|" + document.getElementById('manDept').value;
       const payload = { department: packedDept, category: document.getElementById('manCat').value, title: document.getElementById('manTitle').value, stepsData: "[]" }; 
       
@@ -2015,7 +1960,6 @@
     allManualsData.forEach(r => {
       const [mId, rawDept, mCat, mTitle] = r; 
       
-      // ถอดรหัสข้อมูลแยกประเภทหลัก (ถ้าของเก่าไม่มีขีดคั่น ให้ถือว่าเป็น คู่มือปกติ)
       let mainType = 'MANUAL';
       let actualDept = rawDept ? rawDept.toString() : '';
       if(actualDept.includes('|')) {
@@ -2024,9 +1968,9 @@
           actualDept = parts[1];
       }
 
-      if(mainType !== currentManualMainTab) return; // กรองตามแท็บหลัก
-      if(currentManualFilter !== 'ALL' && actualDept !== currentManualFilter && actualDept !== 'ทั่วไป (ALL)') return; // กรองตามแผนก
-      if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; // ค้นหา
+      if(mainType !== currentManualMainTab) return; 
+      if(currentManualFilter !== 'ALL' && actualDept !== currentManualFilter && actualDept !== 'ทั่วไป (ALL)') return; 
+      if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; 
       
       hasContent = true; 
       const admin = myRole !== 'Member' ? `<div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); confirmDeleteManual('${mId}')">✖ ลบ</button></div>` : ''; 
@@ -2045,7 +1989,7 @@
       currentlyViewingManualId = id; 
       
       let actualDept = manual[1] ? manual[1].toString() : '';
-      if(actualDept.includes('|')) actualDept = actualDept.split('|')[1]; // ถอดรหัสโชว์เฉพาะแผนก
+      if(actualDept.includes('|')) actualDept = actualDept.split('|')[1]; 
 
       document.getElementById('viewManTitle').innerText = manual[3]; 
       document.getElementById('viewManDept').innerText = "📌 " + actualDept; 
@@ -2136,8 +2080,18 @@
       const dateStr = document.getElementById('discordDatePicker').value;
       if (!dateStr) return;
 
-      // ดึงข้อมูลการเข้างานของวันนี้จาก Supabase (ต้องการ Table: discord_attendance)
       try {
+          const [y, m, d] = dateStr.split('-');
+          const ym = `${y}-${m}`;
+          const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
+          dailyScheduleData = {};
+          if (schData) {
+              schData.forEach(r => {
+                  const days = r.daysData ? JSON.parse(r.daysData) : {};
+                  dailyScheduleData[r.nickname] = days[parseInt(d)] || 'ยังไม่ลงกะ';
+              });
+          }
+
           const { data, error } = await supabaseClient
               .from('discord_attendance')
               .select('*')
@@ -2155,36 +2109,31 @@
       const tbody = document.getElementById('discordTableBody');
       tbody.innerHTML = '';
       
-      // ดึงรายชื่อพนักงานทั้งหมดที่มีกะทำงานวันนี้
-      let workingUsers = allUsersData.filter(u => {
-          if (!u || u[7] !== 'Active') return false;
-          const nick = u[1];
-          const curStamp = dailyScheduleData[nick] || '';
-          // เอาเฉพาะคนที่ไม่ได้หยุด
-          return (!offDutyStamps.includes(curStamp) && curStamp !== '');
-      });
-
-      if (workingUsers.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่มีพนักงานลงกะทำงานในวันนี้</td></tr>`;
-          return;
-      }
-
       let html = '';
-      workingUsers.forEach(u => {
+      let hasData = false;
+
+      allUsersData.forEach(u => {
+          if (!u || u[7] !== 'Active') return;
           const nick = u[1];
           const dept = u[3] ? u[3].split(' ')[0] : '';
-          const stamp = dailyScheduleData[nick] || '';
+          const stamp = dailyScheduleData[nick] || 'ยังไม่ลงกะ';
+
+          const dcRecord = allDiscordData.find(d => {
+              const cleanDcName = d.nickname.toUpperCase().replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').trim();
+              return cleanDcName === nick.toUpperCase().trim();
+          });
+
+          const isOff = offDutyStamps.includes(stamp);
           
-          // ค้นหาข้อมูลใน Discord Data ว่าคนนี้เข้าห้องหรือยัง (เทียบชื่อ nick กับชื่อในดิส)
-          const dcRecord = allDiscordData.find(d => d.nickname.toLowerCase() === nick.toLowerCase());
+          if (isOff && !dcRecord) return; 
           
+          hasData = true;
           let timeIn = '-';
           let channel = '-';
           let statusHtml = '';
           let filterMatch = false;
 
           if (dcRecord) {
-              // ถ้าเข้างานแล้ว
               const timeObj = new Date(dcRecord.check_in_time);
               timeIn = timeObj.toLocaleTimeString('th-TH');
               channel = `<span class="text-info fw-bold">🔊 ${dcRecord.channel_name || 'ไม่ระบุห้อง'}</span>`;
@@ -2197,14 +2146,14 @@
                   if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'ON_TIME') filterMatch = true;
               }
           } else {
-              // ถ้ายังไม่เข้า
               statusHtml = `<span class="badge bg-secondary">⚪ ยังไม่เข้างาน</span>`;
               if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'MISSING') filterMatch = true;
           }
 
           if (filterMatch) {
+              const displayNick = dcRecord ? dcRecord.nickname : nick;
               html += `<tr>
-                  <td class="fw-bold text-white">${nick}</td>
+                  <td class="fw-bold text-white">${displayNick}</td>
                   <td class="text-muted small">${dept} <span class="badge bg-dark border">${stamp}</span></td>
                   <td class="text-warning">${timeIn}</td>
                   <td>${channel}</td>
@@ -2213,8 +2162,35 @@
           }
       });
 
-      if (html === '') {
-          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่พบพนักงานในสถานะที่เลือก</td></tr>`;
+      allDiscordData.forEach(dc => {
+          const cleanDcName = dc.nickname.toUpperCase().replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').trim();
+          const foundInSys = allUsersData.find(u => u[1].toUpperCase().trim() === cleanDcName);
+          
+          if (!foundInSys) {
+              hasData = true;
+              const timeObj = new Date(dc.check_in_time);
+              const timeIn = timeObj.toLocaleTimeString('th-TH');
+              const channel = `<span class="text-info fw-bold">🔊 ${dc.channel_name || 'ไม่ระบุห้อง'}</span>`;
+              
+              let statusHtml = dc.status === 'LATE' ? `<span class="badge bg-danger">🔴 มาสาย</span>` : `<span class="badge bg-success">🟢 ตรงเวลา</span>`;
+              let filterMatch = (currentDiscordFilter === 'ALL') || 
+                                (dc.status === 'LATE' && currentDiscordFilter === 'LATE') || 
+                                (dc.status !== 'LATE' && currentDiscordFilter === 'ON_TIME');
+              
+              if (filterMatch) {
+                  html += `<tr>
+                      <td class="fw-bold text-warning">${dc.nickname} <br><small class="text-danger">(ไม่มีชื่อในระบบ)</small></td>
+                      <td class="text-muted small">-</td>
+                      <td class="text-warning">${timeIn}</td>
+                      <td>${channel}</td>
+                      <td>${statusHtml}</td>
+                  </tr>`;
+              }
+          }
+      });
+
+      if (!hasData || html === '') {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่พบพนักงานในสถานะที่เลือก (หรือทุกคนหยุดงาน)</td></tr>`;
       } else {
           tbody.innerHTML = html;
       }
@@ -2224,14 +2200,13 @@
   supabaseClient
       .channel('discord-live')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'discord_attendance' }, payload => {
-          // ไฟกระพริบเตือนว่ามีข้อมูลอัปเดตแบบสดๆ
           const indicator = document.getElementById('discordLiveIndicator');
           if(indicator) {
               indicator.classList.remove('text-primary');
               indicator.classList.add('text-success');
               setTimeout(() => { indicator.classList.remove('text-success'); indicator.classList.add('text-primary'); }, 2000);
           }
-          loadDiscordAttendance(); // โหลดใหม่ทันทีที่มีคนเข้า/ออกดิสคอร์ด
+          loadDiscordAttendance(); 
       })
       .subscribe();
 </script>
