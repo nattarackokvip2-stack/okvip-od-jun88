@@ -2136,20 +2136,8 @@
       const dateStr = document.getElementById('discordDatePicker').value;
       if (!dateStr) return;
 
+      // ดึงข้อมูลการเข้างานของวันนี้จาก Supabase (ต้องการ Table: discord_attendance)
       try {
-          // โหลดตารางกะของเดือนนี้เข้ามาด้วย เพื่อเช็คว่าใครต้องทำงานบ้าง
-          const [y, m, d] = dateStr.split('-');
-          const ym = `${y}-${m}`;
-          const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
-          dailyScheduleData = {};
-          if (schData) {
-              schData.forEach(r => {
-                  const days = r.daysData ? JSON.parse(r.daysData) : {};
-                  dailyScheduleData[r.nickname] = days[parseInt(d)] || 'ยังไม่ลงกะ';
-              });
-          }
-
-          // โหลดข้อมูลคนเข้าดิสคอร์ด
           const { data, error } = await supabaseClient
               .from('discord_attendance')
               .select('*')
@@ -2167,35 +2155,36 @@
       const tbody = document.getElementById('discordTableBody');
       tbody.innerHTML = '';
       
-      let html = '';
-      let hasData = false;
+      // ดึงรายชื่อพนักงานทั้งหมดที่มีกะทำงานวันนี้
+      let workingUsers = allUsersData.filter(u => {
+          if (!u || u[7] !== 'Active') return false;
+          const nick = u[1];
+          const curStamp = dailyScheduleData[nick] || '';
+          // เอาเฉพาะคนที่ไม่ได้หยุด
+          return (!offDutyStamps.includes(curStamp) && curStamp !== '');
+      });
 
-      // 1. เช็คพนักงานทุกคนในระบบ
-      allUsersData.forEach(u => {
-          if (!u || u[7] !== 'Active') return;
+      if (workingUsers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่มีพนักงานลงกะทำงานในวันนี้</td></tr>`;
+          return;
+      }
+
+      let html = '';
+      workingUsers.forEach(u => {
           const nick = u[1];
           const dept = u[3] ? u[3].split(' ')[0] : '';
-          const stamp = dailyScheduleData[nick] || 'ยังไม่ลงกะ';
-
-          // ค้นหาข้อมูลใน Discord Data โดยตัดคำนำหน้า (OD-, ODOL-, ฯลฯ) ออกก่อนเทียบชื่อ
-          const dcRecord = allDiscordData.find(d => {
-              const cleanDcName = d.nickname.toUpperCase().replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').trim();
-              return cleanDcName === nick.toUpperCase().trim();
-          });
-
-          // ตรวจสอบว่าพนักงานคนนี้ "หยุด" หรือเปล่า
-          const isOff = offDutyStamps.includes(stamp);
+          const stamp = dailyScheduleData[nick] || '';
           
-          // ถ้าหยุด และไม่ได้เข้าดิสคอร์ด ให้ซ่อนไปเลย
-          if (isOff && !dcRecord) return; 
+          // ค้นหาข้อมูลใน Discord Data ว่าคนนี้เข้าห้องหรือยัง (เทียบชื่อ nick กับชื่อในดิส)
+          const dcRecord = allDiscordData.find(d => d.nickname.toLowerCase() === nick.toLowerCase());
           
-          hasData = true;
           let timeIn = '-';
           let channel = '-';
           let statusHtml = '';
           let filterMatch = false;
 
           if (dcRecord) {
+              // ถ้าเข้างานแล้ว
               const timeObj = new Date(dcRecord.check_in_time);
               timeIn = timeObj.toLocaleTimeString('th-TH');
               channel = `<span class="text-info fw-bold">🔊 ${dcRecord.channel_name || 'ไม่ระบุห้อง'}</span>`;
@@ -2208,14 +2197,14 @@
                   if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'ON_TIME') filterMatch = true;
               }
           } else {
+              // ถ้ายังไม่เข้า
               statusHtml = `<span class="badge bg-secondary">⚪ ยังไม่เข้างาน</span>`;
               if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'MISSING') filterMatch = true;
           }
 
           if (filterMatch) {
-              const displayNick = dcRecord ? dcRecord.nickname : nick;
               html += `<tr>
-                  <td class="fw-bold text-white">${displayNick}</td>
+                  <td class="fw-bold text-white">${nick}</td>
                   <td class="text-muted small">${dept} <span class="badge bg-dark border">${stamp}</span></td>
                   <td class="text-warning">${timeIn}</td>
                   <td>${channel}</td>
@@ -2224,36 +2213,8 @@
           }
       });
 
-      // 2. เช็คคนแปลกหน้าที่เข้าดิสคอร์ด แต่ไม่มีชื่อในระบบเว็บ!
-      allDiscordData.forEach(dc => {
-          const cleanDcName = dc.nickname.toUpperCase().replace('OD-', '').replace('ODOL-', '').replace('AMOL-', '').replace('FTOL-', '').trim();
-          const foundInSys = allUsersData.find(u => u[1].toUpperCase().trim() === cleanDcName);
-          
-          if (!foundInSys) {
-              hasData = true;
-              const timeObj = new Date(dc.check_in_time);
-              const timeIn = timeObj.toLocaleTimeString('th-TH');
-              const channel = `<span class="text-info fw-bold">🔊 ${dc.channel_name || 'ไม่ระบุห้อง'}</span>`;
-              
-              let statusHtml = dc.status === 'LATE' ? `<span class="badge bg-danger">🔴 มาสาย</span>` : `<span class="badge bg-success">🟢 ตรงเวลา</span>`;
-              let filterMatch = (currentDiscordFilter === 'ALL') || 
-                                (dc.status === 'LATE' && currentDiscordFilter === 'LATE') || 
-                                (dc.status !== 'LATE' && currentDiscordFilter === 'ON_TIME');
-              
-              if (filterMatch) {
-                  html += `<tr>
-                      <td class="fw-bold text-warning">${dc.nickname} <br><small class="text-danger">(ไม่มีชื่อในระบบ)</small></td>
-                      <td class="text-muted small">-</td>
-                      <td class="text-warning">${timeIn}</td>
-                      <td>${channel}</td>
-                      <td>${statusHtml}</td>
-                  </tr>`;
-              }
-          }
-      });
-
-      if (!hasData || html === '') {
-          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่พบพนักงานในสถานะที่เลือก (หรือทุกคนหยุดงาน)</td></tr>`;
+      if (html === '') {
+          tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-5">ไม่พบพนักงานในสถานะที่เลือก</td></tr>`;
       } else {
           tbody.innerHTML = html;
       }
