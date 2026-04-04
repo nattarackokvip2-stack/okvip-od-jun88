@@ -376,6 +376,7 @@
         </table>
       </div>
     </div>
+
     <div id="mealSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
@@ -769,7 +770,8 @@
     </div>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
 <script>
@@ -943,24 +945,31 @@
       }
   }
 
-  // 🌟 1. ฟังก์ชันโหลดตั้งค่า (ดักจับ Error กรณีข้อมูลเก่าตีกับข้อมูลใหม่)
+  // 🌟 1. ฟังก์ชันโหลดตั้งค่า (ดักจับ Error อย่างแน่นหนา) 🌟
   async function loadSupabaseSettings() {
       try {
           const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
-          sysSettings.dutyTypes = { OD: [], ODOL: [] }; // ค่าเริ่มต้นป้องกัน Error
+          sysSettings.dutyTypes = { OD: [], ODOL: [] }; // ค่าเริ่มต้นป้องกันพัง
           
           if (jsData && jsData.length > 0) {
               sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : [];
               if (jsData[0].dutyTypes) {
                   try {
                       let parsedDuties = JSON.parse(jsData[0].dutyTypes);
-                      // เช็คว่าเป็นข้อมูลแบบเก่า (Array) หรือแบบใหม่ (Object แยก OD/ODOL)
+                      
+                      // ถ้าระบบเจอข้อมูลเก่าที่เป็น Array ธรรมดา ให้แปลงเป็น OD แบบอัตโนมัติ
                       if (Array.isArray(parsedDuties)) {
                           sysSettings.dutyTypes = { OD: parsedDuties, ODOL: [] };
-                      } else {
-                          sysSettings.dutyTypes = parsedDuties || { OD: [], ODOL: [] };
+                      } 
+                      // ถ้าเป็น Object อยู่แล้ว ให้ดึงข้อมูลมาใส่ได้เลย
+                      else if (typeof parsedDuties === 'object' && parsedDuties !== null) {
+                          sysSettings.dutyTypes = {
+                              OD: parsedDuties.OD || [],
+                              ODOL: parsedDuties.ODOL || []
+                          };
                       }
                   } catch(e) {
+                      console.warn("Parse Error, resetting duty types:", e);
                       sysSettings.dutyTypes = { OD: [], ODOL: [] };
                   }
               }
@@ -1051,6 +1060,7 @@
       allManualsData = (data || []).map(r => [r.id, r.department, r.category, r.title, r.stepsData || "[]"]);
       renderManualGrid();
   }
+
   // ==========================================
   // 📢 2.5 ระบบประกาศข่าวสาร 
   // ==========================================
@@ -1318,6 +1328,7 @@
     bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).hide();
     if(appliedCount > 0) { document.getElementById('btnSaveSchedule').style.display = 'flex'; Swal.fire({toast:true, position:'top', title:`ลงกะสำเร็จ!`, text:'กรุณากดบันทึกข้อมูลตาราง', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); } else { Swal.fire({toast:true, position:'top', title:'ไม่มีการเปลี่ยนแปลง', icon:'info', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); }
   }
+
   // ==========================================
   // 🚀 6. หน้าที่ & สถิติ (Jobs & Stats)
   // ==========================================
@@ -1352,10 +1363,15 @@
       const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
       const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; 
       
-      // 🌟 ดึงหน้าที่ตามแผนก (ถ้ามีคำว่า ODOL ให้ใช้ของ ODOL ถ้าไม่ให้ใช้ของ OD)
+      // 🌟 ดึงหน้าที่ตามแผนก (ป้องกัน Error แบบแน่นหนา)
       let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
-      // ดักจับ Error เผื่อไม่มีค่า
-      let availableDuties = (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) ? sysSettings.dutyTypes[myDeptType] : [];
+      let availableDuties = [];
+      if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) {
+          availableDuties = sysSettings.dutyTypes[myDeptType];
+      } else if (Array.isArray(sysSettings.dutyTypes)) {
+          // Fallback เผื่อมันยังเห็นเป็น Array เก่า
+          availableDuties = sysSettings.dutyTypes; 
+      }
       
       let dutyOptions = `<option value="">- เลือก -</option>`; 
       availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
@@ -1393,9 +1409,14 @@
               }
               
               const inDuty = u.row.querySelector('.sel-duty');
-              // 🌟 สุ่มหน้าที่ตามแผนก 🌟
+              // 🌟 สุ่มหน้าที่ตามแผนก (ป้องกัน Error แบบแน่นหนา) 🌟
               let myDeptType = u.row.getAttribute('data-dept').includes('ODOL') ? 'ODOL' : 'OD';
-              let availableDuties = (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) ? sysSettings.dutyTypes[myDeptType] : [];
+              let availableDuties = [];
+              if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) {
+                  availableDuties = sysSettings.dutyTypes[myDeptType];
+              } else if (Array.isArray(sysSettings.dutyTypes)) {
+                  availableDuties = sysSettings.dutyTypes; 
+              }
               
               if(inDuty && availableDuties.length > 0) {
                   let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)];
