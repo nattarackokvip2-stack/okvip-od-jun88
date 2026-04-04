@@ -490,10 +490,10 @@
     </div>
 
     <div id="discordSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div class="d-flex align-items-center gap-2">
            <div class="spinner-grow spinner-grow-sm text-primary" role="status" id="discordLiveIndicator"></div>
-           <h4 class="fw-bold mb-0" style="color: #5865F2;">🎧 ระบบเช็คเวลาเข้างาน (Discord Live)</h4>
+           <h4 class="fw-bold mb-0" style="color: #5865F2;">🎧 ศูนย์บัญชาการ Discord</h4>
         </div>
         <div class="d-flex align-items-center gap-2" style="background: #111; border: 1px solid #5865F2; border-radius: 8px;">
             <span class="px-3 text-white small">📅 วันที่:</span>
@@ -501,26 +501,36 @@
         </div>
       </div>
       
-      <div class="filter-bar mb-3">
-        <div class="dept-badge active" id="dcFilterAll" onclick="filterDiscord('ALL', this)">แสดงทั้งหมด</div>
-        <div class="dept-badge" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
-        <div class="dept-badge" onclick="filterDiscord('LATE', this)">🔴 มาสาย</div>
-        <div class="dept-badge" onclick="filterDiscord('MISSING', this)">⚪ ยังไม่เข้างาน</div>
+      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
+        <div id="tabBtnDcAttendance" class="dept-badge active" onclick="switchDiscordTab('attendance')" style="font-size: 1.05rem; padding: 8px 25px;">⏰ 1. ตรวจสอบเวลาเข้างาน</div>
+        <div id="tabBtnDcMonitor" class="dept-badge" onclick="switchDiscordTab('monitor')" style="font-size: 1.05rem; padding: 8px 25px;">📡 2. ติดตามสถานะ (กล้องวงจรปิด)</div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="filter-bar" id="dcFilterBar">
+          <div class="dept-badge active" id="dcFilterAll" onclick="filterDiscord('ALL', this)">แสดงทั้งหมด</div>
+          <div class="dept-badge" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
+          <div class="dept-badge" onclick="filterDiscord('LATE', this)">🔴 มาสาย</div>
+          <div class="dept-badge" onclick="filterDiscord('MISSING', this)">⚪ ยังไม่เข้างาน</div>
+        </div>
+
+        <div id="dcShiftToolbar" class="d-flex align-items-center gap-2" style="background: rgba(88, 101, 242, 0.1); padding: 6px 15px; border-radius: 8px; border: 1px solid rgba(88, 101, 242, 0.4);">
+            <span class="text-white small fw-bold">⏰ กำหนดเวลาเข้ากะ:</span>
+            <select id="dcShiftSelect" class="form-select form-select-sm bg-dark text-warning fw-bold border-primary" style="width: auto; font-size: 0.95rem;" onchange="renderDiscordTable()">
+                <option value="08:00">08:00 น. (กะเช้า)</option>
+                <option value="20:00">20:00 น. (กะดึก)</option>
+                <option value="00:00">00:00 น. (เที่ยงคืน)</option>
+                <option value="12:00">12:00 น. (เที่ยงวัน)</option>
+            </select>
+        </div>
       </div>
 
       <div class="table-responsive mt-3">
         <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>ชื่อพนักงาน (ตรงกับใน Discord)</th>
-              <th>แผนก / กะ</th>
-              <th>เวลาที่เข้าห้องเสียง</th>
-              <th>ห้องที่สิงอยู่ปัจจุบัน</th>
-              <th>สถานะเข้างาน</th>
-            </tr>
-          </thead>
+          <thead id="discordThead">
+            </thead>
           <tbody id="discordTableBody">
-             <tr><td colspan="5" class="text-center text-muted py-5">กำลังเชื่อมต่อกับ Supabase...</td></tr>
+             <tr><td colspan="6" class="text-center text-muted py-5">กำลังเชื่อมต่อกับระบบ...</td></tr>
           </tbody>
         </table>
       </div>
@@ -2037,15 +2047,31 @@
   function updateLeaveStatus(id, newStatus) { Swal.fire({ title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?', icon: 'question', showCancelButton: true, confirmButtonColor: newStatus === 'Approved' ? '#00ff66' : '#ff3366', confirmButtonText: 'ยืนยัน', background:'#111', color:'#fff' }).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(currentLeavePage); Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
   function deleteLeave(id) { Swal.fire({title: 'ยกเลิกคำขอนี้?', text: 'ข้อมูลจะถูกลบออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').delete().eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(1); Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
-  // ==========================================
-  // 🚀 10. ระบบ Discord (Real-time) - แก้อาการเป๊ะๆ
+  /// ==========================================
+  // 🚀 10. ระบบ Discord (แยกแท็บอัจฉริยะ)
   // ==========================================
   let allDiscordData = [];
   let currentDiscordFilter = 'ALL';
+  let currentDiscordTab = 'attendance'; // แท็บเริ่มต้น
+
+  // 🌟 ฟังก์ชันสลับแท็บ
+  function switchDiscordTab(tab) {
+      currentDiscordTab = tab;
+      
+      // สลับสีปุ่ม
+      document.getElementById('tabBtnDcAttendance').classList.toggle('active', tab === 'attendance');
+      document.getElementById('tabBtnDcMonitor').classList.toggle('active', tab === 'monitor');
+      
+      // ซ่อน/โชว์ เครื่องมือให้ตรงกับแท็บ
+      document.getElementById('dcShiftToolbar').style.display = (tab === 'attendance') ? 'flex' : 'none';
+      document.getElementById('dcFilterBar').style.display = (tab === 'attendance') ? 'flex' : 'none';
+      
+      renderDiscordTable();
+  }
 
   function filterDiscord(status, btn) {
       currentDiscordFilter = status;
-      document.querySelectorAll('#discordSection .dept-badge').forEach(b => {
+      document.querySelectorAll('#dcFilterBar .dept-badge').forEach(b => {
           b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
       });
       btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
@@ -2068,11 +2094,7 @@
               });
           }
 
-          const { data, error } = await supabaseClient
-              .from('discord_attendance')
-              .select('*')
-              .eq('dateStr', dateStr);
-          
+          const { data, error } = await supabaseClient.from('discord_attendance').select('*').eq('dateStr', dateStr);
           if (error) throw error;
           allDiscordData = data || [];
           renderDiscordTable();
@@ -2081,26 +2103,38 @@
       }
   }
 
+  // 🌟 ฟังก์ชันคำนวณเวลาสาย (เป็นนาที)
+  function calculateLateMinutes(checkInTimeStr, shiftTimeStr) {
+      if (!checkInTimeStr || !shiftTimeStr) return 0;
+      const checkInDate = new Date(checkInTimeStr);
+      const [shiftH, shiftM] = shiftTimeStr.split(':').map(Number);
+      
+      // สร้างเวลาเข้ากะ โดยอิงจากวันที่พนักงานเข้างาน
+      const shiftDate = new Date(checkInDate);
+      shiftDate.setHours(shiftH, shiftM, 0, 0);
+
+      // ลบเวลาหาความต่าง (มิลลิวินาที -> นาที)
+      const diffMs = checkInDate.getTime() - shiftDate.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      
+      return diffMins > 0 ? diffMins : 0;
+  }
+
   function renderDiscordTable() {
       const tbody = document.getElementById('discordTableBody');
+      const thead = document.getElementById('discordThead');
       tbody.innerHTML = '';
       
-      // ปรับหัวตารางให้มีคอลัมน์ใหม่
-      const thead = document.querySelector('#discordSection table thead tr');
-      if (thead) {
-          thead.innerHTML = `
-              <th>ชื่อพนักงาน</th>
-              <th>แผนก / กะ</th>
-              <th>เวลาเข้างาน</th>
-              <th>สถานะหน้าจอ</th>
-              <th>ห้องปัจจุบัน</th>
-              <th>ขยับล่าสุดเมื่อ</th>
-              <th>การมางาน</th>
-          `;
+      // 🌟 สลับหัวตารางตามแท็บที่เลือก
+      if (currentDiscordTab === 'attendance') {
+          thead.innerHTML = `<tr><th>ชื่อพนักงาน</th><th>แผนก / กะ (ตาราง)</th><th>เวลาเข้าดิสคอร์ด (ตอกบัตร)</th><th>เป้าหมายเวลาเข้ากะ</th><th>สถานะการมางาน</th></tr>`;
+      } else {
+          thead.innerHTML = `<tr><th>ชื่อพนักงาน</th><th>แผนก / กะ</th><th>สถานะหน้าจอ (Presence)</th><th>ห้องที่สิงอยู่ปัจจุบัน</th><th>ขยับตัวล่าสุดเมื่อ</th><th>🚨 การแจ้งเตือนระบบ</th></tr>`;
       }
 
       let html = '';
       let hasData = false;
+      const selectedShift = document.getElementById('dcShiftSelect').value;
 
       function extractCoreName(fullName) {
           if (!fullName) return "";
@@ -2123,79 +2157,84 @@
 
           const dcRecord = allDiscordData.find(d => extractCoreName(d.nickname) === sysNameCleaned);
           const isOff = offDutyStamps.includes(stamp);
-          if (isOff && !dcRecord) return; 
+          
+          if (isOff && !dcRecord) return; // หยุดงานและไม่เข้าดิส ให้ข้ามไป
           
           hasData = true;
-          let timeIn = '-'; let channel = '-'; let statusHtml = ''; let filterMatch = false;
-          let presence = "⚪ ออฟไลน์"; let lastMove = "-"; let presenceClass = "text-muted";
 
-          if (dcRecord) {
-              const timeObj = new Date(dcRecord.check_in_time);
-              timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-              channel = `<span class="text-info fw-bold">🔊 ${dcRecord.channel_name || 'ไม่ระบุห้อง'}</span>`;
-              
-              presence = dcRecord.presence_status || "🟢 ออนไลน์";
-              lastMove = dcRecord.last_moved_at || timeIn;
-              presenceClass = presence.includes("🌙") ? "text-warning fw-bold" : "text-success";
+          // ถ้าเลือกแท็บ: ตรวจสอบเวลาเข้างาน
+          if (currentDiscordTab === 'attendance') {
+              let timeIn = '-';
+              let lateStatusHtml = '';
+              let filterMatch = false;
 
-              if (dcRecord.status === 'LATE') {
-                  statusHtml = `<span class="badge bg-danger">🔴 มาสาย</span>`;
-                  if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'LATE') filterMatch = true;
+              if (dcRecord) {
+                  const timeObj = new Date(dcRecord.check_in_time);
+                  timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                  
+                  // คำนวณสาย
+                  const lateMins = calculateLateMinutes(dcRecord.check_in_time, selectedShift);
+                  if (lateMins > 0) {
+                      lateStatusHtml = `<span class="badge bg-danger fs-6">🔴 สาย ${lateMins} นาที</span>`;
+                      if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'LATE') filterMatch = true;
+                  } else {
+                      lateStatusHtml = `<span class="badge bg-success fs-6">🟢 ตรงเวลา</span>`;
+                      if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'ON_TIME') filterMatch = true;
+                  }
               } else {
-                  statusHtml = `<span class="badge bg-success">🟢 ตรงเวลา</span>`;
-                  if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'ON_TIME') filterMatch = true;
+                  lateStatusHtml = `<span class="badge bg-secondary fs-6">⚪ ยังไม่เข้างาน</span>`;
+                  if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'MISSING') filterMatch = true;
               }
-          } else {
-              statusHtml = `<span class="badge bg-secondary">⚪ ยังไม่เข้างาน</span>`;
-              if (currentDiscordFilter === 'ALL' || currentDiscordFilter === 'MISSING') filterMatch = true;
-          }
 
-          if (filterMatch) {
-              const displayNick = dcRecord ? dcRecord.nickname : nick;
+              if (filterMatch) {
+                  const displayNick = dcRecord ? dcRecord.nickname : nick;
+                  html += `<tr>
+                      <td class="fw-bold text-white">${displayNick}</td>
+                      <td class="text-muted small">${dept} <span class="badge bg-dark border">${stamp}</span></td>
+                      <td class="text-warning fw-bold">${timeIn}</td>
+                      <td class="text-info">${selectedShift} น.</td>
+                      <td>${lateStatusHtml}</td>
+                  </tr>`;
+              }
+          } 
+          // ถ้าเลือกแท็บ: ติดตามสถานะกล้องวงจรปิด
+          else {
+              if (!dcRecord) return; // ไม่โชว์คนยังไม่เข้างานในหน้าติดตามสถานะ
+
+              const timeObj = new Date(dcRecord.check_in_time);
+              const timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+              
+              let presence = dcRecord.presence_status || "🟢 ออนไลน์";
+              let channel = dcRecord.channel_name || 'ไม่ระบุห้อง';
+              let lastMove = dcRecord.last_moved_at || timeIn;
+              
+              let presenceClass = "text-success";
+              let channelClass = "text-info fw-bold";
+              let alertHtml = `<span class="badge bg-dark border text-muted">✅ ปกติ</span>`;
+
+              // 🚨 ตรวจจับการหนีงาน / ออกจากห้องเสียง
+              if (channel.includes('❌') || channel.includes('ออก')) {
+                  channelClass = "text-danger fw-bold";
+                  alertHtml = `<span class="badge" style="background:#ff3366; box-shadow: 0 0 10px #ff3366;">🚨 หนีออกจากห้องเสียง!</span>`;
+              } 
+              // ⚠️ ตรวจจับการหลับ / ไม่อยู่หน้าจอ (พระจันทร์เสี้ยว)
+              else if (presence.includes("🌙")) {
+                  presenceClass = "text-warning fw-bold";
+                  alertHtml = `<span class="badge" style="background:#ff9900; color:#000; box-shadow: 0 0 10px #ff9900;">⚠️ ไม่อยู่หน้าจอ (Idle)</span>`;
+              }
+
               html += `<tr>
-                  <td class="fw-bold text-white">${displayNick}</td>
+                  <td class="fw-bold text-white">${dcRecord.nickname}</td>
                   <td class="text-muted small">${dept} <span class="badge bg-dark border">${stamp}</span></td>
-                  <td class="text-warning">${timeIn}</td>
                   <td class="${presenceClass}">${presence}</td>
-                  <td>${channel}</td>
+                  <td class="${channelClass}">🔊 ${channel}</td>
                   <td class="text-white-50">${lastMove}</td>
-                  <td>${statusHtml}</td>
+                  <td>${alertHtml}</td>
               </tr>`;
           }
       });
 
-      // 2. เช็คคนแปลกหน้าที่ไม่มีในระบบ
-      allDiscordData.forEach(dc => {
-          const dcNameCleaned = extractCoreName(dc.nickname);
-          const foundInSys = allUsersData.find(u => extractCoreName(u[1]) === dcNameCleaned);
-          
-          if (!foundInSys) {
-              hasData = true;
-              const timeObj = new Date(dc.check_in_time);
-              const timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-              const channel = `<span class="text-info fw-bold">🔊 ${dc.channel_name || 'ไม่ระบุห้อง'}</span>`;
-              const presence = dc.presence_status || "🟢 ออนไลน์";
-              const lastMove = dc.last_moved_at || timeIn;
-              const presenceClass = presence.includes("🌙") ? "text-warning fw-bold" : "text-success";
-
-              let statusHtml = dc.status === 'LATE' ? `<span class="badge bg-danger">🔴 มาสาย</span>` : `<span class="badge bg-success">🟢 ตรงเวลา</span>`;
-              let filterMatch = (currentDiscordFilter === 'ALL') || (dc.status === 'LATE' && currentDiscordFilter === 'LATE') || (dc.status !== 'LATE' && currentDiscordFilter === 'ON_TIME');
-              
-              if (filterMatch) {
-                  html += `<tr>
-                      <td class="fw-bold text-warning">${dc.nickname} <br><small class="text-danger">(ไม่มีชื่อในระบบ)</small></td>
-                      <td class="text-muted small">-</td>
-                      <td class="text-warning">${timeIn}</td>
-                      <td class="${presenceClass}">${presence}</td>
-                      <td>${channel}</td>
-                      <td class="text-white-50">${lastMove}</td>
-                      <td>${statusHtml}</td>
-                  </tr>`;
-              }
-          }
-      });
-
-      if (!hasData || html === '') tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-5">ไม่พบพนักงานในสถานะที่เลือก (หรือทุกคนหยุดงาน)</td></tr>`;
+      if (!hasData || html === '') tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">ไม่มีข้อมูลพนักงานตามเงื่อนไขที่เลือก</td></tr>`;
       else tbody.innerHTML = html;
   }
 
