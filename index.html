@@ -2105,7 +2105,11 @@
           if (!fullName) return "";
           let name = fullName.toUpperCase().replace(/[^\x00-\x7F]/g, "").trim();
           name = name.replace(/กะดึก/g, '').replace(/กะเช้า/g, '').trim();
-          let parts = name.split(/[\s-]+/);
+          
+          // 🌟 เพิ่มการหั่นคำด้วยขีดล่าง (_) ด้วย
+          let parts = name.split(/[\s-_]+/);
+          
+          // 🌟 เปลี่ยนให้กรองคำที่ไม่มีขีด
           const prefixes = ['OD', 'ODOL', 'AMOL', 'FTOL', 'FT'];
           parts = parts.filter(p => !prefixes.includes(p));
           let coreName = parts.find(p => /^[A-Z]+$/.test(p));
