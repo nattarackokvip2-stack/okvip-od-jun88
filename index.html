@@ -1040,6 +1040,8 @@
           await loadScheduleTable();
           await loadDailyJobData();
           await loadDailyMealData(); 
+          
+          await loadDiscordAttendance(); // 🌟 เพิ่มบรรทัดนี้เข้ามาครับ! เพื่อให้มันโหลดทันที 🌟
 
           if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
           if(isLoginEvent) showLoginAnnouncement();
