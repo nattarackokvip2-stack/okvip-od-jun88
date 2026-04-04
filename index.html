@@ -430,17 +430,25 @@
 
     <div id="manualSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">📖 คู่มือการทำงานแต่ละแผนก</h4>
+        <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">📖 คู่มือการทำงาน และ กติกา</h4>
         <div class="d-flex gap-2">
-            <input type="text" id="searchManual" class="form-control neon-input-search" placeholder="🔍 ค้นหาคู่มือ..." oninput="handleManualSearch(this.value)">
-            <button id="addManualBtn" class="btn btn-neon-blue px-4" style="display:none;" onclick="openNewManualModal()">➕ สร้างคู่มือ</button>
+            <input type="text" id="searchManual" class="form-control neon-input-search" placeholder="🔍 ค้นหาหัวข้อ..." oninput="handleManualSearch(this.value)">
+            <button id="addManualBtn" class="btn btn-neon-blue px-4" style="display:none;" onclick="openNewManualModal()">➕ สร้างเนื้อหาใหม่</button>
         </div>
       </div>
-      <div class="filter-bar mb-4 pb-3" style="border-bottom: 1px solid #333;">
-        <div class="dept-badge active" onclick="filterManualView('ALL', this)">🔍 ทั้งหมด</div>
+      
+      <div class="filter-bar mb-3 pb-2" style="border-bottom: 1px solid #333;">
+        <div id="tabManual" class="dept-badge active" onclick="switchManualTab('MANUAL', this)">📖 คู่มือการทำงาน</div>
+        <div id="tabRule" class="dept-badge" onclick="switchManualTab('RULE', this)">⚖️ กติกาและเงื่อนไข</div>
+      </div>
+
+      <div class="filter-bar mb-4">
+        <div class="dept-badge active" onclick="filterManualView('ALL', this)">🔍 ดูทั้งหมด</div>
         <div class="dept-badge" onclick="filterManualView('ทั่วไป (ALL)', this)">🌐 ทั่วไป</div>
         <div class="dept-badge" onclick="filterManualView('ออดิท (OD)', this)">🔎 OD</div>
+        <div class="dept-badge" onclick="filterManualView('ออดิทออนไลน์ (ODOL)', this)">💻 ODOL</div>
       </div>
+      
       <div id="manualGridArea" class="manual-grid"></div>
     </div>
 
@@ -665,19 +673,30 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-body p-4">
-        <h4 class="fw-bold mb-4 text-center text-info" id="manualModalTitle">📝 สร้างหมวดหมู่คู่มือ</h4>
+        <h4 class="fw-bold mb-4 text-center text-info" id="manualModalTitle">📝 สร้างหมวดหมู่เนื้อหา</h4>
         <form id="addManualForm" onsubmit="handleManualSubmit(event)">
           <input type="hidden" id="editManualId"> 
-          <label class="small mb-1 text-white">เลือกแผนกที่เกี่ยวข้อง</label>
+          
+          <label class="small mb-1 text-white">1. หมวดหมู่หลัก (Tab)</label>
+          <select id="manMainType" class="form-select mb-3" required>
+            <option value="MANUAL">📖 คู่มือการทำงาน</option>
+            <option value="RULE">⚖️ กติกาและเงื่อนไข</option>
+          </select>
+
+          <label class="small mb-1 text-white">2. แผนกที่เกี่ยวข้อง</label>
           <select id="manDept" class="form-select mb-3" required>
             <option value="ทั่วไป (ALL)">ทั่วไป (ทุกแผนก)</option>
             <option value="ออดิท (OD)">ออดิท (OD)</option>
+            <option value="ออดิทออนไลน์ (ODOL)">ออดิทออนไลน์ (ODOL)</option>
           </select>
-          <label class="small mb-1 text-white">ชื่อหมวดหมู่</label>
-          <input type="text" id="manCat" class="form-control mb-3" placeholder="เช่น ขั้นตอนการถอน" required>
-          <label class="small mb-1 text-white">หัวข้อคู่มือ (Title)</label>
+          
+          <label class="small mb-1 text-white">3. ป้ายกำกับย่อย (Tag)</label>
+          <input type="text" id="manCat" class="form-control mb-3" placeholder="เช่น ขั้นตอนการถอน, กฎการลางาน" required>
+          
+          <label class="small mb-1 text-white">4. หัวข้อหลัก (Title)</label>
           <input type="text" id="manTitle" class="form-control mb-4" placeholder="เช่น ขั้นตอนการทำงานประจำวัน" required>
-          <button type="submit" class="btn btn-neon-blue w-100 py-2">💾 สร้างหัวข้อคู่มือ</button>
+          
+          <button type="submit" class="btn btn-neon-blue w-100 py-2">💾 บันทึกและสร้าง</button>
         </form>
       </div>
     </div>
@@ -865,6 +884,7 @@
       return slots;
   }
 
+  // ระบบบีบอัดรูปภาพทั่วไป (หน้าปกเว็บ)
   function compressImage(file, callback) {
       Swal.fire({ title: 'กำลังประมวลผลรูปภาพ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
       const reader = new FileReader(); reader.readAsDataURL(file);
@@ -876,20 +896,52 @@
               if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
               canvas.width = width; canvas.height = height; 
               const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, width, height);
-              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.9); Swal.close(); callback(compressedBase64);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8); Swal.close(); callback(compressedBase64);
           };
       };
   }
 
-  function setupPasteArea(areaId, fileId, processCallback) {
+  // 🌟 ระบบภาพคมชัดสูง (สำหรับคู่มือการสอน) 🌟
+  function compressImageHQ(file, callback) {
+      Swal.fire({ title: 'กำลังโหลดรูปภาพ (โหมดคมชัด)...', allowOutsideClick: false, didOpen: () => { Swal.showLoading() } });
+      const reader = new FileReader(); reader.readAsDataURL(file);
+      reader.onload = event => {
+          const img = new Image(); img.src = event.target.result;
+          img.onload = () => {
+              const canvas = document.createElement('canvas'); 
+              const MAX_WIDTH = 2500; // ขยายความกว้างสูงสุดให้ชัดขึ้น
+              let width = img.width; let height = img.height;
+              if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+              canvas.width = width; canvas.height = height; 
+              const ctx = canvas.getContext('2d'); 
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = "high"; // สั่งให้เบราว์เซอร์เรนเดอร์ภาพแบบเนียนที่สุด
+              ctx.drawImage(img, 0, 0, width, height);
+              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.98); // คงคุณภาพไว้ที่ 98%
+              Swal.close(); callback(compressedBase64);
+          };
+      };
+  }
+
+  // ตัวจัดการการแปะรูป
+  function setupPasteArea(areaId, fileId, processCallback, isHighQuality = false) {
       const area = document.getElementById(areaId); const fileInput = document.getElementById(fileId);
       if(area && fileInput) {
           area.addEventListener('click', () => fileInput.click());
-          fileInput.addEventListener('change', function(e) { if(e.target.files && e.target.files[0]) compressImage(e.target.files[0], processCallback); });
+          fileInput.addEventListener('change', function(e) { 
+              if(e.target.files && e.target.files[0]) {
+                  if(isHighQuality) compressImageHQ(e.target.files[0], processCallback);
+                  else compressImage(e.target.files[0], processCallback);
+              }
+          });
           area.addEventListener('paste', function(e) {
               e.preventDefault(); const items = (e.clipboardData || e.originalEvent.clipboardData).items; let imageFound = false;
               for (let i = 0; i < items.length; i++) { 
-                  if (items[i].kind === 'file' && items[i].type.includes('image/')) { compressImage(items[i].getAsFile(), processCallback); imageFound = true; break; } 
+                  if (items[i].kind === 'file' && items[i].type.includes('image/')) { 
+                      if(isHighQuality) compressImageHQ(items[i].getAsFile(), processCallback);
+                      else compressImage(items[i].getAsFile(), processCallback);
+                      imageFound = true; break; 
+                  } 
               }
               if (!imageFound) Swal.fire({ toast: true, position: 'top-end', title: 'ไม่พบรูปภาพ!', icon: 'error', showConfirmButton: false, timer: 3000, background: '#111', color: '#fff' });
           });
@@ -897,9 +949,10 @@
   }
 
   window.onload = function() {
-    setupPasteArea('stepPasteArea', 'stepMediaFile', processStepImage);
-    setupPasteArea('portalPasteArea', 'portalMediaFile', processPortalImage);
-    setupPasteArea('backendPasteArea', 'backendMediaFile', processBackendImage);
+    // 🌟 สั่งให้ช่องแปะรูปของคู่มือ ใช้โหมดภาพความละเอียดสูง (HQ = true) 🌟
+    setupPasteArea('stepPasteArea', 'stepMediaFile', processStepImage, true); 
+    setupPasteArea('portalPasteArea', 'portalMediaFile', processPortalImage, false);
+    setupPasteArea('backendPasteArea', 'backendMediaFile', processBackendImage, false);
     
     const now = new Date();
     const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0') + "-" + String(now.getDate()).padStart(2, '0');
@@ -1775,32 +1828,119 @@
   }
 
   // ==========================================
-  // 🚀 7. คู่มือการทำงาน (Manuals)
+  // 🚀 7. คู่มือการทำงานและกติกา (Manuals)
   // ==========================================
+  let currentManualMainTab = 'MANUAL'; // เก็บค่าแท็บหลัก (คู่มือ / กติกา)
+  
+  function switchManualTab(tab, btn) {
+      currentManualMainTab = tab;
+      document.getElementById('tabManual').classList.remove('active');
+      document.getElementById('tabRule').classList.remove('active');
+      document.getElementById('tabManual').style.borderColor = "#444";
+      document.getElementById('tabManual').style.color = "#ccc";
+      document.getElementById('tabRule').style.borderColor = "#444";
+      document.getElementById('tabRule').style.color = "#ccc";
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
+      renderManualGrid();
+  }
+
   function handleManualSearch(term) { manualSearchTerm = term.toLowerCase().trim(); renderManualGrid(); }
   function processStepImage(b64) { document.getElementById('stepImagePreview').src = b64; document.getElementById('stepImagePreview').style.display = 'block'; document.getElementById('stepMediaBase64').value = b64; document.getElementById('stepPasteText').style.display = 'none'; document.getElementById('btnStepClearImage').style.display = 'block'; }
   function clearStepImage() { document.getElementById('stepImagePreview').src = ''; document.getElementById('stepImagePreview').style.display = 'none'; document.getElementById('stepMediaBase64').value = ''; document.getElementById('stepPasteText').style.display = 'block'; document.getElementById('btnStepClearImage').style.display = 'none'; document.getElementById('stepMediaFile').value = ''; }
   function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('imageLightbox').classList.add('active'); }
   function closeLightbox() { document.getElementById('imageLightbox').classList.remove('active'); setTimeout(() => { document.getElementById('lightboxImg').src = ''; }, 300); }
-  function resetManualForm() { document.getElementById('addManualForm').reset(); document.getElementById('manualModalTitle').innerText = '📝 สร้างหมวดหมู่คู่มือใหม่'; }
-  async function handleManualSubmit(e) { e.preventDefault(); const payload = { department: document.getElementById('manDept').value, category: document.getElementById('manCat').value, title: document.getElementById('manTitle').value, stepsData: "[]" }; await supabaseClient.from('manuals').insert([payload]); bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).hide(); refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'สร้างสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); }
-  function filterManualView(dept, btn) { currentManualFilter = dept; document.querySelectorAll('#manualSection .dept-badge').forEach(b => {b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc";}); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderManualGrid(); }
+  function resetManualForm() { document.getElementById('addManualForm').reset(); document.getElementById('manualModalTitle').innerText = '📝 สร้างหมวดหมู่เนื้อหาใหม่'; }
+  
+  async function handleManualSubmit(e) { 
+      e.preventDefault(); 
+      // 🌟 นำประเภทหลัก (MANUAL/RULE) มารวมกับแผนก เพื่อประหยัดการสร้าง Column ใหม่ใน Database
+      const packedDept = document.getElementById('manMainType').value + "|" + document.getElementById('manDept').value;
+      const payload = { department: packedDept, category: document.getElementById('manCat').value, title: document.getElementById('manTitle').value, stepsData: "[]" }; 
+      
+      const btn = document.querySelector('#addManualForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳...';
+      try {
+          await supabaseClient.from('manuals').insert([payload]); 
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).hide(); 
+          refreshData(document.getElementById('refreshBtn')); 
+          Swal.fire({toast:true, position:'top-end', title:'สร้างสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกและสร้าง'; }
+  }
+
+  function filterManualView(dept, btn) { currentManualFilter = dept; document.querySelectorAll('#manualSection .dept-badge').forEach(b => { if(b.id !== 'tabManual' && b.id !== 'tabRule'){ b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc"; } }); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderManualGrid(); }
+  
   function renderManualGrid() {
     const area = document.getElementById('manualGridArea'); area.innerHTML = ''; let hasContent = false;
     allManualsData.forEach(r => {
-      const [mId, mDept, mCat, mTitle] = r; const safeDept = mDept ? mDept.toString() : ''; if(currentManualFilter!=='ALL' && safeDept!==currentManualFilter && safeDept!=='ทั่วไป (ALL)') return; if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; hasContent = true; const admin = myRole!=='Member' ? `<div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); confirmDeleteManual('${mId}')">✖ ลบ</button></div>` : ''; let icon = "📁"; if(safeDept.includes("ODOL")) icon = "🌐"; else if(safeDept.includes("OD")) icon = "🔎"; area.innerHTML += `<div class="manual-card" onclick="openViewManual('${mId}')">${admin}<div class="d-flex align-items-start"><span class="icon">${icon}</span><div><h5 class="title">${mTitle}</h5><div class="small text-muted mt-1">[${safeDept}] ${mCat}</div></div></div><div class="read-more">คลิกเพื่อเข้าดู &rarr;</div></div>`;
-    });
-    if(!hasContent) area.innerHTML = `<div class="text-center py-5 w-100 text-muted">ไม่พบข้อมูล</div>`;
-  }
-  function openViewManual(id) { const manual = allManualsData.find(r => r[0].toString()===id.toString()); if(!manual) return; currentlyViewingManualId = id; document.getElementById('viewManTitle').innerText = manual[3]; document.getElementById('viewManDept').innerText = "📌 " + manual[1]; document.getElementById('viewManCat').innerText = "🏷️ " + manual[2]; try { currentlyViewingSteps = JSON.parse(manual[4]); if (!Array.isArray(currentlyViewingSteps)) currentlyViewingSteps = []; } catch(e) { currentlyViewingSteps = []; } renderSteps(); document.getElementById('btnAddStep').style.display = myRole!=='Member' ? 'block' : 'none'; bootstrap.Modal.getOrCreateInstance(document.getElementById('viewManualModal')).show(); }
-  function renderSteps() { const area = document.getElementById('viewManStepsArea'); area.innerHTML = ''; if(currentlyViewingSteps.length===0){ area.innerHTML=`<div class="text-center text-muted py-5">ยังไม่มีขั้นตอน</div>`; return; } currentlyViewingSteps.forEach((s, i) => { const imgHtml = s.img ? `<div class="mt-3 text-center"><img src="${s.img}" class="manual-step-img" onclick="openLightbox('${s.img}')"></div>` : ''; const admin = myRole!=='Member' ? `<div class="step-tools"><button class="btn btn-sm btn-outline-info" onclick="editStep(${i})">✏️ แก้ไข</button><button class="btn btn-sm btn-outline-danger" onclick="deleteStep(${i})">✖ ลบ</button></div>` : ''; area.innerHTML += `<div class="manual-step-card">${admin}<div class="manual-step-number">ขั้นตอนที่ ${i+1}</div><div class="manual-step-text">${s.text}</div>${imgHtml}</div>`; }); }
-  function openNewManualModal() { resetManualForm(); bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).show(); }
-  function openStepModal() { document.getElementById('addStepForm').reset(); document.getElementById('editStepIndex').value = ''; document.getElementById('stepModalTitle').innerText = '➕ เพิ่มขั้นตอน'; clearStepImage(); bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).show(); }
-  function editStep(idx) { const step = currentlyViewingSteps[idx]; document.getElementById('addStepForm').reset(); document.getElementById('editStepIndex').value = idx; document.getElementById('stepModalTitle').innerText = '✏️ แก้ไขขั้นตอนที่ ' + (idx + 1); document.getElementById('stepContent').value = step.text; if (step.img) processStepImage(step.img); else clearStepImage(); bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).show(); }
-  async function handleStepSubmit(e) { e.preventDefault(); const newText = document.getElementById('stepContent').value; const newImg = document.getElementById('stepMediaBase64').value; const idx = document.getElementById('editStepIndex').value; const btn = document.querySelector('#stepModal button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...'; try { let uploadedImg = newImg; if (newImg && newImg.startsWith('data:image')) { Swal.fire({title:'กำลังอัปโหลดรูป...', didOpen:()=>Swal.showLoading()}); uploadedImg = await uploadToSupabase(newImg, 'manual'); } if(idx !== "") currentlyViewingSteps[idx] = { text: newText, img: uploadedImg }; else currentlyViewingSteps.push({ text: newText, img: uploadedImg }); const { error } = await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); if(error) throw error; bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).hide(); renderSteps(); refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch(err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกขั้นตอน'; } }
-  function deleteStep(idx) { Swal.fire({title:'ลบขั้นตอนนี้?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { currentlyViewingSteps.splice(idx, 1); await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); renderSteps(); refreshData(document.getElementById('refreshBtn')); } }); }
-  function confirmDeleteManual(id) { Swal.fire({title:'ลบหมวดหมู่นี้?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { await supabaseClient.from('manuals').delete().eq('id', id); refreshData(document.getElementById('refreshBtn')); } }); }
+      const [mId, rawDept, mCat, mTitle] = r; 
+      
+      // ถอดรหัสข้อมูลแยกประเภทหลัก (ถ้าของเก่าไม่มีขีดคั่น ให้ถือว่าเป็น คู่มือปกติ)
+      let mainType = 'MANUAL';
+      let actualDept = rawDept ? rawDept.toString() : '';
+      if(actualDept.includes('|')) {
+          const parts = actualDept.split('|');
+          mainType = parts[0];
+          actualDept = parts[1];
+      }
 
+      if(mainType !== currentManualMainTab) return; // กรองตามแท็บหลัก
+      if(currentManualFilter !== 'ALL' && actualDept !== currentManualFilter && actualDept !== 'ทั่วไป (ALL)') return; // กรองตามแผนก
+      if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; // ค้นหา
+      
+      hasContent = true; 
+      const admin = myRole !== 'Member' ? `<div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); confirmDeleteManual('${mId}')">✖ ลบ</button></div>` : ''; 
+      
+      let icon = mainType === 'RULE' ? "⚖️" : "📁"; 
+      if(actualDept.includes("ODOL")) icon = mainType === 'RULE' ? "📜" : "🌐"; 
+      else if(actualDept.includes("OD")) icon = mainType === 'RULE' ? "📌" : "🔎"; 
+      
+      area.innerHTML += `<div class="manual-card" onclick="openViewManual('${mId}')">${admin}<div class="d-flex align-items-start"><span class="icon">${icon}</span><div><h5 class="title">${mTitle}</h5><div class="small text-muted mt-1">[${actualDept}] ${mCat}</div></div></div><div class="read-more">คลิกเพื่อเข้าดู &rarr;</div></div>`;
+    });
+    if(!hasContent) area.innerHTML = `<div class="text-center py-5 w-100 text-muted">ไม่พบข้อมูลในหมวดหมู่นี้</div>`;
+  }
+
+  function openViewManual(id) { 
+      const manual = allManualsData.find(r => r[0].toString()===id.toString()); if(!manual) return; 
+      currentlyViewingManualId = id; 
+      
+      let actualDept = manual[1] ? manual[1].toString() : '';
+      if(actualDept.includes('|')) actualDept = actualDept.split('|')[1]; // ถอดรหัสโชว์เฉพาะแผนก
+
+      document.getElementById('viewManTitle').innerText = manual[3]; 
+      document.getElementById('viewManDept').innerText = "📌 " + actualDept; 
+      document.getElementById('viewManCat').innerText = "🏷️ " + manual[2]; 
+      try { currentlyViewingSteps = JSON.parse(manual[4]); if (!Array.isArray(currentlyViewingSteps)) currentlyViewingSteps = []; } catch(e) { currentlyViewingSteps = []; } 
+      renderSteps(); 
+      document.getElementById('btnAddStep').style.display = myRole!=='Member' ? 'block' : 'none'; 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('viewManualModal')).show(); 
+  }
+
+  function renderSteps() { const area = document.getElementById('viewManStepsArea'); area.innerHTML = ''; if(currentlyViewingSteps.length===0){ area.innerHTML=`<div class="text-center text-muted py-5">ยังไม่มีข้อมูล</div>`; return; } currentlyViewingSteps.forEach((s, i) => { const imgHtml = s.img ? `<div class="mt-3 text-center"><img src="${s.img}" class="manual-step-img" onclick="openLightbox('${s.img}')"></div>` : ''; const admin = myRole!=='Member' ? `<div class="step-tools"><button class="btn btn-sm btn-outline-info" onclick="editStep(${i})">✏️ แก้ไข</button><button class="btn btn-sm btn-outline-danger" onclick="deleteStep(${i})">✖ ลบ</button></div>` : ''; area.innerHTML += `<div class="manual-step-card">${admin}<div class="manual-step-number">ส่วนที่ ${i+1}</div><div class="manual-step-text">${s.text}</div>${imgHtml}</div>`; }); }
+  function openNewManualModal() { resetManualForm(); bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).show(); }
+  function openStepModal() { document.getElementById('addStepForm').reset(); document.getElementById('editStepIndex').value = ''; document.getElementById('stepModalTitle').innerText = '➕ เพิ่มเนื้อหา/ขั้นตอน'; clearStepImage(); bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).show(); }
+  function editStep(idx) { const step = currentlyViewingSteps[idx]; document.getElementById('addStepForm').reset(); document.getElementById('editStepIndex').value = idx; document.getElementById('stepModalTitle').innerText = '✏️ แก้ไขเนื้อหาส่วนที่ ' + (idx + 1); document.getElementById('stepContent').value = step.text; if (step.img) processStepImage(step.img); else clearStepImage(); bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).show(); }
+  
+  async function handleStepSubmit(e) { 
+      e.preventDefault(); const newText = document.getElementById('stepContent').value; const newImg = document.getElementById('stepMediaBase64').value; const idx = document.getElementById('editStepIndex').value; const btn = document.querySelector('#stepModal button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังอัปโหลด...'; 
+      try { 
+          let uploadedImg = newImg; 
+          if (newImg && newImg.startsWith('data:image')) { 
+              Swal.fire({title:'กำลังอัปโหลดรูป (HQ)...', didOpen:()=>Swal.showLoading()}); 
+              uploadedImg = await uploadToSupabase(newImg, 'manual_hq'); 
+          } 
+          if(idx !== "") currentlyViewingSteps[idx] = { text: newText, img: uploadedImg }; 
+          else currentlyViewingSteps.push({ text: newText, img: uploadedImg }); 
+          
+          const { error } = await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); 
+          if(error) throw error; 
+          
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).hide(); renderSteps(); refreshData(document.getElementById('refreshBtn')); 
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch(err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกขั้นตอน'; } 
+  }
+  
+  function deleteStep(idx) { Swal.fire({title:'ลบส่วนนี้ทิ้ง?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { currentlyViewingSteps.splice(idx, 1); await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); renderSteps(); refreshData(document.getElementById('refreshBtn')); } }); }
+  function confirmDeleteManual(id) { Swal.fire({title:'ลบหมวดหมู่นี้?', text:'ข้อมูลด้านในจะหายทั้งหมด', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { await supabaseClient.from('manuals').delete().eq('id', id); refreshData(document.getElementById('refreshBtn')); } }); }
+  
   // ==========================================
   // 🚀 8. จัดการเว็บไซต์ (Portals/Backends)
   // ==========================================
