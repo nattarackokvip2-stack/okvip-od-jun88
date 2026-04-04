@@ -323,63 +323,74 @@
     <div id="jobSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <h4 class="fw-bold mb-0" style="color: var(--neon-yellow);">📋 จัดการหน้าที่และสถิติประจำวัน</h4>
-        <div class="d-flex align-items-center" style="background: #111; border: 1px solid var(--neon-yellow); border-radius: 8px;">
-            <span class="px-3 text-white small">📅 เลือกวันที่:</span>
-            <input type="date" id="jobDatePicker" class="form-control w-auto border-0" style="background: transparent; color: var(--neon-yellow);" onchange="loadDailyJobData(); loadDailyMealData();">
+        <div class="d-flex align-items-center gap-2">
+            <button id="btnJobSettings" class="btn btn-sm btn-outline-secondary" style="display:none;" onclick="openJobSettingsModal()">⚙️ ตั้งค่าระบบ</button>
+            <div class="d-flex align-items-center" style="background: #111; border: 1px solid var(--neon-yellow); border-radius: 8px;">
+                <span class="px-3 text-white small">📅 เลือกวันที่:</span>
+                <input type="date" id="jobDatePicker" class="form-control w-auto border-0" style="background: transparent; color: var(--neon-yellow);" onchange="loadDailyJobData(); loadDailyMealData();">
+            </div>
         </div>
-      </div>
-      <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3">
-        <div class="btn-group" role="group">
-          <button type="button" class="btn btn-outline-warning active" id="btnTabDuty" onclick="toggleJobTab('duty')">🎯 จัดการหน้าที่</button>
-          <button type="button" class="btn btn-outline-info" id="btnTabStat" onclick="toggleJobTab('stat')">📊 บันทึกสถิติ</button>
-        </div>
-        <button id="btnJobSettings" class="btn btn-sm btn-outline-secondary" style="display:none;" onclick="openJobSettingsModal()">⚙️ ตั้งค่าระบบ</button>
       </div>
       
-      <div class="filter-bar mb-3">
-        <div class="dept-badge active" id="badgeJobOD" onclick="filterJobDept('ออดิท (OD)', this)">OD</div>
-        <div class="dept-badge" id="badgeJobODOL" onclick="filterJobDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
+      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
+        <div id="tabBtnDuty" class="dept-badge active" onclick="toggleJobTab('duty')" style="font-size: 1rem; padding: 8px 20px;">🎯 จัดการหน้าที่ (Duty)</div>
+        <div id="tabBtnStat" class="dept-badge" onclick="toggleJobTab('stat')" style="font-size: 1rem; padding: 8px 20px;">📊 บันทึกสถิติ (Stats)</div>
+      </div>
+      
+      <div class="d-flex align-items-center gap-3 mb-3 flex-wrap p-3" style="background: rgba(255,204,0,0.05); border: 1px solid rgba(255,204,0,0.2); border-radius: 10px;">
+        <span class="fw-bold text-warning">กรองข้อมูล:</span>
+        <div class="filter-bar">
+          <div class="dept-badge active" id="badgeJobOD" onclick="filterJobDept('ออดิท (OD)', this)">OD</div>
+          <div class="dept-badge" id="badgeJobODOL" onclick="filterJobDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
+        </div>
+        <span class="text-muted">|</span>
+        <select id="jobShiftSetFilter" class="form-select bg-dark text-warning fw-bold" style="width: auto; border-color: var(--neon-yellow); box-shadow: 0 0 5px rgba(255,204,0,0.3);" onchange="handleJobShiftSetFilter(this.value)">
+             <option value="" disabled selected>-- ⚠️ กรุณาเลือกเซ็ตกะ --</option>
+             <option value="OD (A)">เซ็ตกะ: OD (A)</option>
+             <option value="OD (B)">เซ็ตกะ: OD (B)</option>
+             <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
+             <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
+        </select>
+        <div class="form-check form-switch ms-2">
+             <input class="form-check-input" type="checkbox" id="toggleHiddenUsers" onchange="toggleShowHidden(this)">
+             <label class="form-check-label text-muted small mt-1" for="toggleHiddenUsers">👁️ แสดงคนที่ถูกซ่อน</label>
+        </div>
       </div>
 
-      <div id="siteSummaryArea" class="mb-3 d-flex flex-wrap gap-2 p-3 align-items-center" style="background: #0a0a0c; border: 1px solid #333; border-radius: 10px; display: none;">
-         <span class="text-muted small me-2"><i class="fw-bold text-info">📊 สรุปกำลังคนกะปัจจุบัน:</i></span>
-         <div id="siteSummaryBadges" class="d-flex flex-wrap gap-2"></div>
-      </div>
-      
-      <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
-         <div class="d-flex align-items-center gap-3 flex-wrap">
-             <input type="text" id="searchJob" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 180px;">
-             <select id="jobShiftSetFilter" class="form-select bg-dark text-white" style="width: auto; border-color: var(--neon-yellow); box-shadow: 0 0 5px rgba(255,204,0,0.3);" onchange="handleJobShiftSetFilter(this.value)">
-                 <option value="ALL">-- ทุกเซ็ตกะ --</option>
-                 <option value="OD (A)">เซ็ตกะ: OD (A)</option>
-                 <option value="OD (B)">เซ็ตกะ: OD (B)</option>
-                 <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
-                 <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
-             </select>
-             <div class="form-check form-switch mt-1">
-                 <input class="form-check-input" type="checkbox" id="toggleHiddenUsers" onchange="toggleShowHidden(this)">
-                 <label class="form-check-label text-muted small mt-1" for="toggleHiddenUsers">👁️ แสดงคนที่ถูกซ่อน</label>
+      <div id="dutyWorkspace">
+          <div id="siteSummaryArea" class="mb-3 d-flex flex-column gap-2 p-3" style="background: #0a0a0c; border: 1px solid #333; border-radius: 10px; display: none;">
+             <div class="text-info fw-bold mb-1" id="siteSummaryTitle">📊 สรุปกำลังคนกะปัจจุบัน:</div>
+             <div id="siteSummaryBadges" class="d-flex flex-wrap gap-2"></div>
+          </div>
+          
+          <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
+             <input type="text" id="searchJob" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
+             <div id="dutyActionBtns" style="display: flex; gap: 10px;">
+               <button class="btn btn-outline-danger px-3" onclick="confirmClearDuty()">🗑️ ล้างข้อมูล</button>
+               <button class="btn btn-neon-blue px-4" onclick="randomizeDuties()">🔀 สุ่มหน้าที่</button>
+               <button class="btn btn-neon-green px-4" onclick="saveDutyTable()">💾 บันทึกหน้าที่</button>
              </div>
-         </div>
-         <div id="dutyActionBtns" style="display: flex; gap: 10px;">
-           <button class="btn btn-outline-danger px-3" onclick="confirmClearDuty()">🗑️ ล้างข้อมูล</button>
-           <button class="btn btn-neon-blue px-4" onclick="randomizeDuties()">🔀 สุ่มหน้าที่</button>
-           <button class="btn btn-neon-green px-4" onclick="saveDutyTable()">💾 บันทึกหน้าที่</button>
-         </div>
-         <div id="statActionBtns" style="display: none;">
-           <button class="btn btn-neon-yellow px-4" onclick="saveStatTable()">💾 บันทึกสถิติทั้งหมด</button>
-         </div>
+          </div>
+          <div class="table-responsive mt-3">
+            <table class="table table-hover align-middle">
+              <thead><tr><th>ชื่อพนักงาน</th><th>แผนก</th><th>เว็บที่รับผิดชอบ</th><th style="width: 200px;">เว็บที่ทำวันนี้ (เลือกเองได้)</th><th>หน้าที่ประจำวัน</th><th class="text-center">ตั้งค่า</th></tr></thead>
+              <tbody id="dutyTableBody"></tbody>
+            </table>
+          </div>
       </div>
-      <div class="table-responsive mt-3" id="dutyTableArea">
-        <table class="table table-hover align-middle">
-          <thead><tr><th>ชื่อพนักงาน</th><th>แผนก</th><th>เว็บที่รับผิดชอบ</th><th style="width: 200px;">เว็บที่ทำวันนี้ (เลือกเองได้)</th><th>หน้าที่ประจำวัน</th><th class="text-center">ตั้งค่า</th></tr></thead>
-          <tbody id="dutyTableBody"></tbody>
-        </table>
-      </div>
-      <div class="stat-table-wrapper mt-3" id="statTableArea" style="display: none;">
-        <table class="table table-hover align-middle stat-table mb-0">
-          <thead><tr id="statTableHeader"></tr></thead><tbody id="statTableBody"></tbody>
-        </table>
+
+      <div id="statWorkspace" style="display: none;">
+          <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
+             <input type="text" id="searchStat" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
+             <div id="statActionBtns">
+               <button class="btn btn-neon-yellow px-4" onclick="saveStatTable()">💾 บันทึกสถิติทั้งหมด</button>
+             </div>
+          </div>
+          <div class="stat-table-wrapper mt-3">
+            <table class="table table-hover align-middle stat-table mb-0">
+              <thead><tr id="statTableHeader"></tr></thead><tbody id="statTableBody"></tbody>
+            </table>
+          </div>
       </div>
     </div>
 
@@ -1391,8 +1402,20 @@
   // ==========================================
   // 🚀 6. หน้าที่ & สถิติ (Jobs & Stats)
   // ==========================================
-  function toggleJobTab(tabName) { currentJobTab = tabName; document.getElementById('btnTabDuty').classList.toggle('active', tabName==='duty'); document.getElementById('btnTabDuty').classList.toggle('btn-outline-warning', tabName!=='duty'); document.getElementById('btnTabDuty').classList.toggle('btn-warning', tabName==='duty'); document.getElementById('btnTabStat').classList.toggle('active', tabName==='stat'); document.getElementById('btnTabStat').classList.toggle('btn-outline-info', tabName!=='stat'); document.getElementById('btnTabStat').classList.toggle('btn-info', tabName==='stat'); document.getElementById('dutyTableArea').style.display = tabName==='duty'?'block':'none'; document.getElementById('statTableArea').style.display = tabName==='stat'?'block':'none'; document.getElementById('dutyActionBtns').style.display = tabName==='duty'?'flex':'none'; document.getElementById('statActionBtns').style.display = tabName==='stat'?'block':'none'; renderJobTables(); }
-  function filterJobDept(dept, btn) { currentJobFilter = dept; document.querySelectorAll('#jobSection .dept-badge').forEach(b => {b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc";}); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderJobTables(); }
+  function toggleJobTab(tabName) { 
+      currentJobTab = tabName; 
+      document.getElementById('tabBtnDuty').classList.toggle('active', tabName==='duty'); 
+      document.getElementById('tabBtnStat').classList.toggle('active', tabName==='stat'); 
+      
+      document.getElementById('dutyWorkspace').style.display = tabName==='duty' ? 'block' : 'none'; 
+      document.getElementById('statWorkspace').style.display = tabName==='stat' ? 'block' : 'none'; 
+      
+      if(tabName==='duty') document.getElementById('searchJob').value = jobSearchTerm;
+      else document.getElementById('searchStat').value = jobSearchTerm;
+      
+      renderJobTables(); 
+  }
+  function filterJobDept(dept, btn) { currentJobFilter = dept; document.querySelectorAll('#jobSection .dept-badge').forEach(b => { if(b.id!=='tabBtnDuty'&&b.id!=='tabBtnStat') { b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc"; }}); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderJobTables(); }
   function handleJobSearch(term) { jobSearchTerm = term.toLowerCase().trim(); renderJobTables(); }
   function handleJobShiftSetFilter(val) { currentJobShiftSet = val; renderJobTables(); }
   function toggleShowHidden(checkbox) { isShowingHiddenUsers = checkbox.checked; renderJobTables(); }
@@ -1404,11 +1427,44 @@
       const { data: sData } = await supabaseClient.from('daily_stats').select('*').eq('dateStr', dateStr); dailyStatsData = {}; if(sData) sData.forEach(r => dailyStatsData[r.nickname] = r.statsData ? JSON.parse(r.statsData) : {});
       const [y, m, d] = dateStr.split('-'); const ym = `${y}-${m}`;
       const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); dailyScheduleData = {}; if (schData) { schData.forEach(r => { const days = r.daysData ? JSON.parse(r.daysData) : {}; dailyScheduleData[r.nickname] = days[parseInt(d)] || ''; }); }
+      
+      // เซ็ตค่าเริ่มต้นของตัวแปรบังคับเลือกกะ (ถ้ายังไม่เคยเลือก)
+      if(currentJobShiftSet === 'ALL') currentJobShiftSet = '';
       renderJobTables(); 
+  }
+
+  // 🌟 ฟังก์ชันแยกตัวเลือก OD/ODOL แบบบังคับเลือก 🌟
+  function setupJobFilters() {
+      const myNick = localStorage.getItem('okvip_nick'); const myRole = localStorage.getItem('okvip_role'); const me = allUsersData.find(u => u[1] === myNick); if (!me) return; const myDept = me[3] || ''; 
+      const badgeOD = document.getElementById('badgeJobOD'); const badgeODOL = document.getElementById('badgeJobODOL'); const shiftSelect = document.getElementById('jobShiftSetFilter');
+      currentJobShiftSet = ''; // บังคับให้เป็นค่าว่างเพื่อต้องเลือกใหม่
+
+      if (myRole !== 'SuperAdmin') {
+          if (myDept.includes('ODOL')) {
+              if(badgeOD) badgeOD.style.display = 'none'; 
+              if(badgeODOL) { badgeODOL.style.display = 'inline-block'; badgeODOL.click(); }
+              if(shiftSelect) shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกกะ (ODOL) --</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`;
+          } 
+          else if (myDept.includes('OD') && !myDept.includes('ODOL')) {
+              if(badgeODOL) badgeODOL.style.display = 'none'; 
+              if(badgeOD) { badgeOD.style.display = 'inline-block'; badgeOD.click(); }
+              if(shiftSelect) shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกกะ (OD) --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option>`;
+          }
+      } else {
+          if(badgeOD) badgeOD.click();
+          if(shiftSelect) shiftSelect.innerHTML = `<option value="" disabled selected>-- ⚠️ กรุณาเลือกเซ็ตกะ --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`;
+      }
   }
 
   function buildDutyTable() {
     const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = '';
+    
+    // 🌟 ดักจับถ้ายังไม่ได้เลือกกะ ให้หยุดและโชว์แจ้งเตือน
+    if(!currentJobShiftSet || currentJobShiftSet === '') {
+        tbody.innerHTML=`<tr><td colspan="6" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; 
+        document.getElementById('siteSummaryArea').style.display='none'; return;
+    }
+
     let filteredUsers = allUsersData.filter(u => { 
         if(!u || u[7]!=='Active') return false; const nick = u[1] ? u[1].toString().toLowerCase() : ''; const dept = u[3] ? u[3].toString() : ''; const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
         if(currentJobFilter !== 'ALL' && dept !== currentJobFilter) return false;
@@ -1416,13 +1472,14 @@
         if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false;
         const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; 
     });
-    if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="6" class="text-center py-4">ไม่พบข้อมูล</td></tr>`; document.getElementById('siteSummaryArea').style.display='none'; return;}
+    
+    if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="6" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; document.getElementById('siteSummaryArea').style.display='none'; return;}
     
     filteredUsers.forEach(u => {
       const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
       const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; 
       
-      // วิเคราะห์เว็บหลัก/เว็บรองที่เคยเซฟไว้
+      // 🌟 แยกเว็บหลัก / เว็บรอง จากข้อมูลเก่า
       let mainSite = ''; let subSite = '';
       if(curData.site) {
           let parts = curData.site.split(',');
@@ -1430,7 +1487,7 @@
               if(p.includes('(หลัก)')) mainSite = p.replace('(หลัก)', '').trim();
               else if(p.includes('(รอง)')) subSite = p.replace('(รอง)', '').trim();
           });
-          if(!mainSite && !subSite) mainSite = curData.site.trim(); // กรณีของเก่าไม่มีวงเล็บ
+          if(!mainSite && !subSite) mainSite = curData.site.trim(); 
       }
 
       let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
@@ -1441,7 +1498,7 @@
       let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
       availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
 
-      // สร้าง Dropdown ให้เลือกเว็บหลัก เว็บรองเอง
+      // 🌟 Dropdown เลือกเว็บเอง
       let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
       let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
       (sysSettings.websites || []).forEach(w => {
@@ -1460,10 +1517,10 @@
       if (offDutyStamps.includes(curStamp) || curStamp === '') { const sConf = stampConfig[curStamp] || stampConfig['']; tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="false"><td class="fw-bold text-white">${nick}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td colspan="2" class="text-center bg-dark" style="opacity:0.8"><span class="badge px-3 py-2" style="background-color:${sConf.bg}; color:${sConf.text}; border: 1px solid ${sConf.text};">🛏️ ${sConf.label}</span></td><td class="text-center">${adminBtn}</td></tr>`; } 
       else { let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<span class="badge ms-2" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span>`; } tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="false" data-excluded="false"><td class="fw-bold text-white">${nick} ${stampHtml}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td>${siteDropdowns}</td><td><select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select></td><td class="text-center">${adminBtn}</td></tr>`; }
     });
-    updateSiteSummary(); // อัปเดตสรุปทันทีที่สร้างตารางเสร็จ
+    updateSiteSummary();
   }
 
-  // 🌟 ฟังก์ชันคำนวณและสรุปยอดคนประจำเว็บ
+  // 🌟 ฟังก์ชันสรุปยอดเว็บหลัก/รอง แบบ Realtime
   function updateSiteSummary() {
       let counts = {};
       (sysSettings.websites || []).forEach(w => counts[w] = { main: 0, sub: 0 });
@@ -1487,20 +1544,20 @@
           }
       }
       const summaryArea = document.getElementById('siteSummaryArea');
-      if(html === '') {
-          document.getElementById('siteSummaryBadges').innerHTML = '<span class="text-muted small mt-1">ยังไม่มีพนักงานถูกลงงานในกะนี้</span>';
-      } else {
-          document.getElementById('siteSummaryBadges').innerHTML = html;
-      }
+      if (currentJobTab !== 'duty') { summaryArea.style.display = 'none'; return; }
+      
+      const titleDept = currentJobFilter.split(' ')[0];
+      document.getElementById('siteSummaryTitle').innerText = `📊 สรุปกำลังคนกะปัจจุบัน (${titleDept} - ${currentJobShiftSet}):`;
+
+      if(html === '') { document.getElementById('siteSummaryBadges').innerHTML = '<span class="text-muted small mt-1">ยังไม่มีการลงงานพนักงานในกะนี้</span>'; } 
+      else { document.getElementById('siteSummaryBadges').innerHTML = html; }
       summaryArea.style.display = 'flex';
   }
 
-  // 🌟 ฟังก์ชันล้างข้อมูลหน้าจอชั่วคราว
+  // 🌟 ฟังก์ชันล้างข้อมูลหน้างาน (Clear)
   function confirmClearDuty() {
       Swal.fire({
-          title: 'ล้างตารางหน้าที่?',
-          text: 'ข้อมูลหน้าที่ของทุกคนในกะนี้จะถูกรีเซ็ต (หากต้องการบันทึกให้ล้าง ต้องกดปุ่ม "บันทึกหน้าที่" ด้วย)',
-          icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+          title: 'ล้างตารางหน้าที่?', text: 'ข้อมูลหน้าที่ของทุกคนในกะนี้จะถูกรีเซ็ต (หากต้องการลบออกจากระบบ ต้องกดปุ่ม "บันทึกหน้าที่" ด้วย)', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
       }).then((r) => {
           if (r.isConfirmed) {
               document.querySelectorAll('#dutyTableBody tr').forEach(row => {
@@ -1535,8 +1592,7 @@
               if (possiblePrimarySites.length > 0) { assignedPrimary = possiblePrimarySites[0]; if(siteAssignmentCount[assignedPrimary] !== undefined) siteAssignmentCount[assignedPrimary]++; }
               if (possiblePrimarySites.length > 1) { let remainingSites = possiblePrimarySites.slice(1).sort(() => 0.5 - Math.random()); assignedSecondary = remainingSites[0]; }
               
-              const inSiteMain = u.row.querySelector('.sel-site-main');
-              const inSiteSub = u.row.querySelector('.sel-site-sub');
+              const inSiteMain = u.row.querySelector('.sel-site-main'); const inSiteSub = u.row.querySelector('.sel-site-sub');
               if(inSiteMain) inSiteMain.value = assignedPrimary || "";
               if(inSiteSub) inSiteSub.value = assignedSecondary || "";
               
@@ -1589,6 +1645,11 @@
 
   function buildStatTable() {
     const thead = document.getElementById('statTableHeader'); const tbody = document.getElementById('statTableBody'); let thHtml = `<th class="col-sticky-name">ชื่อพนักงาน</th><th class="col-sticky-dept">แผนก</th>`; sysSettings.websites.forEach(s => thHtml += `<th class="stat-input-cell text-center text-muted">${s}</th>`); thHtml += `<th style="width:120px; color: var(--neon-yellow);" class="text-center">จำนวนรายการถอนจริง</th>`; thead.innerHTML = thHtml; tbody.innerHTML = '';
+    
+    if(!currentJobShiftSet || currentJobShiftSet === '') {
+        tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; return;
+    }
+
     let filteredUsers = allUsersData.filter(u => { 
         if(!u || u[7]!=='Active') return false; const nick = u[1]?u[1].toString().toLowerCase():''; const dept = u[3]?u[3].toString():''; const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
         if(currentJobFilter!=='ALL' && dept !== currentJobFilter) return false; 
@@ -1596,6 +1657,9 @@
         if(jobSearchTerm && !nick.includes(jobSearchTerm)) return false; 
         const capable = sysSettings.userSites[u[1]] || []; if(capable.includes('EXCLUDE_DUTY') && !isShowingHiddenUsers) return false; return true; 
     });
+    
+    if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; return;}
+    
     filteredUsers.forEach(u => {
       const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; 
       if (capable.includes('EXCLUDE_DUTY')) { let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="true" style="opacity: 0.4;"><td class="col-sticky-name fw-bold text-white"><del>${nick}</del></td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => tdHtml += `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="ซ่อน"></td>`); tbody.innerHTML += tdHtml + `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="-"></td></tr>`; return; }
@@ -1620,70 +1684,6 @@
       if(payload.length > 0) await supabaseClient.from('daily_stats').insert(payload);
       btn.innerText = '💾 บันทึกสถิติทั้งหมด'; btn.disabled=false; 
       await loadDailyJobData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกสถิติสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
-  }
-  
-  function openUserSiteModal(nick) { tempSetupNick = nick; document.getElementById('siteNickName').innerText = nick; const capable = sysSettings.userSites[nick] || []; document.getElementById('chkExcludeDuty').checked = capable.includes('EXCLUDE_DUTY'); let html = ''; sysSettings.websites.forEach(s => { const checked = capable.includes(s) ? 'checked' : ''; html += `<div class="form-check form-check-inline bg-dark border border-secondary px-3 py-2" style="border-radius:10px;"><input class="form-check-input capable-chk" type="checkbox" id="chk_${s}" value="${s}" ${checked}><label class="form-check-label text-white ms-2" for="chk_${s}">${s}</label></div>`; }); if(sysSettings.websites.length===0) html='<span class="text-danger">ยังไม่ได้ตั้งเว็บ</span>'; document.getElementById('userSiteCheckboxes').innerHTML = html; bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).show(); }
-  function selectAllUserSites() { const checkboxes = document.querySelectorAll('.capable-chk'); let allChecked = true; checkboxes.forEach(chk => { if(!chk.checked) allChecked = false; }); checkboxes.forEach(chk => chk.checked = !allChecked); }
-
-  async function saveUserCapableSitesBtn() { 
-      let sel = []; document.querySelectorAll('.capable-chk:checked').forEach(el => sel.push(el.value)); 
-      if(document.getElementById('chkExcludeDuty').checked) sel.push('EXCLUDE_DUTY'); 
-      const { data: existing } = await supabaseClient.from('user_sites').select('id').eq('nickname', tempSetupNick);
-      if (existing && existing.length > 0) { await supabaseClient.from('user_sites').update({ capableSites: JSON.stringify(sel) }).eq('id', existing[0].id); } 
-      else { await supabaseClient.from('user_sites').insert([{ nickname: tempSetupNick, capableSites: JSON.stringify(sel) }]); }
-      sysSettings.userSites[tempSetupNick] = sel; renderJobTables(); 
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).hide(); Swal.fire({toast:true, position:'top', title:'ตั้งค่าเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
-  }
-
-  // 🌟 ฟังก์ชันเปิดหน้าต่างตั้งค่า (รับประกันกดติด 100%) 🌟
-  function openJobSettingsModal() { 
-      try {
-          if (!sysSettings.dutyTypes || typeof sysSettings.dutyTypes !== 'object' || Array.isArray(sysSettings.dutyTypes)) {
-              sysSettings.dutyTypes = { OD: [], ODOL: [] }; 
-          }
-          
-          document.getElementById('setWebsites').value = (Array.isArray(sysSettings.websites) ? sysSettings.websites : []).join('\n'); 
-          document.getElementById('setDutiesOD').value = (Array.isArray(sysSettings.dutyTypes.OD) ? sysSettings.dutyTypes.OD : []).join('\n'); 
-          document.getElementById('setDutiesODOL').value = (Array.isArray(sysSettings.dutyTypes.ODOL) ? sysSettings.dutyTypes.ODOL : []).join('\n'); 
-          
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).show(); 
-      } catch(error) {
-          console.error("ปุ่มตั้งค่าพังเพราะ:", error);
-          Swal.fire('เกิดข้อผิดพลาด', 'ระบบโหลดหน้าต่างตั้งค่าไม่สำเร็จ', 'error');
-      }
-  }
-
-  // 🌟 ฟังก์ชันบันทึกตั้งค่า
-  async function saveAdminJobSettings() { 
-      const btn = document.querySelector('#jobSettingsModal button');
-      if(btn) { btn.innerText = '⏳ กำลังบันทึก...'; btn.disabled = true; }
-
-      try {
-          const w = document.getElementById('setWebsites').value.split('\n').map(s=>s.trim()).filter(s=>s); 
-          const d_od = document.getElementById('setDutiesOD').value.split('\n').map(s=>s.trim()).filter(s=>s); 
-          const d_odol = document.getElementById('setDutiesODOL').value.split('\n').map(s=>s.trim()).filter(s=>s); 
-          
-          const payloadDuties = { OD: d_od, ODOL: d_odol };
-          const payload = { websites: JSON.stringify(w), dutyTypes: JSON.stringify(payloadDuties) };
-          
-          const { data: jsData } = await supabaseClient.from('job_settings').select('id').limit(1);
-          if (jsData && jsData.length > 0) { 
-              await supabaseClient.from('job_settings').update(payload).eq('id', jsData[0].id); 
-          } else { 
-              await supabaseClient.from('job_settings').insert([payload]); 
-          }
-          
-          sysSettings.websites = w;
-          sysSettings.dutyTypes = payloadDuties;
-          
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).hide(); 
-          Swal.fire({toast:true, position:'top-end', title:'บันทึกการตั้งค่าสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-          renderJobTables(); 
-      } catch(err) {
-          Swal.fire('Error', err.message, 'error');
-      } finally {
-          if(btn) { btn.innerText = 'บันทึกการตั้งค่าระบบ'; btn.disabled = false; }
-      }
   }
 
   // ==========================================
