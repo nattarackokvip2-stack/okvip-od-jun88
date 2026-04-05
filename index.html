@@ -1343,8 +1343,6 @@
     btn.innerText = 'Checking...';
     
     try {
-        // 🚨 แก้จุดที่ 1: เปลี่ยน .single() เป็น .maybeSingle() 
-        // ป้องกันไม่ให้ระบบพ่น Error แดงๆ เวลากรอกรหัสผิด (หาข้อมูลไม่เจอ)
         const { data, error } = await supabaseClient
             .from('users')
             .select('*')
@@ -1352,7 +1350,6 @@
             .eq('password', p)
             .maybeSingle();
 
-        // 🚨 แก้จุดที่ 2: พิมพ์ Error ลง Console ให้คุณรู้สาเหตุที่แท้จริง (กด F12 ดูในเบราว์เซอร์)
         if (error) {
             console.error("Supabase Error Data:", error);
         }
@@ -1371,7 +1368,6 @@
             return; 
         }
         
-        // (ส่วนนี้โค้ดเดิมของคุณ)
         localStorage.setItem('okvip_user', u); 
         localStorage.setItem('okvip_role', data.role); 
         localStorage.setItem('okvip_nick', data.nickname); 
@@ -1383,7 +1379,6 @@
         verifyUserStatus(u, data.nickname, data.role, true); 
         
     } catch (err) { 
-        // 🚨 พิมพ์ Error ลง Console กรณีโค้ดพัง
         console.error("Code Crash Error:", err);
         Swal.fire({title:'Error', text:'ระบบขัดข้อง โปรดดูรายละเอียดใน Console (F12)', icon:'error', background:'#111', color:'#fff'}); 
         btn.disabled = false; 
@@ -1391,11 +1386,14 @@
     }
 }
 
-  function handleLogout() { localStorage.clear(); document.getElementById('mainDashboard').style.display = 'none'; document.getElementById('loginPage').style.display = 'flex'; document.getElementById('user').value = ''; document.getElementById('pass').value = ''; const loginBtn = document.getElementById('loginBtn'); if(loginBtn) { loginBtn.disabled = false; loginBtn.innerText = 'เข้าสู่ระบบ'; } }
-
-  function verifyUserStatus(user, nick, role, isLoginEvent = false) {
-    myRole = role; currentUsername = user; document.getElementById('userDisplay').innerText = nick; document.getElementById('roleLabel').innerText = role; document.getElementById('roleLabel').className = `role-${role}`;
+function verifyUserStatus(user, nick, role, isLoginEvent = false) {
+    myRole = role; 
+    currentUsername = user; 
+    document.getElementById('userDisplay').innerText = nick; 
+    document.getElementById('roleLabel').innerText = role; 
+    document.getElementById('roleLabel').className = `role-${role}`;
     document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
+    
     if(myRole !== 'Member') { 
         document.getElementById('dashboardWidgets').style.setProperty('display', 'flex', 'important');
         document.getElementById('btnClearSchedule').style.display = 'inline-block'; document.getElementById('btnAssignShift').style.display = 'inline-block'; document.getElementById('addBtn').style.display = 'block'; 
@@ -1412,7 +1410,8 @@
     renderStampPalette(); 
     switchMainTab('hubSection'); 
     refreshData(document.getElementById('refreshBtn'), isLoginEvent);
-
+}
+  
   function switchMainTab(sectionId) { 
       try {
           if (unsavedChanges && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); return; } 
