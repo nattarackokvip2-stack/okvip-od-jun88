@@ -316,16 +316,23 @@
       </div>
 
       <div class="schedule-toolbar d-flex flex-column gap-3 mb-3 p-3" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-          <div class="filter-bar">
-             <span class="text-muted small me-2">กลุ่มพนักงาน:</span>
-             <div class="dept-badge active" onclick="filterScheduleDept('ALL', this)">ทั้งหมด</div>
-             <div class="dept-badge" onclick="filterScheduleDept('ออดิท (OD)', this)">🔎 OD</div>
-             <div class="dept-badge" onclick="filterScheduleDept('ออดิทออนไลน์ (ODOL)', this)">🌐 ODOL</div>
-             <div class="dept-badge" onclick="filterScheduleDept('อื่นๆ (OTHER)', this)">🔘 อื่นๆ</div>
-             <div class="dept-badge" onclick="filterScheduleDept('SHIFT_A', this)" style="border-color:#00f0ff;">☀️ กะ A</div>
-             <div class="dept-badge" onclick="filterScheduleDept('SHIFT_B', this)" style="border-color:#ffcc00;">🌙 กะ B</div>
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+           <div class="d-flex flex-column gap-2">
+               <div class="filter-bar" id="schDeptFilterBar">
+                 <span class="text-muted small me-2">กลุ่มพนักงาน:</span>
+                 <div class="dept-badge active" onclick="filterScheduleDept('ALL', this)">ทั้งหมด</div>
+                 <div class="dept-badge" onclick="filterScheduleDept('ออดิท (OD)', this)">🔎 OD</div>
+                 <div class="dept-badge" onclick="filterScheduleDept('ออดิทออนไลน์ (ODOL)', this)">🌐 ODOL</div>
+                 <div class="dept-badge" onclick="filterScheduleDept('อื่นๆ (OTHER)', this)">🔘 อื่นๆ</div>
+               </div>
+               <div class="filter-bar" id="schShiftFilterBar" style="display: none; padding-left: 10px; border-left: 2px solid #444;">
+                 <span class="text-muted small me-2">เลือกเซ็ตกะ:</span>
+                 <div class="dept-badge active" onclick="filterScheduleShift('ALL', this)">แสดงทั้งหมด</div>
+                 <div class="dept-badge" onclick="filterScheduleShift('A', this)" style="border-color:#00f0ff; color:#00f0ff;">☀️ กะ A</div>
+                 <div class="dept-badge" onclick="filterScheduleShift('B', this)" style="border-color:#ffcc00; color:#ffcc00;">🌙 กะ B</div>
+               </div>
            </div>
+
            <div>
              <button id="btnClearSchedule" onclick="confirmClearSchedule()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🗑️ ล้างตาราง</button>
              <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3 ms-1" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะทำงาน</button>
