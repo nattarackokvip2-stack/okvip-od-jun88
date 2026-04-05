@@ -256,6 +256,7 @@
         </div>
       </div>
     </div>
+
     <div id="announceSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
@@ -593,8 +594,7 @@
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
     </div>
 
-  </div> </div> ```
-<div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
+  </div> </div> <div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center text-warning" id="announceModalTitle">📢 สร้างประกาศใหม่</h4>
     <form id="announceForm" onsubmit="handleAnnounceSubmit(event)">
@@ -947,10 +947,9 @@
     </div>
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
-  
+
 <script>
   // ==========================================
   // ⚡ เริ่มต้นระบบ JavaScript
@@ -1577,12 +1576,14 @@
           document.getElementById('sandboxScheduleActions').style.display = 'none';
           document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
           document.getElementById('btnSaveSchedule').style.display = 'none';
+          document.getElementById('btnSaveSandbox').style.display = 'none';
       } else {
           document.getElementById('tabBtnSwapSandbox').style.borderColor = "#fff"; document.getElementById('tabBtnSwapSandbox').style.color = "#fff";
           document.getElementById('tabBtnRealSchedule').style.borderColor = "#444"; document.getElementById('tabBtnRealSchedule').style.color = "#ccc";
           document.getElementById('realScheduleActions').style.display = 'none';
           document.getElementById('sandboxScheduleActions').style.display = (myRole !== 'Member') ? 'flex' : 'none';
           document.getElementById('stampToolbox').style.setProperty('display', 'none', 'important'); 
+          document.getElementById('btnSaveSchedule').style.display = 'none';
       }
       loadScheduleTable();
   }
@@ -2019,6 +2020,7 @@
           btn.disabled = false; btn.innerText = '🔀 ยืนยันการสลับกะ';
       }
   }
+
   // ==========================================
   // 🚀 6. หน้าที่ & สถิติ (Jobs & Stats)
   // ==========================================
