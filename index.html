@@ -506,7 +506,7 @@
         <div id="tabBtnDcMonitor" class="dept-badge" onclick="switchDiscordTab('monitor')" style="font-size: 1.05rem; padding: 8px 25px;">📡 2. ติดตามสถานะ (กล้องวงจรปิด)</div>
       </div>
 
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2" id="dcAttendanceFilterContainer">
+      <div id="dcAttendanceFilterContainer" class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div class="filter-bar" id="dcFilterBar">
           <div class="dept-badge active" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
           <div class="dept-badge" onclick="filterDiscord('LATE', this)">🔴 มาสาย</div>
@@ -515,7 +515,7 @@
         </div>
       </div>
 
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2" id="dcMonitorFilterContainer" style="display: none;">
+      <div id="dcMonitorFilterContainer" class="d-none justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <div class="filter-bar" id="dcMonitorBar">
           <div class="dept-badge active" onclick="filterMonitorShift('ALL', this)">👥 แสดงคนในระบบทั้งหมด</div>
           <div class="dept-badge" onclick="filterMonitorShift('A', this)">☀️ เฉพาะ กะ A (08:00 - 20:00)</div>
@@ -2055,14 +2055,22 @@
 
   function switchDiscordTab(tab) {
       currentDiscordTab = tab;
+      
+      // สลับสีปุ่มเมนูหลัก
       document.getElementById('tabBtnDcAttendance').classList.toggle('active', tab === 'attendance');
       document.getElementById('tabBtnDcMonitor').classList.toggle('active', tab === 'monitor');
       
-      // บังคับซ่อนโชว์แผงปุ่มกรองให้ตรงกับแท็บ
+      // 🌟 ใช้คำสั่ง d-none เพื่อบังคับซ่อน/โชว์แบบเด็ดขาด 100%
       const attFilter = document.getElementById('dcAttendanceFilterContainer');
       const monFilter = document.getElementById('dcMonitorFilterContainer');
-      if (attFilter) attFilter.style.display = (tab === 'attendance') ? 'flex' : 'none';
-      if (monFilter) monFilter.style.display = (tab === 'monitor') ? 'flex' : 'none';
+      
+      if (tab === 'attendance') {
+          if (attFilter) { attFilter.classList.remove('d-none'); attFilter.classList.add('d-flex'); }
+          if (monFilter) { monFilter.classList.remove('d-flex'); monFilter.classList.add('d-none'); }
+      } else {
+          if (attFilter) { attFilter.classList.remove('d-flex'); attFilter.classList.add('d-none'); }
+          if (monFilter) { monFilter.classList.remove('d-none'); monFilter.classList.add('d-flex'); }
+      }
       
       renderDiscordTable();
   }
