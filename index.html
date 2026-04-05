@@ -1329,32 +1329,67 @@
       document.getElementById('announceModalTitle').innerText = '✏️ แก้ไขประกาศ'; bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).show(); 
   }
   
-  async function handleAnnounceSubmit(e) {
-      e.preventDefault(); const id = document.getElementById('editAnnounceId').value; const title = document.getElementById('annTitle').value; const content = document.getElementById('annContent').value; const isActive = document.getElementById('annActive').checked;
-      const btn = document.querySelector('#announceForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
-      try {
-          if (isActive) await supabaseClient.from('announcements').update({ is_active: 'false' }).neq('id', '0');
-          if (id) await supabaseClient.from('announcements').update({ title, content, is_active: isActive.toString() }).eq('id', id); else await supabaseClient.from('announcements').insert([{ title, content, is_active: isActive.toString() }]);
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).hide(); await loadSupabaseAnnouncements(); Swal.fire({toast:true, position:'top-end', title:'บันทึกประกาศสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-      } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกประกาศ'; }
-  }
-  
-  async function deleteAnnouncement(id) { Swal.fire({title:'ลบประกาศนี้?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('announcements').delete().eq('id', id); await loadSupabaseAnnouncements(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
-
   async function handleLogin() {
-      const u = document.getElementById('user').value; const p = document.getElementById('pass').value; const btn = document.getElementById('loginBtn');
-      if(!u || !p) { Swal.fire({title:'เตือน', text:'กรอกข้อมูลให้ครบ', icon:'warning', background:'#111', color:'#fff'}); return; }
-      btn.disabled = true; btn.innerText = 'Checking...';
-      try {
-          const { data, error } = await supabaseClient.from('users').select('*').eq('username', u).eq('password', p).single();
-          if (error || !data) { Swal.fire({title:'Error', text:'ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; return; }
-          if (data.status === 'Blocked') { Swal.fire({title:'Error', text:'บัญชีนี้ถูกระงับการใช้งาน', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; return; }
-          
-          localStorage.setItem('okvip_user', u); localStorage.setItem('okvip_role', data.role); localStorage.setItem('okvip_nick', data.nickname); localStorage.setItem('okvip_time', new Date().getTime().toString());
-          currentUsername = u; document.getElementById('loginPage').style.display = 'none'; document.getElementById('mainDashboard').style.display = 'block';
-          verifyUserStatus(u, data.nickname, data.role, true); 
-      } catch (err) { Swal.fire({title:'Error', text:'เกิดข้อผิดพลาดในการล็อคอิน', icon:'error', background:'#111', color:'#fff'}); btn.disabled = false; btn.innerText = 'เข้าสู่ระบบ'; }
-  }
+    const u = document.getElementById('user').value; 
+    const p = document.getElementById('pass').value; 
+    const btn = document.getElementById('loginBtn');
+    
+    if(!u || !p) { 
+        Swal.fire({title:'เตือน', text:'กรอกข้อมูลให้ครบ', icon:'warning', background:'#111', color:'#fff'}); 
+        return; 
+    }
+    
+    btn.disabled = true; 
+    btn.innerText = 'Checking...';
+    
+    try {
+        // 🚨 แก้จุดที่ 1: เปลี่ยน .single() เป็น .maybeSingle() 
+        // ป้องกันไม่ให้ระบบพ่น Error แดงๆ เวลากรอกรหัสผิด (หาข้อมูลไม่เจอ)
+        const { data, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('username', u)
+            .eq('password', p)
+            .maybeSingle();
+
+        // 🚨 แก้จุดที่ 2: พิมพ์ Error ลง Console ให้คุณรู้สาเหตุที่แท้จริง (กด F12 ดูในเบราว์เซอร์)
+        if (error) {
+            console.error("Supabase Error Data:", error);
+        }
+
+        if (error || !data) { 
+            Swal.fire({title:'Error', text:'ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง', icon:'error', background:'#111', color:'#fff'}); 
+            btn.disabled = false; 
+            btn.innerText = 'เข้าสู่ระบบ'; 
+            return; 
+        }
+
+        if (data.status === 'Blocked') { 
+            Swal.fire({title:'Error', text:'บัญชีนี้ถูกระงับการใช้งาน', icon:'error', background:'#111', color:'#fff'}); 
+            btn.disabled = false; 
+            btn.innerText = 'เข้าสู่ระบบ'; 
+            return; 
+        }
+        
+        // (ส่วนนี้โค้ดเดิมของคุณ)
+        localStorage.setItem('okvip_user', u); 
+        localStorage.setItem('okvip_role', data.role); 
+        localStorage.setItem('okvip_nick', data.nickname); 
+        localStorage.setItem('okvip_time', new Date().getTime().toString());
+        currentUsername = u; 
+        
+        document.getElementById('loginPage').style.display = 'none'; 
+        document.getElementById('mainDashboard').style.display = 'block';
+        verifyUserStatus(u, data.nickname, data.role, true); 
+        
+    } catch (err) { 
+        // 🚨 พิมพ์ Error ลง Console กรณีโค้ดพัง
+        console.error("Code Crash Error:", err);
+        Swal.fire({title:'Error', text:'ระบบขัดข้อง โปรดดูรายละเอียดใน Console (F12)', icon:'error', background:'#111', color:'#fff'}); 
+        btn.disabled = false; 
+        btn.innerText = 'เข้าสู่ระบบ'; 
+    }
+}
 
   function handleLogout() { localStorage.clear(); document.getElementById('mainDashboard').style.display = 'none'; document.getElementById('loginPage').style.display = 'flex'; document.getElementById('user').value = ''; document.getElementById('pass').value = ''; const loginBtn = document.getElementById('loginBtn'); if(loginBtn) { loginBtn.disabled = false; loginBtn.innerText = 'เข้าสู่ระบบ'; } }
 
