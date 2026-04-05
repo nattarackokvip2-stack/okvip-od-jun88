@@ -1412,6 +1412,25 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     refreshData(document.getElementById('refreshBtn'), isLoginEvent);
 }
   
+  function handleLogout() { 
+    // ล้างข้อมูลการล็อกอินในเครื่อง
+    localStorage.clear(); 
+    
+    // ซ่อนหน้า Dashboard และโชว์หน้า Login
+    document.getElementById('mainDashboard').style.display = 'none'; 
+    document.getElementById('loginPage').style.display = 'flex'; 
+    
+    // เคลียร์ช่องใส่รหัสผ่าน
+    document.getElementById('user').value = ''; 
+    document.getElementById('pass').value = ''; 
+    
+    // รีเซ็ตปุ่มล็อกอินให้กลับมากดได้
+    const loginBtn = document.getElementById('loginBtn'); 
+    if(loginBtn) { 
+        loginBtn.disabled = false; 
+        loginBtn.innerText = 'เข้าสู่ระบบ'; 
+    } 
+}
   function switchMainTab(sectionId) { 
       try {
           if (unsavedChanges && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); return; } 
