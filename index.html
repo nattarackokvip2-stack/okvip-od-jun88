@@ -899,7 +899,7 @@
     <div class="modal-content">
       <div class="modal-body p-4">
         <h4 class="fw-bold mb-3 text-center text-warning">🔀 ระบบสลับกะอัตโนมัติ</h4>
-        <p class="small text-muted text-center mb-4">ระบบจะสลับพนักงานระหว่าง กะ A และ กะ B โดยหลบวันหยุด (X, TX) หน้า-หลังให้ 1 วัน และกระจายวันสลับให้บาลานซ์กัน</p>
+        <p class="small text-muted text-center mb-4">ระบบจะเกลี่ยจำนวนคนสลับกะให้เท่าๆ กันในแต่ละวัน โดยหลบวันหยุด (X, TX) ให้หน้า-หลัง 1 วัน</p>
         
         <form onsubmit="executeShiftSwap(event)">
           <label class="small text-white mb-1">1. เลือกแผนกที่ต้องการสลับกะ</label>
@@ -907,14 +907,21 @@
             <option value="OD">ออดิท (OD)</option>
             <option value="ODOL">ออดิทออนไลน์ (ODOL)</option>
           </select>
+
+          <label class="small text-white mb-1">2. เลือกกะต้นทางที่ต้องการสลับ</label>
+          <select id="swapTargetShift" class="form-select mb-3" required>
+            <option value="BOTH">🔄 สลับพร้อมกันทั้งสองกะ (A ไป B และ B ไป A)</option>
+            <option value="A">☀️ เฉพาะคนกะ A (ย้ายไปเข้ากะดึก B)</option>
+            <option value="B">🌙 เฉพาะคนกะ B (ย้ายไปเข้ากะเช้า A)</option>
+          </select>
           
           <div class="row g-2 mb-4">
               <div class="col-6">
-                  <label class="small text-white mb-1">2. เริ่มสลับตั้งแต่วันที่</label>
+                  <label class="small text-white mb-1">3. เริ่มสลับตั้งแต่วันที่</label>
                   <select id="swapStartDay" class="form-select" required></select>
               </div>
               <div class="col-6">
-                  <label class="small text-white mb-1">3. ถึงวันที่</label>
+                  <label class="small text-white mb-1">4. ถึงวันที่</label>
                   <select id="swapEndDay" class="form-select" required></select>
               </div>
           </div>
@@ -1682,6 +1689,30 @@
       else { Swal.fire({toast:true, position:'top', title:'ไม่มีการเปลี่ยนแปลง', icon:'info', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); }
   }
 
+  // 🌟 โค้ดที่หายไป: ฟังก์ชันยืนยันการล้างตารางทั้งหมดในเดือนนั้น
+  async function confirmClearSchedule() { 
+      const ym = document.getElementById('monthPicker').value; 
+      Swal.fire({ 
+          title: `ไม่บันทึก ${ym}?`, 
+          text: "ข้อมูลของเดือนนี้จะถูกลบทั้งหมด!", 
+          icon: 'warning', 
+          showCancelButton: true, 
+          confirmButtonColor: '#ff3366', 
+          confirmButtonText: 'ล้างทั้งหมด', 
+          background: '#111', 
+          color: '#fff' 
+      }).then(async r => { 
+          if(r.isConfirmed) { 
+              Swal.fire({title:'กำลังล้าง...', didOpen:()=>Swal.showLoading()}); 
+              await supabaseClient.from('schedules').delete().eq('yearMonth', ym); 
+              unsavedChanges = {}; 
+              document.getElementById('btnSaveSchedule').style.display = 'none'; 
+              await loadScheduleTable(); 
+              Swal.fire({toast:true, position:'top-end', title:'ล้างข้อมูลเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          } 
+      }); 
+  }
+
   // ==========================================
   // 🚀 ระบบสลับกะอัตโนมัติ (Auto Shift Swap)
   // ==========================================
@@ -1712,6 +1743,7 @@
       btn.disabled = true; btn.innerText = '⏳ กำลังประมวลผล...';
 
       const dept = document.getElementById('swapDept').value;
+      const targetShift = document.getElementById('swapTargetShift').value; // ค่าที่ผู้ใช้เลือก (BOTH, A, B)
       const startD = parseInt(document.getElementById('swapStartDay').value);
       const endD = parseInt(document.getElementById('swapEndDay').value);
       const ym = document.getElementById('monthPicker').value;
@@ -1733,8 +1765,17 @@
           }
 
           let targetUsers = allUsersData.filter(u => u[7] === 'Active' && u[3].includes(dept));
-          let shiftA_Users = targetUsers.filter(u => u[9] && u[9].includes('(A)'));
-          let shiftB_Users = targetUsers.filter(u => u[9] && u[9].includes('(B)'));
+          
+          let shiftA_Users = [];
+          let shiftB_Users = [];
+
+          // กรองพนักงานตามกะที่เลือก
+          if (targetShift === 'BOTH' || targetShift === 'A') {
+              shiftA_Users = targetUsers.filter(u => u[9] && u[9].includes('(A)'));
+          }
+          if (targetShift === 'BOTH' || targetShift === 'B') {
+              shiftB_Users = targetUsers.filter(u => u[9] && u[9].includes('(B)'));
+          }
 
           let daysInMonth = new Date(ym.split('-')[0], ym.split('-')[1], 0).getDate();
           let swapDates = [];
@@ -1749,10 +1790,11 @@
               return true;
           }
 
+          // ฟังก์ชันกระจายคน (Round-Robin Balancing)
           function assignDates(users) {
               let assignments = [];
               let shuffled = users.sort(() => 0.5 - Math.random()); 
-              let dateIndex = 0;
+              let dateIndex = 0; // ตัวแปรคุมให้สลับวันไปเรื่อยๆ เพื่อให้บาลานซ์ (เช่น 2, 2, 1, 1, 1)
               
               for (let u of shuffled) {
                   let nick = u[1];
