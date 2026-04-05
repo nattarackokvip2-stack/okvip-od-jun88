@@ -2092,24 +2092,22 @@
       tbody.innerHTML = '';
       
       if (currentDiscordTab === 'attendance') {
-          thead.innerHTML = `<tr><th>ชื่อพนักงาน</th><th>แผนก / เซ็ตกะ</th><th>เวลาเข้าดิสคอร์ด</th><th>เป้าหมายเวลาเข้ากะ</th><th>สถานะการมางาน</th></tr>`;
+          thead.innerHTML = `<tr><th>ชื่อพนักงาน (อิงตามระบบ)</th><th>แผนก / เซ็ตกะ</th><th>เวลาเข้าดิสคอร์ด</th><th>เป้าหมายเวลาเข้ากะ</th><th>สถานะการมางาน</th></tr>`;
       } else {
-          thead.innerHTML = `<tr><th>ชื่อพนักงาน</th><th>สถานะหน้าจอ (Presence)</th><th>ห้องปัจจุบัน</th><th>ขยับล่าสุดเมื่อ</th><th>🚨 ประวัติการไม่อยู่จอ (หลับ)</th></tr>`;
+          thead.innerHTML = `<tr><th>ชื่อพนักงาน (อิงตามระบบ)</th><th>สถานะหน้าจอ (Presence)</th><th>ห้องปัจจุบัน</th><th>ขยับล่าสุดเมื่อ</th><th>🚨 ประวัติการไม่อยู่จอ (หลับ)</th></tr>`;
       }
 
       let html = '';
       let hasData = false;
       const now = new Date();
+      const selectedShift = document.getElementById('dcShiftSelect') ? document.getElementById('dcShiftSelect').value : '08:00';
 
+      // ฟังก์ชันสุดฉลาด ที่เอาไว้แกะชื่อ
       function extractCoreName(fullName) {
           if (!fullName) return "";
           let name = fullName.toUpperCase().replace(/[^\x00-\x7F]/g, "").trim();
           name = name.replace(/กะดึก/g, '').replace(/กะเช้า/g, '').trim();
-          
-          // 🌟 เพิ่มการหั่นคำด้วยขีดล่าง (_) ด้วย
           let parts = name.split(/[\s-_]+/);
-          
-          // 🌟 เปลี่ยนให้กรองคำที่ไม่มีขีด
           const prefixes = ['OD', 'ODOL', 'AMOL', 'FTOL', 'FT'];
           parts = parts.filter(p => !prefixes.includes(p));
           let coreName = parts.find(p => /^[A-Z]+$/.test(p));
@@ -2119,19 +2117,17 @@
 
       allUsersData.forEach(u => {
           if (!u || u[7] !== 'Active') return;
-          const nick = u[1];
+          const nick = u[1]; // 🌟 ยึดชื่อพนักงานจากระบบหลังบ้านแบบเป๊ะๆ 100%
           const dept = u[3] ? u[3].split(' ')[0] : '';
-          const shiftSet = u[9] || 'ไม่ระบุ'; // ดึง A หรือ B
+          const shiftSet = u[9] || 'ไม่ระบุ';
           const stamp = dailyScheduleData[nick] || '';
           
-          // กำหนดรายการวันหยุด/ลา (เพิ่ม KL)
           const allOffStamps = ['X', 'XX', 'TX', 'PN', 'KP', 'KL', 'X4'];
           const isLeave = allOffStamps.includes(stamp);
 
           const sysNameCleaned = extractCoreName(nick);
           const dcRecord = allDiscordData.find(d => extractCoreName(d.nickname) === sysNameCleaned);
           
-          // 🎯 คำนวณเวลาเป้าหมายเข้ากะ จากวงเล็บของพนักงาน
           let targetShiftTime = "-";
           let targetH = 0; let targetM = 0;
           if (shiftSet.includes('(A)')) { targetShiftTime = "08:00"; targetH = 8; }
@@ -2139,13 +2135,16 @@
 
           hasData = true;
 
-          // ==========================================
-          // ⏰ แท็บ 1: ตรวจสอบเวลาเข้างาน
-          // ==========================================
+          // 🌟 โชว์ชื่อระบบตัวใหญ่ๆ แล้วเอาชื่อ Discord เป็นตัวเล็กๆ ห้อยท้าย
+          const displayNick = nick; 
+          const dcHint = dcRecord ? `<br><small class="text-muted" style="font-size: 0.75rem;">(ไอดีดิสคอร์ด: ${dcRecord.nickname})</small>` : '';
+
+          // =====================================
+          // แท็บ 1: เช็คชื่อตอกบัตร
           if (currentDiscordTab === 'attendance') {
               let timeIn = '-';
               let statusBadge = '';
-              let calculatedStatus = 'MISSING'; // เริ่มต้นที่ยังไม่เข้างาน
+              let calculatedStatus = 'MISSING';
 
               if (isLeave) {
                   calculatedStatus = 'LEAVE';
@@ -2154,7 +2153,6 @@
                   const checkInDate = new Date(dcRecord.check_in_time);
                   timeIn = checkInDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
                   
-                  // คำนวณสาย
                   if (targetShiftTime !== "-") {
                       const shiftDate = new Date(checkInDate);
                       shiftDate.setHours(targetH, targetM, 0, 0);
@@ -2168,17 +2166,16 @@
                           statusBadge = `<span class="badge bg-success fs-6 border border-success">🟢 ตรงเวลา</span>`;
                       }
                   } else {
-                      calculatedStatus = 'ON_TIME'; // ถ้าไม่ระบุกะ ถือว่าเข้าแล้ว=ตรงเวลา
+                      calculatedStatus = 'ON_TIME';
                       statusBadge = `<span class="badge bg-success fs-6">🟢 เข้างานแล้ว</span>`;
                   }
               } else {
                   statusBadge = `<span class="badge bg-secondary fs-6">⚪ ยังไม่เข้างาน</span>`;
               }
 
-              // ถ้าตรงกับฟิลเตอร์ที่เลือก ให้แสดงผล
               if (currentDiscordFilter === calculatedStatus) {
                   html += `<tr>
-                      <td class="fw-bold text-white">${nick}</td>
+                      <td class="fw-bold text-white" style="font-size: 1.05rem;">${displayNick} ${dcHint}</td>
                       <td class="text-muted small">${dept} <span class="text-info">[${shiftSet}]</span></td>
                       <td class="text-warning fw-bold fs-6">${timeIn}</td>
                       <td class="text-info">${targetShiftTime !== "-" ? targetShiftTime + " น." : "ไม่ได้ตั้งกะ"}</td>
@@ -2186,11 +2183,10 @@
                   </tr>`;
               }
           } 
-          // ==========================================
-          // 📡 แท็บ 2: ติดตามสถานะ (กล้องวงจรปิด)
-          // ==========================================
+          // =====================================
+          // แท็บ 2: ติดตามสถานะ
           else {
-              if (!dcRecord || isLeave) return; // ไม่โชว์คนหยุดหรือยังไม่เข้างาน
+              if (!dcRecord || isLeave) return;
 
               let presence = dcRecord.presence_status || "🟢 ออนไลน์";
               let channel = dcRecord.channel_name || 'ไม่ระบุห้อง';
@@ -2199,16 +2195,13 @@
               let presenceClass = "text-success";
               let channelClass = "text-info fw-bold";
               
-              // ตรวจจับคนหนีออกดิส
               if (channel.includes('❌') || channel.includes('ออก')) channelClass = "text-danger fw-bold";
 
-              // 🎯 ระบบคำนวณการอู้ (พระจันทร์เสี้ยว)
               let idleAlertHtml = `<span class="text-muted small">-</span>`;
               let isCurrentlyIdle = presence.includes("🌙");
               
               if (isCurrentlyIdle) presenceClass = "text-warning fw-bold";
 
-              // ดึงประวัติการอู้ทั้งหมดของวันนี้มาแสดง
               let idleHistories = dcRecord.idle_history ? JSON.parse(dcRecord.idle_history) : [];
               let totalIdleMins = 0;
               let histHtml = "";
@@ -2220,12 +2213,11 @@
                   });
               }
 
-              // ถ้าตอนนี้กำลังอู้ (หลับ) อยู่ ให้นับเวลาเรียลไทม์บวกเข้าไปด้วย
               if (isCurrentlyIdle && dcRecord.idle_start_time) {
                   let startObj = new Date(dcRecord.idle_start_time);
                   let currentIdleMins = Math.floor((now.getTime() - startObj.getTime()) / 60000);
                   totalIdleMins += currentIdleMins;
-                  histHtml += `<div class="small text-warning fw-bold mt-1">⚠️ กำลังหายไป: ${currentIdleMins} นาที (เริ่ม ${startObj.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</div>`;
+                  histHtml += `<div class="small text-warning fw-bold mt-1">⚠️ กำลังหายไป: ${currentIdleMins} นาที <br>(เริ่ม ${startObj.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</div>`;
               }
 
               if (totalIdleMins > 0) {
@@ -2238,7 +2230,7 @@
               }
 
               html += `<tr>
-                  <td class="fw-bold text-white">${dcRecord.nickname}</td>
+                  <td class="fw-bold text-white" style="font-size: 1.05rem;">${displayNick} ${dcHint}</td>
                   <td class="${presenceClass}">${presence}</td>
                   <td class="${channelClass}">${channel}</td>
                   <td class="text-white-50">${lastMove}</td>
