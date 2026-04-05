@@ -317,12 +317,14 @@
 
       <div class="schedule-toolbar d-flex flex-column gap-3 mb-3 p-3" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-           <div class="filter-bar">
+          <div class="filter-bar">
              <span class="text-muted small me-2">กลุ่มพนักงาน:</span>
              <div class="dept-badge active" onclick="filterScheduleDept('ALL', this)">ทั้งหมด</div>
              <div class="dept-badge" onclick="filterScheduleDept('ออดิท (OD)', this)">🔎 OD</div>
              <div class="dept-badge" onclick="filterScheduleDept('ออดิทออนไลน์ (ODOL)', this)">🌐 ODOL</div>
              <div class="dept-badge" onclick="filterScheduleDept('อื่นๆ (OTHER)', this)">🔘 อื่นๆ</div>
+             <div class="dept-badge" onclick="filterScheduleDept('SHIFT_A', this)" style="border-color:#00f0ff;">☀️ กะ A</div>
+             <div class="dept-badge" onclick="filterScheduleDept('SHIFT_B', this)" style="border-color:#ffcc00;">🌙 กะ B</div>
            </div>
            <div>
              <button id="btnClearSchedule" onclick="confirmClearSchedule()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🗑️ ล้างตาราง</button>
@@ -432,8 +434,8 @@
              <input type="text" id="searchMeal" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleMealSearch(this.value)" style="width: 150px;">
              <select id="filterMealShift" class="form-select bg-dark text-white" style="width: auto; border-color: #ff66cc; box-shadow: 0 0 5px rgba(255,102,204,0.3);" onchange="renderMealTable()">
                  <option value="ALL">-- รวมทุกกะ --</option>
-                 <option value="N">กะเช้า (N)</option>
-                 <option value="D">กะดึก (D)</option>
+                 <option value="D">กะเช้า (D)</option>
+                 <option value="N">กะดึก (N)</option>
              </select>
              <select id="filterMealDept" class="form-select bg-dark text-white" style="width: auto; border-color: #ff66cc; box-shadow: 0 0 5px rgba(255,102,204,0.3);" onchange="renderMealTable()">
                  <option value="ALL">-- รวมทุกแผนก --</option>
@@ -629,7 +631,9 @@
       </select>
       <label class="small text-white mb-1">เลือกกะที่จะลง</label>
       <select id="shiftStampSelect" class="form-select mb-4" required>
-        <option value="N">N (กะเช้า)</option><option value="D">D (กะดึก)</option><option value="M">M (อื่นๆ)</option>
+        <option value="D">D (กะเช้า)</option>
+        <option value="N">N (กะดึก)</option>
+        <option value="M">M (อื่นๆ)</option>
       </select>
       <button type="submit" class="btn btn-neon-blue w-100 py-2">✅ ยืนยันการจัดกะ</button>
     </form>
@@ -941,8 +945,8 @@
     'KP': { bg: 'rgba(255, 153, 51, 0.2)', text: '#ff9933', label: 'KP (ขาดงาน)', limit: 99 }, 
     'L':  { bg: 'rgba(255, 204, 0, 0.8)', text: '#ff0000', label: 'L (สาย)', limit: 99 }, 
     'X4': { bg: 'rgba(204, 102, 255, 0.2)', text: '#cc66ff', label: 'X4 (ปจด.)', limit: 1 }, 
-    'D':  { bg: 'rgba(0, 255, 102, 0.2)', text: '#00ff66', label: 'D (ดึก)', limit: 99 }, 
-    'N':  { bg: 'rgba(0, 240, 255, 0.2)', text: '#00f0ff', label: 'N (เช้า)', limit: 99 }, 
+    'D':  { bg: 'rgba(0, 255, 102, 0.2)', text: '#00ff66', label: 'D (เช้า)', limit: 99 }, 
+    'N':  { bg: 'rgba(0, 240, 255, 0.2)', text: '#00f0ff', label: 'N (ดึก)', limit: 99 },
     'M':  { bg: 'rgba(255, 253, 208, 0.2)', text: '#ffffe0', label: 'M (อื่นๆ)', limit: 99 }, 
     'KL': { bg: 'rgba(255, 204, 0, 0.5)', text: '#000000', label: 'KL (ลา)', limit: 99 },
     '':   { bg: 'transparent', text: '#aaaaaa', label: 'ลบ (ยางลบ)', limit: 99 }
@@ -1452,19 +1456,42 @@
     const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); const dataMap = {}; if (schData) { schData.forEach(r => dataMap[r.nickname] = r.daysData ? JSON.parse(r.daysData) : {}); }
     const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate);
     document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table';
-    let th = '<tr><th class="name-col">ชื่อพนักงาน</th><th class="dept-col">แผนก</th>'; for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th += `<th class="${c}">${d}</th>`; } th += '</tr>'; document.getElementById('schThead').innerHTML = th;
+    
+    // 🌟 เพิ่มคอลัมน์ "กะ" ลงในหัวตาราง
+    let th = '<tr><th class="name-col">ชื่อพนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px;">กะ</th><th class="dept-col">แผนก</th>'; 
+    for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th += `<th class="${c}">${d}</th>`; } th += '</tr>'; document.getElementById('schThead').innerHTML = th;
+    
     let tb = ''; let hasData = false;
     allUsersData.forEach(u => {
         if(!u || u[7] !== 'Active') return; const nick = u[1] ? u[1].toString() : ''; const dept = u[3] ? u[3].toString() : 'ไม่ระบุ';
-        if (currentScheduleFilter !== 'ALL') { const filterBase = currentScheduleFilter.split(' ')[0]; const deptBase = dept.split(' ')[0]; if (dept !== currentScheduleFilter && filterBase !== deptBase) return; }
+        const shiftSet = u[9] ? u[9].toString() : '-'; // ดึงกะพนักงานมาใช้
+        
+        // 🌟 ระบบคัดกรองแบบใหม่ (แยก A, B, และแผนก)
+        if (currentScheduleFilter !== 'ALL') { 
+            if (currentScheduleFilter === 'SHIFT_A' && !shiftSet.includes('(A)')) return;
+            if (currentScheduleFilter === 'SHIFT_B' && !shiftSet.includes('(B)')) return;
+            if (currentScheduleFilter !== 'SHIFT_A' && currentScheduleFilter !== 'SHIFT_B') {
+                const filterBase = currentScheduleFilter.split(' ')[0]; const deptBase = dept.split(' ')[0]; 
+                if (dept !== currentScheduleFilter && filterBase !== deptBase) return; 
+            }
+        }
         if (scheduleSearchTerm && !nick.toLowerCase().includes(scheduleSearchTerm.toLowerCase())) return; hasData = true;
+        
         const isMyRow = (nick === localStorage.getItem('okvip_nick')); const canEdit = (myRole !== 'Member') || (isMyRow && isNextMonthOrFuture);
         const nameClass = isMyRow ? 'name-col highlight-me' : 'name-col'; const rowBg = isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : '';
-        tb += `<tr data-nick="${nick}" data-dept="${dept}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`;
+        
+        // 🌟 ป้ายแสดงกะ A และ B ในตาราง
+        let shiftBadge = '-';
+        if(shiftSet.includes('(A)')) shiftBadge = '<span class="text-warning fw-bold">☀️ A</span>';
+        else if(shiftSet.includes('(B)')) shiftBadge = '<span class="text-info fw-bold">🌙 B</span>';
+        
+        // 🌟 แทรกคอลัมน์กะลงไปในตาราง
+        tb += `<tr data-nick="${nick}" data-dept="${dept}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-center" style="background: #111;">${shiftBadge}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`;
+        
         const userDays = dataMap[nick] || {};
         for(let d=1; d<=daysInMonth; d++) { const val = userDays[d] || ''; const style = stampConfig[val] || { bg:'transparent', text:'#eee' }; const mouse = canEdit ? `onmousedown="startStampDrag(this,'${nick}','${dept}',${d})" onmouseenter="enterStampDrag(event, this,'${nick}','${dept}',${d})"` : ''; const c = (isCurMonth && d === curD) ? 'today-column' : ''; const curClass = canEdit ? 'admin-mode cell-day' : 'cell-day'; tb += `<td class="${curClass} ${c}" data-day="${d}" data-original="${val}" style="background-color:${style.bg}; color:${style.text};" ${mouse}>${val}</td>`; } tb += '</tr>';
     }); 
-    if (!hasData) tb = `<tr><td colspan="${daysInMonth + 2}" class="text-center py-5 text-muted">ไม่พบข้อมูลพนักงานในกลุ่มนี้</td></tr>`;
+    if (!hasData) tb = `<tr><td colspan="${daysInMonth + 3}" class="text-center py-5 text-muted">ไม่พบข้อมูลพนักงานในกลุ่มนี้</td></tr>`;
     document.getElementById('schTbody').innerHTML = tb;
   }
   function startStampDrag(cell, nick, dept, day) { if(currentStamp===null){ Swal.fire({toast:true, position:'top', title:'เลือกตรายางก่อนครับ', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return;} isDraggingStamp = true; applyStamp(cell, nick, dept, day); }
@@ -1859,7 +1886,7 @@
           
           if (!isOff && !isExcluded) {
               const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ'; let shiftType = 'OTHER';
-              if (stamp === 'N' || stamp.includes('เช้า')) shiftType = 'N'; else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
+              if (stamp === 'D' || stamp.includes('เช้า')) shiftType = 'D'; else if (stamp === 'N' || stamp.includes('ดึก')) shiftType = 'N'; else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
               let matchSearch = !searchT || nick.toLowerCase().includes(searchT); let matchShift = shiftF === 'ALL' || shiftType === shiftF; let matchDept = deptF === 'ALL' || dept.includes(deptF);
               
               if (matchSearch && matchShift && matchDept) { 
@@ -1897,8 +1924,8 @@
       
       workingUsers.forEach(u => {
           let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; 
-          if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (เช้า)</span>`; 
-          if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (ดึก)</span>`;
+          if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (เช้า)</span>`; 
+          if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (ดึก)</span>`;
           
           const curMeal = dailyMealData[u.nick] || {}; 
           const m1 = curMeal.slot1 || ''; 
