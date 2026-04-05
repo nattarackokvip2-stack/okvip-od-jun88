@@ -1408,9 +1408,10 @@
         document.getElementById('dashboardWidgets').style.setProperty('display', 'none', 'important');
         document.getElementById('btnClearSchedule').style.display = 'none'; document.getElementById('btnAssignShift').style.display = 'none'; document.getElementById('addAnnounceBtn').style.display = 'none'; document.getElementById('thAnnounceManage').style.display = 'none'; document.getElementById('mealActionBtns').style.display = 'none';
     }
-    checkSwapButtonPermission();
-    renderStampPalette(); switchMainTab('hubSection'); refreshData(document.getElementById('refreshBtn'), isLoginEvent);
-  }
+    
+    renderStampPalette(); 
+    switchMainTab('hubSection'); 
+    refreshData(document.getElementById('refreshBtn'), isLoginEvent);
 
   function switchMainTab(sectionId) { 
       try {
