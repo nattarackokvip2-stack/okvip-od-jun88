@@ -1,3 +1,189 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+  /* ================= DARK NEON THEME ================= */
+  :root { 
+    --bg-main: #050505; --bg-card: #121215; --bg-hover: #1e1e24; --border-color: #2a2a35;
+    --text-white-neon: #ffffff; --neon-white-glow: 0 0 8px rgba(255,255,255,0.6); 
+    --neon-red: #ff3366; --neon-yellow: #ffcc00; --neon-blue: #00f0ff; --neon-green: #00ff66;
+  }
+  body { font-family: 'Kanit', sans-serif; background-color: var(--bg-main); color: var(--text-white-neon); text-shadow: var(--neon-white-glow); min-height: 100vh; margin: 0; overflow-x: hidden; }
+  .text-muted, .text-secondary { color: #a0aab5 !important; text-shadow: none; }
+  
+  #loginPage { background: radial-gradient(circle at center, #151520 0%, #000000 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
+  .login-card { background: rgba(10, 10, 15, 0.8); padding: 45px; border-radius: 20px; box-shadow: 0 0 30px rgba(0, 240, 255, 0.15); width: 100%; max-width: 420px; text-align: center; border: 1px solid var(--neon-blue); }
+  .login-input { background: #000 !important; border: 1px solid #333 !important; color: var(--text-white-neon) !important; border-radius: 10px !important; text-shadow: none !important; width: 100% !important; padding: 15px !important; margin-bottom: 15px !important; box-shadow: none !important; }
+  .login-input:focus { background: #111 !important; border-color: var(--neon-blue) !important; box-shadow: 0 0 10px rgba(0,240,255,0.4) !important; color: white !important; outline: none !important; }
+  .login-btn-custom { width: 100% !important; padding: 15px !important; border-radius: 10px !important; background: transparent; color: var(--neon-blue); border: 1px solid var(--neon-blue); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(0,240,255,0.5); }
+  .login-btn-custom:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px rgba(0,240,255,0.7); text-shadow: none; }
+  
+  #mainDashboard { display: none; padding: 30px; position: relative;}
+  
+  .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; padding: 20px 0; }
+  .hub-card { background: var(--bg-card); border-radius: 15px; padding: 30px 20px; text-align: center; cursor: pointer; transition: all 0.3s ease; text-decoration: none; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; }
+  .hub-card:hover { transform: translateY(-5px); }
+  .hub-icon { font-size: 3.5rem; margin-bottom: 15px; text-shadow: none; transition: 0.3s; }
+  .hub-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 5px; transition: 0.3s; }
+  
+  .hub-staff { border: 1px solid var(--neon-blue); box-shadow: 0 0 10px rgba(0, 240, 255, 0.1); } .hub-staff .hub-title { color: var(--neon-blue); text-shadow: 0 0 5px rgba(0, 240, 255, 0.3); } .hub-staff:hover { box-shadow: 0 0 25px rgba(0, 240, 255, 0.4); background: rgba(0, 240, 255, 0.05); }
+  .hub-schedule { border: 1px solid var(--neon-green); box-shadow: 0 0 10px rgba(0, 255, 102, 0.1); } .hub-schedule .hub-title { color: var(--neon-green); text-shadow: 0 0 5px rgba(0, 255, 102, 0.3); } .hub-schedule:hover { box-shadow: 0 0 25px rgba(0, 255, 102, 0.4); background: rgba(0, 255, 102, 0.05); }
+  .hub-job { border: 1px solid var(--neon-yellow); box-shadow: 0 0 10px rgba(255, 204, 0, 0.1); } .hub-job .hub-title { color: var(--neon-yellow); text-shadow: 0 0 5px rgba(255, 204, 0, 0.3); } .hub-job:hover { box-shadow: 0 0 25px rgba(255, 204, 0, 0.4); background: rgba(255, 204, 0, 0.05); }
+  .hub-meal { border: 1px solid #ff66cc; box-shadow: 0 0 10px rgba(255, 102, 204, 0.1); } .hub-meal .hub-title { color: #ff66cc; text-shadow: 0 0 5px rgba(255, 102, 204, 0.3); } .hub-meal:hover { box-shadow: 0 0 25px rgba(255, 102, 204, 0.4); background: rgba(255, 102, 204, 0.05); }
+  .hub-manual { border: 1px solid #ff9900; box-shadow: 0 0 10px rgba(255, 153, 0, 0.1); } .hub-manual .hub-title { color: #ff9900; text-shadow: 0 0 5px rgba(255, 153, 0, 0.3); } .hub-manual:hover { box-shadow: 0 0 25px rgba(255, 153, 0, 0.4); background: rgba(255, 153, 0, 0.05); }
+  .hub-penalty { border: 1px solid var(--neon-red); box-shadow: 0 0 10px rgba(255, 51, 102, 0.1); } .hub-penalty .hub-title { color: var(--neon-red); text-shadow: 0 0 5px rgba(255, 51, 102, 0.3); } .hub-penalty:hover { box-shadow: 0 0 25px rgba(255, 51, 102, 0.4); background: rgba(255, 51, 102, 0.05); }
+  .hub-portal { border: 1px solid #cc66ff; box-shadow: 0 0 10px rgba(204, 102, 255, 0.1); } .hub-portal .hub-title { color: #cc66ff; text-shadow: 0 0 5px rgba(204, 102, 255, 0.3); } .hub-portal:hover { box-shadow: 0 0 25px rgba(204, 102, 255, 0.4); background: rgba(204, 102, 255, 0.05); }
+
+  .nav-menu-bar { display: none; gap: 12px; margin-bottom: 25px; padding: 0; overflow-x: auto;}
+  .top-nav { background: var(--bg-card); padding: 15px 30px; border-radius: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--border-color); flex-wrap: wrap; gap: 15px;}
+  .card-custom { background: var(--bg-card); border-radius: 15px; padding: 30px; border: 1px solid var(--border-color); }
+  
+  .neon-input-search { background: #111 !important; color: #fff !important; border: 1px solid var(--neon-blue) !important; border-radius: 10px !important; width: 250px; box-shadow: 0 0 8px rgba(0, 240, 255, 0.3) !important; transition: all 0.3s ease !important; }
+  .neon-input-search:focus { border-color: var(--neon-yellow) !important; box-shadow: 0 0 15px rgba(255, 204, 0, 0.6) !important; outline: none !important; }
+  .neon-input-search::placeholder { color: #888 !important; text-shadow: none !important;}
+  
+  .role-SuperAdmin { color: var(--neon-red) !important; font-weight: 600; text-shadow: 0 0 10px rgba(255,51,102,0.8) !important; }
+  .role-Admin { color: var(--neon-yellow) !important; font-weight: 600; text-shadow: 0 0 10px rgba(255,204,0,0.8) !important; }
+  .role-Member { color: var(--neon-blue) !important; font-weight: 600; text-shadow: 0 0 10px rgba(0,240,255,0.8) !important; }
+  .status-active { color: var(--neon-green); background: rgba(0,255,102,0.1); padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; border: 1px solid rgba(0,255,102,0.4); text-shadow: none; white-space: nowrap;}
+  .status-blocked { color: var(--neon-red); background: rgba(255,51,102,0.1); padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; border: 1px solid rgba(255,51,102,0.4); text-shadow: none; white-space: nowrap;}
+  
+  .btn-neon-blue { background: transparent; color: var(--neon-blue); border: 1px solid var(--neon-blue); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(0,240,255,0.5); }
+  .btn-neon-blue:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px rgba(0,240,255,0.7); text-shadow: none; }
+  .btn-neon-yellow { background: transparent; color: var(--neon-yellow); border: 1px solid var(--neon-yellow); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(255,204,0,0.5); }
+  .btn-neon-yellow:hover { background: var(--neon-yellow); color: #000; box-shadow: 0 0 15px rgba(255,204,0,0.7); text-shadow: none; }
+  .btn-neon-red { background: transparent; color: var(--neon-red); border: 1px solid var(--neon-red); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(255,51,102,0.5); }
+  .btn-neon-red:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px rgba(255,51,102,0.7); text-shadow: none; }
+  .btn-neon-green { background: transparent; color: var(--neon-green); border: 1px solid var(--neon-green); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(0,255,102,0.5); }
+  .btn-neon-green:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 15px rgba(0,255,102,0.7); text-shadow: none; }
+  .neon-save-button { background-color: #004d26; border: 1px solid rgba(0, 255, 95, 0.5); color: #00ff5f; padding: 10px 25px; font-size: 1.1rem; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 10px; font-weight: bold; text-shadow: 0 0 5px #00ff5f; box-shadow: 0 0 8px rgba(0, 255, 95, 0.4), 0 0 15px rgba(0, 255, 95, 0.2); transition: all 0.2s ease; }
+  .neon-save-button:hover { box-shadow: 0 0 12px rgba(0, 255, 95, 0.6), 0 0 20px rgba(0, 255, 95, 0.4), 0 0 30px rgba(0, 255, 95, 0.2); transform: translateY(-2px); background-color: #006633;}
+  
+  .table { color: var(--text-white-neon); border-color: var(--border-color); }
+  .table th { border-bottom: 2px solid #444; color: #fff; font-weight: 500; text-shadow: var(--neon-white-glow); background-color: rgba(255,255,255,0.05); white-space: nowrap;}
+  .table td { border-bottom: 1px solid #222; background: transparent !important; color: #eee; text-shadow: none; vertical-align: middle; white-space: nowrap;}
+  .table-hover tbody tr:hover td { background-color: var(--bg-hover) !important; color: #fff; }
+  
+  .filter-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .dept-badge { cursor: pointer; padding: 6px 18px; border-radius: 50px; font-size: 0.85rem; border: 1px solid #444; background: #111; transition: 0.3s; color: #ccc; text-shadow: none;}
+  .dept-badge.active { background: #222; color: var(--text-white-neon); border-color: var(--text-white-neon); box-shadow: var(--neon-white-glow); font-weight: bold;}
+  
+  .page-btn { background: #111; color: #ccc; border: 1px solid #444; border-radius: 8px; padding: 6px 14px; cursor: pointer; transition: 0.2s; text-shadow: none; font-size: 0.9rem;}
+  .page-btn:hover:not(:disabled) { background: rgba(0, 240, 255, 0.1); border-color: var(--neon-blue); color: var(--neon-blue); }
+  .page-btn.active { background: var(--neon-blue); color: #000; box-shadow: 0 0 10px rgba(0,240,255,0.5); border-color: var(--neon-blue); font-weight: bold; pointer-events: none; }
+  
+  .content-section { display: none; }
+  .content-section.active { display: block !important; animation: fadeIn 0.4s; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  
+  .manual-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+  .manual-card { background: #111115; border: 1px solid #333; border-radius: 12px; padding: 20px; cursor: pointer; transition: 0.3s; position: relative; min-height: 130px; }
+  .manual-card:hover { border-color: var(--neon-yellow); box-shadow: 0 0 20px rgba(255, 204, 0, 0.2); transform: translateY(-3px); }
+  .manual-card .icon { font-size: 1.5rem; margin-right: 15px; text-shadow: none; }
+  .manual-card .title { color: var(--neon-yellow); font-size: 1.1rem; font-weight: 500; text-shadow: 0 0 8px rgba(255,204,0,0.6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 15px;}
+  .manual-card .read-more { color: var(--neon-yellow); font-size: 0.85rem; opacity: 0.8; margin-top: auto; padding-top: 15px; }
+  
+  .portal-card { background: #111115; border: 1px solid #333; border-radius: 12px; overflow: hidden; cursor: pointer; transition: 0.3s; position: relative; display: flex; flex-direction: column; text-decoration: none !important;}
+  .portal-card:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0, 240, 255, 0.2); transform: translateY(-3px); }
+  .portal-card.backend-mode { border: 1px solid #ffcc00; }
+  .portal-card.backend-mode:hover { border-color: var(--neon-yellow); box-shadow: 0 0 20px rgba(255, 204, 0, 0.2); }
+  .portal-img-container { width: 100%; height: 160px; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; border-bottom: 1px solid #333;}
+  .portal-img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+  .portal-card:hover .portal-img { opacity: 0.8; transform: scale(1.05); }
+  .portal-info { padding: 15px; text-align: center; flex-grow: 1; display: flex; flex-direction: column; justify-content: center; }
+  .portal-title { color: var(--text-white-neon); font-size: 1.2rem; font-weight: bold; margin-bottom: 5px; text-shadow: var(--neon-white-glow);}
+  .portal-link-text { color: var(--neon-blue); font-size: 0.9rem; font-weight: 500; text-shadow: none;}
+  .backend-mode .portal-link-text { color: var(--neon-yellow); }
+  .card-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; z-index: 10; }
+  .btn-action { background: rgba(0,0,0,0.8); border: 1px solid #444; border-radius: 6px; color: #ccc; padding: 4px 8px; font-size: 0.8rem; cursor: pointer; transition: 0.2s; text-shadow: none; }
+  .btn-action.edit:hover { border-color: var(--neon-yellow); color: var(--neon-yellow); box-shadow: 0 0 8px rgba(255,204,0,0.4); }
+  .btn-action.delete:hover { border-color: #ff3366; color: #ff3366; box-shadow: 0 0 8px rgba(255,51,102,0.4); }
+  
+  .schedule-toolbar { background: #0a0a0c; border: 1px solid var(--border-color); padding: 15px; border-radius: 15px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px;}
+  .stamp-palette { display: flex; gap: 10px; flex-wrap: wrap;}
+  .stamp-btn { padding: 6px 15px; border-radius: 8px; border: 1px solid #444; background: #111; color: #ccc; cursor: pointer; font-weight: 500; text-shadow: none; transition: 0.2s;}
+  .stamp-btn.active { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.05); color: #fff; font-weight: bold;}
+  .table-container { overflow-x: auto; background: #0a0a0c; border-radius: 12px; border: 1px solid var(--border-color); position: relative;}
+  .schedule-table { width: max-content; border-collapse: collapse; table-layout: fixed; font-size: 0.9rem; text-shadow: none;}
+  .schedule-table th, .schedule-table td { border: 1px solid #2a2a2a; text-align: center; vertical-align: middle; transition: background-color 0.1s; user-select: none;}
+  .schedule-table th { background: #151518; color: #aaa; font-weight: 500;}
+  .name-col { width: 140px; min-width: 140px; text-align: left !important; padding-left: 15px !important; font-weight: bold; background: #0f0f12 !important; position: sticky; left: 0; z-index: 5; color: #fff;}
+  .dept-col { width: 80px; min-width: 80px; background: #0a0a0c; }
+  .date-col, .cell-day { width: 45px !important; min-width: 45px !important; max-width: 45px !important; height: 45px !important; padding: 0 !important; }
+  .cell-day { cursor: default; font-weight: bold; overflow: hidden; position: relative;}
+  .admin-mode .cell-day { cursor: cell; } 
+  .admin-mode .cell-day:hover { border: 1px solid #fff; z-index: 10;}
+  .unsaved-mark::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background-color: #ffaa00; border-radius: 50%; box-shadow: 0 0 5px #ffaa00;}
+  .today-header { background-color: rgba(0, 240, 255, 0.2) !important; color: var(--neon-blue) !important; border: 1px solid var(--neon-blue) !important; font-weight: 800 !important; box-shadow: inset 0 0 10px rgba(0,240,255,0.3); }
+  .today-column { border-left: 1px solid var(--neon-blue) !important; border-right: 1px solid var(--neon-blue) !important; background-color: rgba(0, 240, 255, 0.05) !important; }
+  
+  .site-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin: 2px; text-shadow: none; border: 1px solid;}
+  .stat-box { background: #151518; border: 1px solid #333; border-radius: 8px; padding: 8px; margin-bottom: 5px; text-align: left; font-size: 0.85rem;}
+  .stat-label { color: #aaa; margin-right: 5px;}
+  .stat-val { color: var(--neon-yellow); font-weight: bold; text-shadow: 0 0 5px rgba(255,204,0,0.5);}
+  
+  .modal-content { background-color: var(--bg-card); color: var(--text-white-neon); border: 1px solid var(--border-color); box-shadow: 0 0 40px rgba(0,0,0,0.9); }
+  .modal-header, .modal-footer { border-color: var(--border-color); }
+  .form-control, .form-select { background-color: #050505; border: 1px solid #444; color: #fff; text-shadow: none; }
+  .form-control:focus, .form-select:focus { background-color: #111; border-color: var(--neon-yellow); box-shadow: 0 0 10px rgba(255,204,0,0.3); color: white;}
+  
+  .paste-area { border: 2px dashed #555; border-radius: 15px; background: rgba(0,0,0,0.5); padding: 40px; text-align: center; cursor: pointer; transition: 0.3s; position: relative; min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center;}
+  .paste-area:hover, .paste-area:focus { border-color: var(--neon-yellow); background: #111; box-shadow: inset 0 0 20px rgba(255,204,0,0.1); outline: none;}
+  .paste-area .placeholder-text { pointer-events: none; }
+  
+  .close, .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+  .view-title-neon { color: var(--neon-yellow); text-shadow: 0 0 15px rgba(255,204,0,0.7); font-size: 1.8rem; font-weight: 600; }
+  
+  .manual-step-card { background: #151518; border: 1px solid #333; border-radius: 10px; padding: 20px; margin-bottom: 20px; position: relative;}
+  .manual-step-number { font-size: 1.2rem; color: var(--neon-yellow); font-weight: bold; margin-bottom: 10px; text-shadow: 0 0 8px rgba(255,204,0,0.5);}
+  .manual-step-text { white-space: pre-wrap; line-height: 1.6; color: #ddd; font-size: 1rem; text-shadow: none; margin-bottom: 15px;}
+  .manual-step-img { max-width: 100%; border-radius: 8px; border: 1px solid #444; cursor: zoom-in; transition: transform 0.2s;}
+  .manual-step-img:hover { opacity: 0.9; box-shadow: 0 0 15px rgba(255,255,255,0.2); }
+  .step-tools { position: absolute; top: 15px; right: 15px; display: flex; gap: 5px; }
+  
+  .image-lightbox { display: none; position: fixed; z-index: 99999; top: 0; left: 0; width: 100vw; height: 100vh; background-color: rgba(0,0,0,0.9); align-items: center; justify-content: center; cursor: zoom-out;}
+  .image-lightbox.active { display: flex; animation: fadeIn 0.3s; }
+  .image-lightbox img { max-width: 90%; max-height: 90vh; border-radius: 10px; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+  
+  .tool-btn { padding: 4px 10px; font-size: 0.85rem; border-radius: 6px; border: 1px solid #444; background: transparent; cursor: pointer; transition: 0.2s; text-shadow: none;}
+  .tool-btn.edit { color: #00f0ff; border-color: #00f0ff; }
+  .tool-btn.edit:hover { background: rgba(0,240,255,0.2); }
+  .tool-btn.settings { color: #ccc; border-color: #555; }
+  .tool-btn.settings:hover { background: rgba(255,255,255,0.1); }
+  .tool-btn.delete { color: #ff3366; border-color: #ff3366; }
+  .tool-btn.delete:hover { background: rgba(255,51,102,0.2); }
+  .tool-btn.password { color: #ffaa00; border-color: #ffaa00; }
+  .tool-btn.password:hover { background: rgba(255, 170, 0, 0.2); }
+  .tool-btn.telegram { color: #0088cc; border-color: #0088cc; }
+  .tool-btn.telegram:hover { background: rgba(0, 136, 204, 0.2); }
+  
+  .swal2-select { width: 100% !important; max-width: 300px; background-color: #050505 !important; color: #fff !important; border: 1px solid #555 !important; border-radius: 8px; padding: 8px; font-size: 1rem;}
+  .swal2-select option { background-color: #111; color: #fff; padding: 10px;}
+  .swal2-popup { width: auto !important; padding: 1.5rem !important; }
+  
+  .stat-table-wrapper { overflow-x: auto; max-width: 100%; border-radius: 10px; border: 1px solid var(--border-color); }
+  .stat-table { width: max-content; min-width: 100%; }
+  .col-sticky-name { position: sticky; left: 0; background-color: var(--bg-card) !important; z-index: 2; border-right: 1px solid #333; width: 150px; min-width: 150px; }
+  .col-sticky-dept { position: sticky; left: 150px; background-color: var(--bg-card) !important; z-index: 2; border-right: 1px solid #444; width: 80px; min-width: 80px; }
+  .stat-input-cell { width: 90px; min-width: 90px; }
+  .highlight-me { color: var(--neon-green) !important; text-shadow: 0 0 10px rgba(0, 255, 102, 0.8) !important; font-size: 1.05rem; }
+  
+  @keyframes blinkAlert {
+    0% { box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px var(--neon-red); background-color: rgba(255, 51, 102, 0.2); border-color: var(--neon-red); }
+    50% { box-shadow: 0 0 20px var(--neon-red), inset 0 0 20px var(--neon-red); background-color: rgba(255, 51, 102, 0.6); border-color: var(--neon-red); }
+    100% { box-shadow: 0 0 10px var(--neon-red), inset 0 0 10px var(--neon-red); background-color: rgba(255, 51, 102, 0.2); border-color: var(--neon-red); }
+  }
+  .btn-alert-blink { animation: blinkAlert 1.5s infinite; font-weight: 800 !important; color: var(--neon-yellow) !important; text-shadow: 0 0 5px #000 !important; }
+  </style>
+</head>
 <body>
 
 <div id="imageLightbox" class="image-lightbox" onclick="closeLightbox()">
@@ -399,808 +585,355 @@
 
   </div> 
 </div>
-<body>
-
-<div id="imageLightbox" class="image-lightbox" onclick="closeLightbox()">
-  <img id="lightboxImg" src="">
+<div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center text-warning" id="announceModalTitle">📢 สร้างประกาศใหม่</h4>
+    <form id="announceForm" onsubmit="handleAnnounceSubmit(event)">
+      <input type="hidden" id="editAnnounceId">
+      <label class="small mb-1 text-white">หัวข้อประกาศ (สั้นๆ ให้ดึงดูด)</label>
+      <input type="text" id="annTitle" class="form-control mb-3" placeholder="เช่น: ปรับปรุงระบบวันที่ 10 นี้" required>
+      <label class="small mb-1 text-white">เนื้อหาประกาศ (ขึ้นบรรทัดใหม่ได้)</label>
+      <textarea id="annContent" class="form-control mb-3" rows="5" placeholder="รายละเอียด..." required></textarea>
+      <div class="form-check form-switch mb-4 p-3 border border-secondary" style="border-radius:10px; background: rgba(255, 153, 0, 0.1);">
+        <input class="form-check-input ms-0 mt-1" type="checkbox" id="annActive" checked style="cursor:pointer; width: 2.5rem; height: 1.25rem;">
+        <label class="form-check-label text-warning fw-bold ms-3" for="annActive" style="cursor:pointer; padding-top: 3px;">เปิดให้เด้ง Popup ตอนเข้าสู่ระบบ</label>
+      </div>
+      <button type="submit" class="btn btn-warning text-dark w-100 py-2 fw-bold">💾 บันทึกประกาศ</button>
+    </form>
+  </div></div></div>
 </div>
 
-<div id="loginPage">
-  <div class="login-card">
-    <h2 class="fw-bold mb-4" style="color: var(--neon-blue); text-shadow: 0 0 15px rgba(0,240,255,0.8); letter-spacing: 2px;">OKVIP LOGIN</h2>
-    <input type="text" id="user" class="login-input" placeholder="ยูสเซอร์เนม">
-    <input type="password" id="pass" class="login-input" placeholder="รหัสผ่าน">
-    <button onclick="handleLogin()" id="loginBtn" class="login-btn-custom">เข้าสู่ระบบ</button>
-  </div>
+<div class="modal fade" id="regModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center text-warning" id="regModalTitle">➕ เพิ่มรายชื่อสมาชิก</h4>
+    <form id="adminRegForm" onsubmit="handleRegSubmit(event)">
+      <input type="hidden" id="editUserIdx">
+      <input type="text" id="nick" class="form-control mb-3" placeholder="ชื่อเล่น (ENG พิมพ์ใหญ่)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '')" required>
+      <select id="work" class="form-select mb-3" onchange="document.getElementById('otherWork').style.display = (this.value === 'OTHER') ? 'block' : 'none'" required>
+        <option value="Jun88">Jun88</option><option value="MK8">MK8</option><option value="F168">F168</option><option value="PG688">PG688</option><option value="JL69">JL69</option><option value="NM9">NM9</option><option value="Vv72">Vv72</option><option value="TH26">TH26</option><option value="BT678">BT678</option><option value="K188">K188</option><option value="OTHER">อื่นๆ</option>
+      </select>
+      <input type="text" id="otherWork" class="form-control mb-3" style="display:none;" placeholder="ระบุเว็บ...">
+      <select id="dept" class="form-select mb-3">
+        <option value="ออดิท (OD)">ออดิท (OD)</option><option value="ออดิทออนไลน์ (ODOL)">ออดิทออนไลน์ (ODOL)</option><option value="อื่นๆ (OTHER)">อื่นๆ (OTHER)</option>
+      </select>
+      <select id="uSet" class="form-select mb-3 text-info">
+        <option value="">-- ไม่ระบุเซ็ตกะ --</option>
+        <option value="OD (A)">OD (A)</option><option value="OD (B)">OD (B)</option>
+        <option value="ODOL (A)">ODOL (A)</option><option value="ODOL (B)">ODOL (B)</option>
+      </select>
+      <input type="text" id="uName" class="form-control mb-3" placeholder="USER (ENG)" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
+      <input type="text" id="uPass" class="form-control mb-3" placeholder="PASS (ENG/เลข)">
+      <select id="uRole" class="form-select mb-4"><option value="Member">Member</option><option value="Admin">Admin</option><option value="SuperAdmin">SuperAdmin</option></select>
+      <button type="submit" id="btnSubmitReg" class="btn btn-neon-yellow w-100 py-2">บันทึกข้อมูล</button>
+    </form>
+  </div></div></div>
 </div>
 
-<div id="mainDashboard">
-  <div class="nav-menu-bar" id="topNavBar">
-    <button class="btn btn-outline-light px-4 py-2" style="border-radius:10px;" onclick="goToHub()">⬅️ กลับหน้าเมนูหลัก</button>
-  </div>
+<div class="modal fade" id="shiftModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center text-info">🔄 จัดกะการทำงาน (รายเดือน)</h4>
+    <p class="small text-muted text-center">ระบบจะลงกะให้พนักงานในเซ็ตที่คุณเลือก เฉพาะช่องที่ว่างหรือเป็นกะเก่า โดยไม่ทับวันลา/วันหยุด</p>
+    <form onsubmit="applyShiftToSet(event)">
+      <label class="small text-white mb-1">เลือกเซ็ตพนักงาน</label>
+      <select id="shiftSetSelect" class="form-select mb-3" required>
+        <option value="OD (A)">OD (A)</option><option value="OD (B)">OD (B)</option><option value="ODOL (A)">ODOL (A)</option><option value="ODOL (B)">ODOL (B)</option>
+      </select>
+      <label class="small text-white mb-1">เลือกกะที่จะลง</label>
+      <select id="shiftStampSelect" class="form-select mb-4" required>
+        <option value="D">D (กะเช้า)</option>
+        <option value="N">N (กะดึก)</option>
+        <option value="M">M (อื่นๆ)</option>
+      </select>
+      <button type="submit" class="btn btn-neon-blue w-100 py-2">✅ ยืนยันการจัดกะ</button>
+    </form>
+  </div></div></div>
+</div>
 
-  <div class="top-nav">
-    <div>
-      <span class="text-muted small">ยินดีต้อนรับ:</span> 
-      <b id="userDisplay" class="ms-1 fs-5 text-white"></b> 
-      <span class="mx-2 text-secondary">|</span>
-      <span id="roleLabel"></span>
+<div class="modal fade" id="jobSettingsModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered modal-lg"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center text-warning">⚙️ ตั้งค่าระบบ (เว็บ/หน้าที่)</h4>
+    <div class="row g-4">
+      <div class="col-md-4">
+          <h6 class="text-info">รายชื่อเว็บไซต์ทั้งหมด</h6>
+          <textarea id="setWebsites" class="form-control" rows="8"></textarea>
+      </div>
+      <div class="col-md-4">
+          <h6 class="text-warning">ประเภทหน้าที่: ออดิท (OD)</h6>
+          <textarea id="setDutiesOD" class="form-control" rows="8" placeholder="หน้าที่ของ OD..."></textarea>
+      </div>
+      <div class="col-md-4">
+          <h6 class="text-warning">ประเภทหน้าที่: ODOL</h6>
+          <textarea id="setDutiesODOL" class="form-control" rows="8" placeholder="หน้าที่ของ ODOL..."></textarea>
+      </div>
     </div>
-    <div class="d-flex gap-2 align-items-center flex-wrap">
-      <button onclick="switchMainTab('announceSection')" class="btn btn-outline-warning px-3 py-2" style="border-radius:8px; font-size: 1rem;" title="จัดการประกาศข่าวสาร">📢</button>
-      <button id="refreshBtn" onclick="refreshData(this)" class="btn btn-outline-info px-3 py-2" style="border-radius:8px; font-size: 0.9rem;" title="รีโหลดดึงข้อมูลล่าสุด">🔄 รีเฟรช</button>
-      <button onclick="handleLogout()" class="btn btn-neon-red px-4" style="border-radius:10px;">ออกจากระบบ</button>
-    </div>
-  </div>
-
-  <div class="card-custom">
+    <button class="btn btn-neon-yellow w-100 py-2 mt-4" onclick="saveAdminJobSettings()">บันทึกการตั้งค่าระบบ</button>
     
-    <div id="hubSection" class="content-section active">
-      <div class="text-center mb-4">
-        <h2 class="fw-bold" style="color: var(--neon-blue); text-shadow: 0 0 15px rgba(0,240,255,0.6);">ศูนย์ควบคุมระบบ (Control Center)</h2>
-        <p class="text-muted">เลือกโหมดการทำงานที่คุณต้องการ</p>
-      </div>
+    <div id="cleanupSection" class="mt-4 pt-3 border-top border-secondary text-center" style="display: none;">
+        <h6 class="text-danger fw-bold">🧹 การบำรุงรักษาระบบฐานข้อมูล</h6>
+        <p class="small text-muted mb-2">ลบข้อมูลสถิติและ Discord ที่เก่ากว่า 3 เดือนทิ้ง เพื่อให้เว็บโหลดเร็วขึ้น</p>
+        <button class="btn btn-outline-danger btn-sm px-4" onclick="cleanupOldData()">🗑️ ล้างข้อมูลขยะ</button>
+    </div>
+  </div></div></div>
+</div>
 
-      <div id="dashboardWidgets" class="d-flex gap-3 mb-4 flex-wrap" style="display:none !important;">
-          <div style="flex:1; min-width: 200px; background: rgba(0, 240, 255, 0.05); border: 1px solid var(--neon-blue); border-radius: 12px; padding: 20px; text-align: center;">
-              <div class="text-info mb-2 fw-bold" style="font-size: 1rem;">👥 พนักงาน Active</div>
-              <div id="widgetActiveUsers" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(0,240,255,0.5);">0</div>
+<div class="modal fade" id="userSiteModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h5 class="text-white mb-3">ตั้งค่าระบบงาน: <b id="siteNickName" class="text-warning"></b></h5>
+    <div class="p-3 mb-3" style="background: rgba(255, 51, 102, 0.1); border: 1px solid rgba(255, 51, 102, 0.4); border-radius: 10px;">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" id="chkExcludeDuty" style="cursor:pointer;">
+          <label class="form-check-label text-danger fw-bold ms-1" for="chkExcludeDuty">🚫 ซ่อนคนนี้จากตารางหน้าที่</label>
+        </div>
+    </div>
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" class="btn btn-sm btn-outline-info" onclick="selectAllUserSites()">☑️ เลือกทั้งหมด / ยกเลิก</button>
+    </div>
+    <div id="userSiteCheckboxes" class="d-flex flex-wrap gap-2 mb-4"></div>
+    <button class="btn btn-neon-blue w-100 py-2" onclick="saveUserCapableSitesBtn()">บันทึกข้อมูล</button>
+  </div></div></div>
+</div>
+
+<div class="modal fade" id="penaltyModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center" style="color:#ff3366;">⚠️ บันทึกความผิด</h4>
+    <form id="penaltyForm" onsubmit="handlePenaltySubmit(event)">
+      <input type="hidden" id="editPenaltyId"> 
+      <label class="small mb-1 text-white">ประจำเดือน/ปี (รีเซ็ตโควต้าตามเดือนนี้)</label>
+      <input type="month" id="penMonth" class="form-control mb-3" required onchange="checkPenaltyLimits()">
+      <label class="small mb-1 text-white">1. กรองตามแผนก</label>
+      <select id="penDeptFilter" class="form-select mb-2" onchange="updatePenaltySelect()">
+        <option value="ALL">-- ดูทุกแผนก --</option>
+        <option value="OD">ออดิท (OD)</option>
+        <option value="ODOL">ออดิทออนไลน์ (ODOL)</option>
+        <option value="OTHER">อื่นๆ</option>
+      </select>
+      <label class="small mb-1 text-white">2. พิมพ์ค้นหา หรือ เลือกพนักงาน</label>
+      <input type="text" id="penNickSearch" class="form-control mb-2" placeholder="🔍 พิมพ์ชื่อเล่น..." oninput="updatePenaltySelect()">
+      <select id="penNick" class="form-select mb-3" onchange="checkPenaltyLimits()" required></select>
+      <label class="small mb-1 text-white">รายละเอียดความผิด</label>
+      <textarea id="penReason" class="form-control mb-3" rows="3" required placeholder="ระบุเหตุผล..."></textarea>
+      <label class="small mb-1 text-white">บทลงโทษ</label>
+      <select id="penType" class="form-select mb-3" onchange="togglePenaltyFields()" required>
+        <option value="1. ตักเตือนด้วยวาจา">1. ตักเตือนด้วยวาจา</option>
+        <option value="2. ใบปรับตามข้อ">2. ใบปรับตามข้อ</option>
+        <option value="3. ใบปรับตามข้อและเกิดความเสียหาย">3. ใบปรับตามข้อและเกิดความเสียหาย</option>
+      </select>
+      <div id="penaltyExtraFields" style="display: none; background: rgba(255, 51, 102, 0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(255, 51, 102, 0.3);" class="mb-4">
+         <div id="penAlertMsg" class="small mb-2 fw-bold text-warning"></div>
+         <label class="small text-white mb-1">ความเสียหายทั้งหมด (บาท)</label>
+         <input type="number" id="penDamageAmt" class="form-control mb-3" placeholder="ระบุยอดเงิน..." oninput="calculateDeduction()">
+         <label class="small text-white mb-1">เปอร์เซ็นต์การหักเงิน</label>
+         <select id="penPercent" class="form-select mb-3" onchange="calculateDeduction()">
+            <option value="20">ปรับ 20% (ได้สูงสุด 3 ครั้ง/เดือน)</option>
+            <option value="100">ปรับ 100% (หักเต็มจำนวน)</option>
+         </select>
+         <label class="small text-white mb-1">ยอดหักเงินสุทธิที่จะปรับ (บาท)</label>
+         <input type="number" id="penDeductAmt" class="form-control bg-black text-danger fw-bold" readonly>
+      </div>
+      <button type="submit" class="btn btn-neon-red w-100 py-2">บันทึกข้อมูลการลงโทษ</button>
+    </form>
+  </div></div></div>
+</div>
+
+<div class="modal fade" id="portalModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center text-info" id="portalModalTitle">🌐 เพิ่มเว็บไซต์</h4>
+    <form id="addPortalForm" onsubmit="handlePortalSubmit(event)">
+      <input type="hidden" id="editPortalId"> 
+      <input type="text" id="portalTitle" class="form-control mb-3" placeholder="ชื่อเว็บไซต์" required>
+      <input type="url" id="portalLink" class="form-control mb-3" placeholder="https://..." required>
+      <div id="portalPasteArea" class="paste-area mb-3" tabindex="0">
+        <div id="portalPasteText"><span style="font-size: 30px;">📸</span><br>คลิกแล้วกด <b>Ctrl+V</b> วางรูป</div>
+        <input type="file" id="portalMediaFile" accept="image/*" style="display:none;">
+        <img id="portalImagePreview" style="display: none; max-width: 100%; border-radius:10px;">
+      </div>
+      <input type="hidden" id="portalMediaBase64" required>
+      <button type="button" id="btnPortalClearImage" class="btn btn-sm btn-outline-danger mb-3 w-100" style="display:none;" onclick="clearPortalImage()">❌ ลบภาพนี้ออก</button>
+      <button type="submit" id="btnSavePortal" class="btn btn-neon-blue w-100 py-2">💾 บันทึกและเผยแพร่</button>
+    </form>
+  </div></div></div>
+</div>
+
+<div class="modal fade" id="backendModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center text-warning" id="backendModalTitle">⚙️ เพิ่มเว็บไซต์หลังบ้าน</h4>
+    <form id="addBackendForm" onsubmit="handleBackendSubmit(event)">
+      <input type="hidden" id="editBackendId"> 
+      <input type="text" id="backendTitle" class="form-control mb-3" placeholder="ชื่อระบบหลังบ้าน" required>
+      <input type="url" id="backendLink" class="form-control mb-3" placeholder="https://..." required>
+      <div id="backendPasteArea" class="paste-area mb-3" tabindex="0">
+        <div id="backendPasteText"><span style="font-size: 30px;">📸</span><br>คลิกแล้วกด <b>Ctrl+V</b> วางรูป</div>
+        <input type="file" id="backendMediaFile" accept="image/*" style="display:none;">
+        <img id="backendImagePreview" style="display: none; max-width: 100%; border-radius:10px;">
+      </div>
+      <input type="hidden" id="backendMediaBase64" required>
+      <button type="button" id="btnBackendClearImage" class="btn btn-sm btn-outline-danger mb-3 w-100" style="display:none;" onclick="clearBackendImage()">❌ ลบภาพนี้ออก</button>
+      <button type="submit" id="btnSaveBackend" class="btn btn-neon-yellow w-100 py-2">💾 บันทึกและเผยแพร่</button>
+    </form>
+  </div></div></div>
+</div>
+
+<div class="modal fade" id="manualModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-4 text-center text-info" id="manualModalTitle">📝 สร้างหมวดหมู่เนื้อหา</h4>
+        <form id="addManualForm" onsubmit="handleManualSubmit(event)">
+          <input type="hidden" id="editManualId"> 
+          
+          <label class="small mb-1 text-white">1. หมวดหมู่หลัก (Tab)</label>
+          <select id="manMainType" class="form-select mb-3" required>
+            <option value="MANUAL">📖 คู่มือการทำงาน</option>
+            <option value="RULE">⚖️ กติกาและเงื่อนไข</option>
+          </select>
+
+          <label class="small mb-1 text-white">2. แผนกที่เกี่ยวข้อง</label>
+          <select id="manDept" class="form-select mb-3" required>
+            <option value="ทั่วไป (ALL)">ทั่วไป (ทุกแผนก)</option>
+            <option value="ออดิท (OD)">ออดิท (OD)</option>
+            <option value="ออดิทออนไลน์ (ODOL)">ออดิทออนไลน์ (ODOL)</option>
+          </select>
+          
+          <label class="small mb-1 text-white">3. ป้ายกำกับย่อย (Tag)</label>
+          <input type="text" id="manCat" class="form-control mb-3" placeholder="เช่น ขั้นตอนการถอน, กฎการลางาน" required>
+          
+          <label class="small mb-1 text-white">4. หัวข้อหลัก (Title)</label>
+          <input type="text" id="manTitle" class="form-control mb-4" placeholder="เช่น ขั้นตอนการทำงานประจำวัน" required>
+          
+          <button type="submit" class="btn btn-neon-blue w-100 py-2">💾 บันทึกและสร้าง</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="viewManualModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content" style="background:#0a0a0c;">
+    <div class="modal-header border-bottom-0 pb-0 pt-4 px-5">
+      <div class="w-100">
+        <div class="d-flex mb-3"><span id="viewManDept" class="badge bg-dark border text-light me-2 px-3 py-2"></span><span id="viewManCat" class="badge bg-dark border text-light px-3 py-2"></span></div>
+        <div class="d-flex justify-content-between align-items-center">
+          <h2 class="view-title-neon mb-0" id="viewManTitle">ชื่อหัวข้อ</h2>
+          <button id="btnAddStep" class="btn btn-neon-yellow px-4" style="display:none;" onclick="openStepModal()">➕ เพิ่มขั้นตอน</button>
+        </div>
+      </div>
+      <button type="button" class="btn-close ms-3" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body px-5 py-4"><div id="viewManStepsArea"></div></div>
+  </div></div>
+</div>
+
+<div class="modal fade" id="stepModal" tabindex="-1" data-bs-theme="dark" style="z-index: 1060;">
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center text-warning" id="stepModalTitle">➕ เพิ่มขั้นตอน</h4>
+    <form id="addStepForm" onsubmit="handleStepSubmit(event)">
+      <input type="hidden" id="editStepIndex">
+      <textarea id="stepContent" class="form-control mb-3" rows="4" placeholder="คำอธิบาย..." required></textarea>
+      <div id="stepPasteArea" class="paste-area mb-3" tabindex="0">
+        <div id="stepPasteText"><span style="font-size: 30px;">📸</span><br>คลิกแล้วกด <b>Ctrl+V</b> วางรูป</div>
+        <input type="file" id="stepMediaFile" accept="image/*" style="display:none;">
+        <img id="stepImagePreview" style="display: none; max-width: 100%; border-radius:10px;">
+      </div>
+      <input type="hidden" id="stepMediaBase64">
+      <button type="button" id="btnStepClearImage" class="btn btn-sm btn-outline-danger mb-3 w-100" style="display:none;" onclick="clearStepImage()">❌ ลบภาพนี้ออก</button>
+      <button type="submit" class="btn btn-neon-yellow w-100 py-2">💾 บันทึกขั้นตอน</button>
+    </form>
+  </div></div></div>
+</div>
+
+<div class="modal fade" id="leaveHistoryModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header border-bottom-0 pb-0 pt-4 px-4">
+        <h4 class="fw-bold mb-0 text-warning">📩 ระบบแจ้งลากิจ/ลาป่วย</h4>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+          <div class="d-flex align-items-center gap-2">
+             <span class="text-white small">📅 กรองตามเดือน:</span>
+             <input type="month" id="leaveMonthFilter" class="form-control" style="width: auto; background: #111; color: #ffcc00; border-color: #ffcc00;" onchange="loadLeavesPage(1)">
           </div>
-          <div style="flex:1; min-width: 200px; background: rgba(255, 204, 0, 0.05); border: 1px solid var(--neon-yellow); border-radius: 12px; padding: 20px; text-align: center;">
-              <div class="text-warning mb-2 fw-bold" style="font-size: 1rem;">📩 รออนุมัติลา</div>
-              <div id="widgetPendingLeaves" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(255,204,0,0.5);">0</div>
+          <button class="btn btn-warning fw-bold text-dark px-4" style="border-radius: 8px;" onclick="openSubmitLeaveModal()">➕ แจ้งวันลา</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>วันที่ขอลา</th><th>ผู้แจ้ง (แผนก)</th><th>ประเภท</th><th>สาเหตุ</th><th>สถานะ</th><th class="text-center">จัดการ</th></tr></thead>
+            <tbody id="leaveTableBody"></tbody>
+          </table>
+        </div>
+        <div id="leavePaginationArea" class="d-flex justify-content-center mt-3 gap-2 flex-wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="submitLeaveModal" tabindex="-1" data-bs-theme="dark" style="z-index: 1060;">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-4">
+        <h5 class="fw-bold mb-4 text-center text-warning">📝 แจ้งลากิจ / ลาป่วย</h5>
+        <form id="leaveForm" onsubmit="handleLeaveSubmit(event)">
+          <label class="small mb-1 text-white">1. วัน/เดือน/ปี ที่ต้องการลา</label>
+          <input type="date" id="leaveDateInput" class="form-control mb-3" required>
+          
+          <label class="small mb-1 text-white">2. ประเภทการลา</label>
+          <select id="leaveTypeInput" class="form-select mb-3" required>
+            <option value="">-- เลือกประเภท --</option>
+            <option value="ลากิจ">ลากิจ</option>
+            <option value="ลาป่วย">ลาป่วย</option>
+          </select>
+          
+          <label class="small mb-1 text-white">3. รายละเอียด / สาเหตุ</label>
+          <textarea id="leaveReasonInput" class="form-control mb-4" rows="3" required placeholder="ระบุเหตุผลการลา..."></textarea>
+          
+          <button type="submit" class="btn btn-warning w-100 py-2 fw-bold text-dark">ส่งคำขอลา</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="shiftSwapModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-3 text-center text-warning">🔀 ระบบสลับกะอัตโนมัติ</h4>
+        <p class="small text-muted text-center mb-4">ระบบจะสลับพนักงานระหว่าง กะ A และ กะ B โดยหลบวันหยุด (X, TX) หน้า-หลังให้ 1 วัน และกระจายวันสลับให้บาลานซ์กัน</p>
+        
+        <form onsubmit="executeShiftSwap(event)">
+          <label class="small text-white mb-1">1. เลือกแผนกที่ต้องการสลับกะ</label>
+          <select id="swapDept" class="form-select mb-3" required>
+            <option value="OD">ออดิท (OD)</option>
+            <option value="ODOL">ออดิทออนไลน์ (ODOL)</option>
+          </select>
+          
+          <div class="row g-2 mb-4">
+              <div class="col-6">
+                  <label class="small text-white mb-1">2. เริ่มสลับตั้งแต่วันที่</label>
+                  <select id="swapStartDay" class="form-select" required></select>
+              </div>
+              <div class="col-6">
+                  <label class="small text-white mb-1">3. ถึงวันที่</label>
+                  <select id="swapEndDay" class="form-select" required></select>
+              </div>
           </div>
-          <div style="flex:1; min-width: 200px; background: rgba(255, 51, 102, 0.05); border: 1px solid var(--neon-red); border-radius: 12px; padding: 20px; text-align: center;">
-              <div class="text-danger mb-2 fw-bold" style="font-size: 1rem;">⚠️ ยอดปรับเดือนนี้</div>
-              <div id="widgetPenaltySum" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(255,51,102,0.5);">0 ฿</div>
-          </div>
-      </div>
 
-      <div class="hub-grid">
-        <div class="hub-card hub-staff" onclick="switchMainTab('staffSection')"><div class="hub-icon">👥</div><div class="hub-title">จัดการรายชื่อสมาชิก</div></div>
-        <div class="hub-card hub-schedule" onclick="switchMainTab('holidaySection')"><div class="hub-icon">📅</div><div class="hub-title">ตารางวันทำงาน/วันหยุด</div></div>
-        <div class="hub-card hub-job" onclick="switchMainTab('jobSection')"><div class="hub-icon">📋</div><div class="hub-title">หน้าที่และสถิติ</div></div>
-        <div class="hub-card hub-meal" onclick="switchMainTab('mealSection')"><div class="hub-icon">🍽️</div><div class="hub-title">ตารางทานข้าว</div></div>
-        <div class="hub-card hub-manual" onclick="switchMainTab('manualSection')"><div class="hub-icon">📖</div><div class="hub-title">คู่มือการทำงาน</div></div>
-        <div class="hub-card hub-penalty" onclick="switchMainTab('penaltySection')"><div class="hub-icon">⚠️</div><div class="hub-title">ตารางลงโทษพนักงาน</div></div>
-        <div class="hub-card hub-portal" onclick="switchMainTab('portalSection')"><div class="hub-icon">🌐</div><div class="hub-title">จัดการเว็บไซต์</div></div>
-        <div class="hub-card" style="border: 1px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(88, 101, 242, 0.4)'; this.style.background='rgba(88, 101, 242, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(88, 101, 242, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('discordSection')">
-           <div class="hub-icon" style="text-shadow: none;">🎧</div>
-           <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
-        </div>
-      </div>
-    </div>
-
-    <div id="announceSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
-        <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead><tr><th>สถานะ</th><th>หัวข้อประกาศ</th><th>เนื้อหา</th><th class="text-center" id="thAnnounceManage">จัดการ</th></tr></thead>
-          <tbody id="announceTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="staffSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-yellow);">👥 รายชื่อสมาชิกในระบบ</h4>
-        <div class="d-flex gap-2">
-          <input type="text" id="searchInput" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อเล่น หรือ ยูสเซอร์..." oninput="handleSearch(this.value)">
-          <button id="addBtn" class="btn btn-neon-yellow px-4 py-2" style="border-radius:10px; display:none;" onclick="openRegModal()">➕ เพิ่มรายชื่อสมาชิก</button>
-        </div>
-      </div>
-      <div class="filter-bar mb-3" id="deptFilter">
-        <div class="dept-badge active" onclick="filterStaffDept('ALL', this)">ทั้งหมด</div>
-        <div class="dept-badge" onclick="filterStaffDept('ออดิท (OD)', this)">OD</div>
-        <div class="dept-badge" onclick="filterStaffDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
-        <div class="dept-badge" onclick="filterStaffDept('อื่นๆ (OTHER)', this)">OTHER</div>
-      </div>
-      <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle">
-          <thead><tr><th>ชื่อเล่น</th><th>เซ็ตกะ</th><th>แผนก</th><th>User</th><th>สิทธิ์</th><th>Status</th><th>Telegram</th><th id="thManage" class="text-center">จัดการ</th></tr></thead>
-          <tbody id="userTable"></tbody>
-        </table>
-      </div>
-      <div id="paginationArea" class="d-flex justify-content-center mt-4 gap-2 flex-wrap"></div>
-    </div>
-
-    <div id="holidaySection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-3">
-           <div class="d-flex align-items-center gap-2">
-               <div class="hub-icon mb-0" style="font-size: 1.5rem;">📅</div>
-               <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">ตารางงานพนักงาน</h4>
-           </div>
-           <button class="btn btn-outline-warning btn-sm fw-bold px-3 py-1" style="border-radius: 8px;" onclick="openShiftSwapModal()" id="btnAutoSwapShift" style="display:none;">🔀 สลับกะอัตโนมัติ</button>
-        </div>
-        <div class="d-flex gap-3 align-items-center flex-wrap">
-            <div class="input-group" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; overflow: hidden; width: 250px;">
-               <span class="input-group-text bg-transparent border-0 text-white">🔍</span>
-               <input type="text" id="searchSchedule" class="form-control bg-transparent border-0 text-white shadow-none px-0" placeholder="ค้นหาพนักงาน..." oninput="handleScheduleSearch(this.value)">
-            </div>
-            
-            <div class="d-flex align-items-center gap-3">
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-info btn-sm" onclick="changeMonth(-1)" style="border-radius: 8px; padding: 6px 12px;">◀</button>
-                    <input type="month" id="monthPicker" class="form-control text-center text-info shadow-none fw-bold" onchange="loadScheduleTable()" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; width: 140px; padding: 5px;">
-                    <button type="button" class="btn btn-outline-info btn-sm" onclick="changeMonth(1)" style="border-radius: 8px; padding: 6px 12px;">▶</button>
-                </div>
-                <button id="btnLeaveSystem" class="btn btn-warning px-3 fw-bold text-dark" style="border-radius: 8px; transition: all 0.3s;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
-            </div>
-        </div>
-      </div>
-
-      <div class="schedule-toolbar d-flex flex-column gap-3 mb-3 p-3" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-           <div class="d-flex flex-column gap-2">
-               <div class="filter-bar" id="schDeptFilterBar">
-                 <span class="text-muted small me-2">กลุ่มพนักงาน:</span>
-                 <div class="dept-badge active" onclick="filterScheduleDept('ALL', this)">ทั้งหมด</div>
-                 <div class="dept-badge" onclick="filterScheduleDept('ออดิท (OD)', this)">🔎 OD</div>
-                 <div class="dept-badge" onclick="filterScheduleDept('ออดิทออนไลน์ (ODOL)', this)">🌐 ODOL</div>
-                 <div class="dept-badge" onclick="filterScheduleDept('อื่นๆ (OTHER)', this)">🔘 อื่นๆ</div>
-               </div>
-               <div class="filter-bar" id="schShiftFilterBar" style="display: none; padding-left: 10px; border-left: 2px solid #444;">
-                 <span class="text-muted small me-2">เลือกเซ็ตกะ:</span>
-                 <div class="dept-badge active" onclick="filterScheduleShift('ALL', this)">แสดงทั้งหมด</div>
-                 <div class="dept-badge" onclick="filterScheduleShift('A', this)" style="border-color:#00f0ff; color:#00f0ff;">☀️ กะ A</div>
-                 <div class="dept-badge" onclick="filterScheduleShift('B', this)" style="border-color:#ffcc00; color:#ffcc00;">🌙 กะ B</div>
-               </div>
-           </div>
-
-           <div>
-             <button id="btnClearSchedule" onclick="confirmClearSchedule()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🗑️ ล้างตาราง</button>
-             <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3 ms-1" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะทำงาน</button>
-           </div>
-        </div>
-        <div id="stampToolbox" class="d-flex justify-content-between align-items-center flex-wrap gap-3" style="display: none !important;">
-          <div class="stamp-palette" id="stampPalette"></div>
-          <button id="btnSaveSchedule" onclick="saveAllScheduleChanges()" class="neon-save-button" style="display: none;">💾 บันทึกข้อมูลตาราง</button>
-        </div>
-      </div>
-
-      <div class="table-container" id="scheduleTableContainer">
-        <div class="text-center py-5 text-muted" id="scheduleLoading">กำลังโหลดข้อมูลตาราง...</div>
-        <table class="schedule-table" id="scheduleTable" style="display:none;"><thead id="schThead"></thead><tbody id="schTbody"></tbody></table>
-      </div>
-    </div>
-
-    <div id="jobSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-yellow);">📋 จัดการหน้าที่และสถิติประจำวัน</h4>
-        <div class="d-flex align-items-center gap-2">
-            <button id="btnJobSettings" class="btn btn-sm btn-outline-secondary" style="display:none;" onclick="openJobSettingsModal()">⚙️ ตั้งค่าระบบ</button>
-            <div class="d-flex align-items-center" style="background: #111; border: 1px solid var(--neon-yellow); border-radius: 8px;">
-                <span class="px-3 text-white small">📅 เลือกวันที่:</span>
-                <input type="date" id="jobDatePicker" class="form-control w-auto border-0" style="background: transparent; color: var(--neon-yellow);" onchange="loadDailyJobData(); loadDailyMealData();">
-            </div>
-        </div>
-      </div>
-      
-      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
-        <div id="tabBtnDuty" class="dept-badge active" onclick="toggleJobTab('duty')" style="font-size: 1rem; padding: 8px 20px;">🎯 จัดการหน้าที่ (Duty)</div>
-        <div id="tabBtnStat" class="dept-badge" onclick="toggleJobTab('stat')" style="font-size: 1rem; padding: 8px 20px;">📊 บันทึกสถิติ (Stats)</div>
-      </div>
-      
-      <div class="d-flex align-items-center gap-3 mb-3 flex-wrap p-3" style="background: rgba(255,204,0,0.05); border: 1px solid rgba(255,204,0,0.2); border-radius: 10px;">
-        <span class="fw-bold text-warning">กรองข้อมูล:</span>
-        <div class="filter-bar">
-          <div class="dept-badge active" id="badgeJobOD" onclick="filterJobDept('ออดิท (OD)', this)">OD</div>
-          <div class="dept-badge" id="badgeJobODOL" onclick="filterJobDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
-        </div>
-        <span class="text-muted">|</span>
-        <select id="jobShiftSetFilter" class="form-select bg-dark text-warning fw-bold" style="width: auto; border-color: var(--neon-yellow); box-shadow: 0 0 5px rgba(255,204,0,0.3);" onchange="handleJobShiftSetFilter(this.value)">
-             <option value="" disabled selected>-- ⚠️ กรุณาเลือกเซ็ตกะ --</option>
-             <option value="OD (A)">เซ็ตกะ: OD (A)</option>
-             <option value="OD (B)">เซ็ตกะ: OD (B)</option>
-             <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
-             <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
-        </select>
-        <div class="form-check form-switch ms-2">
-             <input class="form-check-input" type="checkbox" id="toggleHiddenUsers" onchange="toggleShowHidden(this)">
-             <label class="form-check-label text-muted small mt-1" for="toggleHiddenUsers">👁️ แสดงคนที่ถูกซ่อน</label>
-        </div>
-      </div>
-
-      <div id="dutyWorkspace">
-          <div id="siteSummaryArea" class="mb-3 d-flex flex-column gap-2 p-3" style="background: #0a0a0c; border: 1px solid #333; border-radius: 10px; display: none;">
-             <div class="text-info fw-bold mb-1" id="siteSummaryTitle">📊 สรุปกำลังคนกะปัจจุบัน:</div>
-             <div id="siteSummaryBadges" class="d-flex flex-wrap gap-2"></div>
+          <div class="alert alert-dark border-warning text-warning small mb-4" style="background: rgba(255, 204, 0, 0.05);">
+             <b>📌 เงื่อนไขการทำงาน:</b><br>
+             - <b>คนกะ B (ดึก):</b> จะได้หยุด <b>XX</b> ในวันที่สุ่มได้ และเปลี่ยนเป็น <b>D (เช้า)</b> ในวันถัดไป<br>
+             - <b>คนกะ A (เช้า):</b> จะเปลี่ยนเป็น <b>N (ดึก)</b> ในวันที่สุ่มได้ เพื่อเข้าเสียบแทนคนกะ B ที่หยุด
           </div>
           
-          <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
-             <input type="text" id="searchJob" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
-             <div id="dutyActionBtns" style="display: flex; gap: 10px;">
-               <button class="btn btn-outline-danger px-3" onclick="confirmClearDuty()">🗑️ ล้างข้อมูล</button>
-               <button class="btn btn-neon-blue px-4" onclick="randomizeDuties()">🔀 สุ่มหน้าที่</button>
-               <button class="btn btn-neon-green px-4" onclick="saveDutyTable()">💾 บันทึกหน้าที่</button>
-             </div>
-          </div>
-          <div class="table-responsive mt-3">
-            <table class="table table-hover align-middle">
-              <thead><tr><th>ชื่อพนักงาน</th><th>แผนก</th><th>เว็บที่รับผิดชอบ</th><th style="width: 200px;">เว็บที่ทำวันนี้ (เลือกเองได้)</th><th>หน้าที่ประจำวัน</th><th class="text-center">ตั้งค่า</th></tr></thead>
-              <tbody id="dutyTableBody"></tbody>
-            </table>
-          </div>
-      </div>
-
-      <div id="statWorkspace" style="display: none;">
-          <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
-             <input type="text" id="searchStat" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
-             <div id="statActionBtns">
-               <button class="btn btn-neon-yellow px-4" onclick="saveStatTable()">💾 บันทึกสถิติทั้งหมด</button>
-             </div>
-          </div>
-          <div class="stat-table-wrapper mt-3">
-            <table class="table table-hover align-middle stat-table mb-0">
-              <thead><tr id="statTableHeader"></tr></thead><tbody id="statTableBody"></tbody>
-            </table>
-          </div>
+          <button type="submit" id="btnSubmitSwap" class="btn btn-warning w-100 py-2 fw-bold text-dark">🔀 ยืนยันการสลับกะ</button>
+        </form>
       </div>
     </div>
-
-    <div id="mealSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <div>
-           <h4 class="fw-bold mb-0" style="color: #ff66cc;">🍽️ จัดการตารางทานข้าว</h4>
-           <p class="small text-muted mb-0 mt-1">ระบบจะดึงเฉพาะพนักงานที่มาทำงานวันนี้ และกระจายรอบทานข้าวเพื่อป้องกันเว็บขาดคน</p>
-        </div>
-        <div class="d-flex align-items-center" style="background: #111; border: 1px solid #ff66cc; border-radius: 8px;">
-            <span class="px-3 text-white small">📅 เลือกวันที่:</span>
-            <input type="date" id="mealDatePicker" class="form-control w-auto border-0" style="background: transparent; color: #ff66cc;" onchange="syncMealDate()">
-        </div>
-      </div>
-      
-      <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
-         <div class="d-flex align-items-center gap-2 flex-wrap">
-             <input type="text" id="searchMeal" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleMealSearch(this.value)" style="width: 150px;">
-             <select id="filterMealShift" class="form-select bg-dark text-white" style="width: auto; border-color: #ff66cc; box-shadow: 0 0 5px rgba(255,102,204,0.3);" onchange="renderMealTable()">
-                 <option value="ALL">-- รวมทุกกะ --</option>
-                 <option value="D">กะเช้า (D)</option>
-                 <option value="N">กะดึก (N)</option>
-             </select>
-             <select id="filterMealDept" class="form-select bg-dark text-white" style="width: auto; border-color: #ff66cc; box-shadow: 0 0 5px rgba(255,102,204,0.3);" onchange="renderMealTable()">
-                 <option value="ALL">-- รวมทุกแผนก --</option>
-                 <option value="OD">ออดิท (OD)</option>
-                 <option value="ODOL">ออดิทออนไลน์ (ODOL)</option>
-             </select>
-         </div>
-         <div id="mealActionBtns" style="display: flex; gap: 10px;">
-           <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
-           <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
-         </div>
-      </div>
-      
-      <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>ชื่อพนักงาน</th>
-              <th>แผนก</th>
-              <th>กะงานวันนี้</th>
-              <th>เว็บที่รับผิดชอบวันนี้</th>
-              <th>เพื่อนร่วมงานเว็บเดียวกัน</th>
-              <th>จัดรอบทานข้าว</th>
-            </tr>
-          </thead>
-          <tbody id="mealTableBody">
-             <tr><td colspan="6" class="text-center text-muted py-5">กรุณาตั้งค่า 'หน้าที่หน้างาน' ให้เสร็จก่อนจัดตารางทานข้าวนะครับ</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    
-    <div id="manualSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">📖 คู่มือการทำงาน และ กติกา</h4>
-        <div class="d-flex gap-2">
-            <input type="text" id="searchManual" class="form-control neon-input-search" placeholder="🔍 ค้นหาหัวข้อ..." oninput="handleManualSearch(this.value)">
-            <button id="addManualBtn" class="btn btn-neon-blue px-4" style="display:none;" onclick="openNewManualModal()">➕ สร้างเนื้อหาใหม่</button>
-        </div>
-      </div>
-      
-      <div class="filter-bar mb-3 pb-2" style="border-bottom: 1px solid #333;">
-        <div id="tabManual" class="dept-badge active" onclick="switchManualTab('MANUAL', this)">📖 คู่มือการทำงาน</div>
-        <div id="tabRule" class="dept-badge" onclick="switchManualTab('RULE', this)">⚖️ กติกาและเงื่อนไข</div>
-      </div>
-
-      <div class="filter-bar mb-4">
-        <div class="dept-badge active" onclick="filterManualView('ALL', this)">🔍 ดูทั้งหมด</div>
-        <div class="dept-badge" onclick="filterManualView('ทั่วไป (ALL)', this)">🌐 ทั่วไป</div>
-        <div class="dept-badge" onclick="filterManualView('ออดิท (OD)', this)">🔎 OD</div>
-        <div class="dept-badge" onclick="filterManualView('ออดิทออนไลน์ (ODOL)', this)">💻 ODOL</div>
-      </div>
-      
-      <div id="manualGridArea" class="manual-grid"></div>
-    </div>
-
-    <div id="penaltySection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <h4 class="fw-bold mb-0" style="color: #ff3366;">⚠️ ตารางบันทึกการลงโทษพนักงาน</h4>
-        <div class="d-flex gap-2 align-items-center flex-wrap">
-            <span class="text-white small">📅 เลือกเดือน:</span>
-            <input type="month" id="penaltyMonthFilter" class="form-control" style="width: auto; background: #111; color: #ff3366; border-color: #ff3366;" onchange="loadPenaltiesTable()">
-            <input type="text" id="penaltySearchInput" class="form-control neon-input-search" style="width: 200px; border-color: #ff3366;" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="loadPenaltiesTable()">
-            <button class="btn btn-outline-success px-3 ms-2" onclick="exportTableToExcel('penaltyTable', 'Penalty_Report')">📥 โหลด Excel</button>
-            <button id="addPenaltyBtn" class="btn btn-neon-red px-4 ms-2" style="display:none;" onclick="openPenaltyModal()">➕ บันทึกความผิด</button>
-        </div>
-      </div>
-      <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle" id="penaltyTable">
-          <thead><tr><th>เดือน/ปี</th><th>พนักงาน</th><th>แผนก</th><th>รายละเอียดความผิด</th><th>บทลงโทษ</th><th>ยอดหักสุทธิ</th><th>สถานะ</th><th class="text-center">จัดการ</th></tr></thead>
-          <tbody id="penaltyTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="discordSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-2">
-           <div class="spinner-grow spinner-grow-sm text-primary" role="status" id="discordLiveIndicator"></div>
-           <h4 class="fw-bold mb-0" style="color: #5865F2;">🎧 ศูนย์บัญชาการ Discord</h4>
-        </div>
-        <div class="d-flex align-items-center gap-2" style="background: #111; border: 1px solid #5865F2; border-radius: 8px;">
-            <button class="btn btn-outline-success btn-sm px-3 me-2" onclick="exportTableToExcel('discordTable', 'Discord_Attendance_Report')">📥 โหลด Excel</button>
-            <span class="px-3 text-white small">📅 วันที่:</span>
-            <input type="date" id="discordDatePicker" class="form-control w-auto border-0" style="background: transparent; color: #5865F2;" onchange="loadDiscordAttendance()">
-        </div>
-      </div>
-      
-      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
-        <div id="tabBtnDcAttendance" class="dept-badge active" onclick="switchDiscordTab('attendance')" style="font-size: 1.05rem; padding: 8px 25px;">⏰ 1. ตรวจสอบเวลาเข้างาน</div>
-        <div id="tabBtnDcMonitor" class="dept-badge" onclick="switchDiscordTab('monitor')" style="font-size: 1.05rem; padding: 8px 25px;">📡 2. ติดตามสถานะ (กล้องวงจรปิด)</div>
-      </div>
-
-      <div id="dcAttendanceFilterContainer" class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="filter-bar" id="dcFilterBar">
-          <div class="dept-badge active" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
-          <div class="dept-badge" onclick="filterDiscord('LATE', this)">🔴 มาสาย</div>
-          <div class="dept-badge" onclick="filterDiscord('MISSING', this)">⚪ ยังไม่เข้างาน</div>
-          <div class="dept-badge" onclick="filterDiscord('LEAVE', this)" style="border-color:#ffcc00; color:#ffcc00;">🛏️ วันหยุด / ลา (X, TX, KL)</div>
-        </div>
-      </div>
-
-      <div id="dcMonitorFilterContainer" class="d-none justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="filter-bar" id="dcMonitorBar">
-          <div class="dept-badge active" onclick="filterMonitorShift('ALL', this)">👥 แสดงคนในระบบทั้งหมด</div>
-          <div class="dept-badge" onclick="filterMonitorShift('A', this)">☀️ เฉพาะ กะ A (08:00 - 20:00)</div>
-          <div class="dept-badge" onclick="filterMonitorShift('B', this)">🌙 เฉพาะ กะ B (20:00 - 08:00)</div>
-          <div class="dept-badge" onclick="filterMonitorShift('UNKNOWN', this)" style="border-color:#ff9900; color:#ff9900;">👽 ดูรายชื่อคนนอก (ไม่มีในระบบ)</div>
-        </div>
-      </div>
-
-      <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle" id="discordTable">
-          <thead id="discordThead"></thead>
-          <tbody id="discordTableBody">
-             <tr><td colspan="7" class="text-center text-muted py-5">กำลังเชื่อมต่อกับระบบ...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-      
-    <div id="portalSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">🌐 จัดการเว็บไซต์ (Websites)</h4>
-        <div>
-            <button id="addPortalBtn" class="btn btn-neon-blue px-4" style="display:none;" onclick="openPortalModal()">➕ เพิ่มเว็บหน้าบ้าน</button>
-            <button id="addBackendBtn" class="btn btn-neon-yellow px-4 ms-2" style="display:none;" onclick="openBackendModal()">➕ เพิ่มเว็บหลังบ้าน</button>
-        </div>
-      </div>
-      <div class="filter-bar mb-4 pb-3" style="border-bottom: 1px solid #333;">
-        <div id="tabFrontEnd" class="dept-badge active" onclick="switchWebZone('frontend', this)">🌐 เว็บหน้าบ้าน (Front-End)</div>
-        <div id="tabBackEnd" class="dept-badge" onclick="switchWebZone('backend', this)">⚙️ เว็บหลังบ้าน (Back-End)</div>
-      </div>
-      <div id="portalGridArea" class="manual-grid"></div>
-      <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
-    </div>
-
-  </div> 
-</div>
-<body>
-
-<div id="imageLightbox" class="image-lightbox" onclick="closeLightbox()">
-  <img id="lightboxImg" src="">
-</div>
-
-<div id="loginPage">
-  <div class="login-card">
-    <h2 class="fw-bold mb-4" style="color: var(--neon-blue); text-shadow: 0 0 15px rgba(0,240,255,0.8); letter-spacing: 2px;">OKVIP LOGIN</h2>
-    <input type="text" id="user" class="login-input" placeholder="ยูสเซอร์เนม">
-    <input type="password" id="pass" class="login-input" placeholder="รหัสผ่าน">
-    <button onclick="handleLogin()" id="loginBtn" class="login-btn-custom">เข้าสู่ระบบ</button>
   </div>
 </div>
 
-<div id="mainDashboard">
-  <div class="nav-menu-bar" id="topNavBar">
-    <button class="btn btn-outline-light px-4 py-2" style="border-radius:10px;" onclick="goToHub()">⬅️ กลับหน้าเมนูหลัก</button>
-  </div>
-
-  <div class="top-nav">
-    <div>
-      <span class="text-muted small">ยินดีต้อนรับ:</span> 
-      <b id="userDisplay" class="ms-1 fs-5 text-white"></b> 
-      <span class="mx-2 text-secondary">|</span>
-      <span id="roleLabel"></span>
-    </div>
-    <div class="d-flex gap-2 align-items-center flex-wrap">
-      <button onclick="switchMainTab('announceSection')" class="btn btn-outline-warning px-3 py-2" style="border-radius:8px; font-size: 1rem;" title="จัดการประกาศข่าวสาร">📢</button>
-      <button id="refreshBtn" onclick="refreshData(this)" class="btn btn-outline-info px-3 py-2" style="border-radius:8px; font-size: 0.9rem;" title="รีโหลดดึงข้อมูลล่าสุด">🔄 รีเฟรช</button>
-      <button onclick="handleLogout()" class="btn btn-neon-red px-4" style="border-radius:10px;">ออกจากระบบ</button>
-    </div>
-  </div>
-
-  <div class="card-custom">
-    
-    <div id="hubSection" class="content-section active">
-      <div class="text-center mb-4">
-        <h2 class="fw-bold" style="color: var(--neon-blue); text-shadow: 0 0 15px rgba(0,240,255,0.6);">ศูนย์ควบคุมระบบ (Control Center)</h2>
-        <p class="text-muted">เลือกโหมดการทำงานที่คุณต้องการ</p>
-      </div>
-
-      <div id="dashboardWidgets" class="d-flex gap-3 mb-4 flex-wrap" style="display:none !important;">
-          <div style="flex:1; min-width: 200px; background: rgba(0, 240, 255, 0.05); border: 1px solid var(--neon-blue); border-radius: 12px; padding: 20px; text-align: center;">
-              <div class="text-info mb-2 fw-bold" style="font-size: 1rem;">👥 พนักงาน Active</div>
-              <div id="widgetActiveUsers" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(0,240,255,0.5);">0</div>
-          </div>
-          <div style="flex:1; min-width: 200px; background: rgba(255, 204, 0, 0.05); border: 1px solid var(--neon-yellow); border-radius: 12px; padding: 20px; text-align: center;">
-              <div class="text-warning mb-2 fw-bold" style="font-size: 1rem;">📩 รออนุมัติลา</div>
-              <div id="widgetPendingLeaves" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(255,204,0,0.5);">0</div>
-          </div>
-          <div style="flex:1; min-width: 200px; background: rgba(255, 51, 102, 0.05); border: 1px solid var(--neon-red); border-radius: 12px; padding: 20px; text-align: center;">
-              <div class="text-danger mb-2 fw-bold" style="font-size: 1rem;">⚠️ ยอดปรับเดือนนี้</div>
-              <div id="widgetPenaltySum" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(255,51,102,0.5);">0 ฿</div>
-          </div>
-      </div>
-
-      <div class="hub-grid">
-        <div class="hub-card hub-staff" onclick="switchMainTab('staffSection')"><div class="hub-icon">👥</div><div class="hub-title">จัดการรายชื่อสมาชิก</div></div>
-        <div class="hub-card hub-schedule" onclick="switchMainTab('holidaySection')"><div class="hub-icon">📅</div><div class="hub-title">ตารางวันทำงาน/วันหยุด</div></div>
-        <div class="hub-card hub-job" onclick="switchMainTab('jobSection')"><div class="hub-icon">📋</div><div class="hub-title">หน้าที่และสถิติ</div></div>
-        <div class="hub-card hub-meal" onclick="switchMainTab('mealSection')"><div class="hub-icon">🍽️</div><div class="hub-title">ตารางทานข้าว</div></div>
-        <div class="hub-card hub-manual" onclick="switchMainTab('manualSection')"><div class="hub-icon">📖</div><div class="hub-title">คู่มือการทำงาน</div></div>
-        <div class="hub-card hub-penalty" onclick="switchMainTab('penaltySection')"><div class="hub-icon">⚠️</div><div class="hub-title">ตารางลงโทษพนักงาน</div></div>
-        <div class="hub-card hub-portal" onclick="switchMainTab('portalSection')"><div class="hub-icon">🌐</div><div class="hub-title">จัดการเว็บไซต์</div></div>
-        <div class="hub-card" style="border: 1px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(88, 101, 242, 0.4)'; this.style.background='rgba(88, 101, 242, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(88, 101, 242, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('discordSection')">
-           <div class="hub-icon" style="text-shadow: none;">🎧</div>
-           <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
-        </div>
-      </div>
-    </div>
-
-    <div id="announceSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
-        <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
-      </div>
-      <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead><tr><th>สถานะ</th><th>หัวข้อประกาศ</th><th>เนื้อหา</th><th class="text-center" id="thAnnounceManage">จัดการ</th></tr></thead>
-          <tbody id="announceTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="staffSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-yellow);">👥 รายชื่อสมาชิกในระบบ</h4>
-        <div class="d-flex gap-2">
-          <input type="text" id="searchInput" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อเล่น หรือ ยูสเซอร์..." oninput="handleSearch(this.value)">
-          <button id="addBtn" class="btn btn-neon-yellow px-4 py-2" style="border-radius:10px; display:none;" onclick="openRegModal()">➕ เพิ่มรายชื่อสมาชิก</button>
-        </div>
-      </div>
-      <div class="filter-bar mb-3" id="deptFilter">
-        <div class="dept-badge active" onclick="filterStaffDept('ALL', this)">ทั้งหมด</div>
-        <div class="dept-badge" onclick="filterStaffDept('ออดิท (OD)', this)">OD</div>
-        <div class="dept-badge" onclick="filterStaffDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
-        <div class="dept-badge" onclick="filterStaffDept('อื่นๆ (OTHER)', this)">OTHER</div>
-      </div>
-      <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle">
-          <thead><tr><th>ชื่อเล่น</th><th>เซ็ตกะ</th><th>แผนก</th><th>User</th><th>สิทธิ์</th><th>Status</th><th>Telegram</th><th id="thManage" class="text-center">จัดการ</th></tr></thead>
-          <tbody id="userTable"></tbody>
-        </table>
-      </div>
-      <div id="paginationArea" class="d-flex justify-content-center mt-4 gap-2 flex-wrap"></div>
-    </div>
-
-    <div id="holidaySection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-3">
-           <div class="d-flex align-items-center gap-2">
-               <div class="hub-icon mb-0" style="font-size: 1.5rem;">📅</div>
-               <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">ตารางงานพนักงาน</h4>
-           </div>
-           <button class="btn btn-outline-warning btn-sm fw-bold px-3 py-1" style="border-radius: 8px;" onclick="openShiftSwapModal()" id="btnAutoSwapShift" style="display:none;">🔀 สลับกะอัตโนมัติ</button>
-        </div>
-        <div class="d-flex gap-3 align-items-center flex-wrap">
-            <div class="input-group" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; overflow: hidden; width: 250px;">
-               <span class="input-group-text bg-transparent border-0 text-white">🔍</span>
-               <input type="text" id="searchSchedule" class="form-control bg-transparent border-0 text-white shadow-none px-0" placeholder="ค้นหาพนักงาน..." oninput="handleScheduleSearch(this.value)">
-            </div>
-            
-            <div class="d-flex align-items-center gap-3">
-                <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-outline-info btn-sm" onclick="changeMonth(-1)" style="border-radius: 8px; padding: 6px 12px;">◀</button>
-                    <input type="month" id="monthPicker" class="form-control text-center text-info shadow-none fw-bold" onchange="loadScheduleTable()" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; width: 140px; padding: 5px;">
-                    <button type="button" class="btn btn-outline-info btn-sm" onclick="changeMonth(1)" style="border-radius: 8px; padding: 6px 12px;">▶</button>
-                </div>
-                <button id="btnLeaveSystem" class="btn btn-warning px-3 fw-bold text-dark" style="border-radius: 8px; transition: all 0.3s;" onclick="openLeaveHistoryModal()">📩 ระบบแจ้งลา</button>
-            </div>
-        </div>
-      </div>
-
-      <div class="schedule-toolbar d-flex flex-column gap-3 mb-3 p-3" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
-           <div class="d-flex flex-column gap-2">
-               <div class="filter-bar" id="schDeptFilterBar">
-                 <span class="text-muted small me-2">กลุ่มพนักงาน:</span>
-                 <div class="dept-badge active" onclick="filterScheduleDept('ALL', this)">ทั้งหมด</div>
-                 <div class="dept-badge" onclick="filterScheduleDept('ออดิท (OD)', this)">🔎 OD</div>
-                 <div class="dept-badge" onclick="filterScheduleDept('ออดิทออนไลน์ (ODOL)', this)">🌐 ODOL</div>
-                 <div class="dept-badge" onclick="filterScheduleDept('อื่นๆ (OTHER)', this)">🔘 อื่นๆ</div>
-               </div>
-               <div class="filter-bar" id="schShiftFilterBar" style="display: none; padding-left: 10px; border-left: 2px solid #444;">
-                 <span class="text-muted small me-2">เลือกเซ็ตกะ:</span>
-                 <div class="dept-badge active" onclick="filterScheduleShift('ALL', this)">แสดงทั้งหมด</div>
-                 <div class="dept-badge" onclick="filterScheduleShift('A', this)" style="border-color:#00f0ff; color:#00f0ff;">☀️ กะ A</div>
-                 <div class="dept-badge" onclick="filterScheduleShift('B', this)" style="border-color:#ffcc00; color:#ffcc00;">🌙 กะ B</div>
-               </div>
-           </div>
-
-           <div>
-             <button id="btnClearSchedule" onclick="confirmClearSchedule()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🗑️ ล้างตาราง</button>
-             <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3 ms-1" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะทำงาน</button>
-           </div>
-        </div>
-        <div id="stampToolbox" class="d-flex justify-content-between align-items-center flex-wrap gap-3" style="display: none !important;">
-          <div class="stamp-palette" id="stampPalette"></div>
-          <button id="btnSaveSchedule" onclick="saveAllScheduleChanges()" class="neon-save-button" style="display: none;">💾 บันทึกข้อมูลตาราง</button>
-        </div>
-      </div>
-
-      <div class="table-container" id="scheduleTableContainer">
-        <div class="text-center py-5 text-muted" id="scheduleLoading">กำลังโหลดข้อมูลตาราง...</div>
-        <table class="schedule-table" id="scheduleTable" style="display:none;"><thead id="schThead"></thead><tbody id="schTbody"></tbody></table>
-      </div>
-    </div>
-
-    <div id="jobSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-yellow);">📋 จัดการหน้าที่และสถิติประจำวัน</h4>
-        <div class="d-flex align-items-center gap-2">
-            <button id="btnJobSettings" class="btn btn-sm btn-outline-secondary" style="display:none;" onclick="openJobSettingsModal()">⚙️ ตั้งค่าระบบ</button>
-            <div class="d-flex align-items-center" style="background: #111; border: 1px solid var(--neon-yellow); border-radius: 8px;">
-                <span class="px-3 text-white small">📅 เลือกวันที่:</span>
-                <input type="date" id="jobDatePicker" class="form-control w-auto border-0" style="background: transparent; color: var(--neon-yellow);" onchange="loadDailyJobData(); loadDailyMealData();">
-            </div>
-        </div>
-      </div>
-      
-      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
-        <div id="tabBtnDuty" class="dept-badge active" onclick="toggleJobTab('duty')" style="font-size: 1rem; padding: 8px 20px;">🎯 จัดการหน้าที่ (Duty)</div>
-        <div id="tabBtnStat" class="dept-badge" onclick="toggleJobTab('stat')" style="font-size: 1rem; padding: 8px 20px;">📊 บันทึกสถิติ (Stats)</div>
-      </div>
-      
-      <div class="d-flex align-items-center gap-3 mb-3 flex-wrap p-3" style="background: rgba(255,204,0,0.05); border: 1px solid rgba(255,204,0,0.2); border-radius: 10px;">
-        <span class="fw-bold text-warning">กรองข้อมูล:</span>
-        <div class="filter-bar">
-          <div class="dept-badge active" id="badgeJobOD" onclick="filterJobDept('ออดิท (OD)', this)">OD</div>
-          <div class="dept-badge" id="badgeJobODOL" onclick="filterJobDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
-        </div>
-        <span class="text-muted">|</span>
-        <select id="jobShiftSetFilter" class="form-select bg-dark text-warning fw-bold" style="width: auto; border-color: var(--neon-yellow); box-shadow: 0 0 5px rgba(255,204,0,0.3);" onchange="handleJobShiftSetFilter(this.value)">
-             <option value="" disabled selected>-- ⚠️ กรุณาเลือกเซ็ตกะ --</option>
-             <option value="OD (A)">เซ็ตกะ: OD (A)</option>
-             <option value="OD (B)">เซ็ตกะ: OD (B)</option>
-             <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
-             <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
-        </select>
-        <div class="form-check form-switch ms-2">
-             <input class="form-check-input" type="checkbox" id="toggleHiddenUsers" onchange="toggleShowHidden(this)">
-             <label class="form-check-label text-muted small mt-1" for="toggleHiddenUsers">👁️ แสดงคนที่ถูกซ่อน</label>
-        </div>
-      </div>
-
-      <div id="dutyWorkspace">
-          <div id="siteSummaryArea" class="mb-3 d-flex flex-column gap-2 p-3" style="background: #0a0a0c; border: 1px solid #333; border-radius: 10px; display: none;">
-             <div class="text-info fw-bold mb-1" id="siteSummaryTitle">📊 สรุปกำลังคนกะปัจจุบัน:</div>
-             <div id="siteSummaryBadges" class="d-flex flex-wrap gap-2"></div>
-          </div>
-          
-          <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
-             <input type="text" id="searchJob" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
-             <div id="dutyActionBtns" style="display: flex; gap: 10px;">
-               <button class="btn btn-outline-danger px-3" onclick="confirmClearDuty()">🗑️ ล้างข้อมูล</button>
-               <button class="btn btn-neon-blue px-4" onclick="randomizeDuties()">🔀 สุ่มหน้าที่</button>
-               <button class="btn btn-neon-green px-4" onclick="saveDutyTable()">💾 บันทึกหน้าที่</button>
-             </div>
-          </div>
-          <div class="table-responsive mt-3">
-            <table class="table table-hover align-middle">
-              <thead><tr><th>ชื่อพนักงาน</th><th>แผนก</th><th>เว็บที่รับผิดชอบ</th><th style="width: 200px;">เว็บที่ทำวันนี้ (เลือกเองได้)</th><th>หน้าที่ประจำวัน</th><th class="text-center">ตั้งค่า</th></tr></thead>
-              <tbody id="dutyTableBody"></tbody>
-            </table>
-          </div>
-      </div>
-
-      <div id="statWorkspace" style="display: none;">
-          <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
-             <input type="text" id="searchStat" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
-             <div id="statActionBtns">
-               <button class="btn btn-neon-yellow px-4" onclick="saveStatTable()">💾 บันทึกสถิติทั้งหมด</button>
-             </div>
-          </div>
-          <div class="stat-table-wrapper mt-3">
-            <table class="table table-hover align-middle stat-table mb-0">
-              <thead><tr id="statTableHeader"></tr></thead><tbody id="statTableBody"></tbody>
-            </table>
-          </div>
-      </div>
-    </div>
-
-    <div id="mealSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <div>
-           <h4 class="fw-bold mb-0" style="color: #ff66cc;">🍽️ จัดการตารางทานข้าว</h4>
-           <p class="small text-muted mb-0 mt-1">ระบบจะดึงเฉพาะพนักงานที่มาทำงานวันนี้ และกระจายรอบทานข้าวเพื่อป้องกันเว็บขาดคน</p>
-        </div>
-        <div class="d-flex align-items-center" style="background: #111; border: 1px solid #ff66cc; border-radius: 8px;">
-            <span class="px-3 text-white small">📅 เลือกวันที่:</span>
-            <input type="date" id="mealDatePicker" class="form-control w-auto border-0" style="background: transparent; color: #ff66cc;" onchange="syncMealDate()">
-        </div>
-      </div>
-      
-      <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
-         <div class="d-flex align-items-center gap-2 flex-wrap">
-             <input type="text" id="searchMeal" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleMealSearch(this.value)" style="width: 150px;">
-             <select id="filterMealShift" class="form-select bg-dark text-white" style="width: auto; border-color: #ff66cc; box-shadow: 0 0 5px rgba(255,102,204,0.3);" onchange="renderMealTable()">
-                 <option value="ALL">-- รวมทุกกะ --</option>
-                 <option value="D">กะเช้า (D)</option>
-                 <option value="N">กะดึก (N)</option>
-             </select>
-             <select id="filterMealDept" class="form-select bg-dark text-white" style="width: auto; border-color: #ff66cc; box-shadow: 0 0 5px rgba(255,102,204,0.3);" onchange="renderMealTable()">
-                 <option value="ALL">-- รวมทุกแผนก --</option>
-                 <option value="OD">ออดิท (OD)</option>
-                 <option value="ODOL">ออดิทออนไลน์ (ODOL)</option>
-             </select>
-         </div>
-         <div id="mealActionBtns" style="display: flex; gap: 10px;">
-           <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
-           <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
-         </div>
-      </div>
-      
-      <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle">
-          <thead>
-            <tr>
-              <th>ชื่อพนักงาน</th>
-              <th>แผนก</th>
-              <th>กะงานวันนี้</th>
-              <th>เว็บที่รับผิดชอบวันนี้</th>
-              <th>เพื่อนร่วมงานเว็บเดียวกัน</th>
-              <th>จัดรอบทานข้าว</th>
-            </tr>
-          </thead>
-          <tbody id="mealTableBody">
-             <tr><td colspan="6" class="text-center text-muted py-5">กรุณาตั้งค่า 'หน้าที่หน้างาน' ให้เสร็จก่อนจัดตารางทานข้าวนะครับ</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-    
-    <div id="manualSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">📖 คู่มือการทำงาน และ กติกา</h4>
-        <div class="d-flex gap-2">
-            <input type="text" id="searchManual" class="form-control neon-input-search" placeholder="🔍 ค้นหาหัวข้อ..." oninput="handleManualSearch(this.value)">
-            <button id="addManualBtn" class="btn btn-neon-blue px-4" style="display:none;" onclick="openNewManualModal()">➕ สร้างเนื้อหาใหม่</button>
-        </div>
-      </div>
-      
-      <div class="filter-bar mb-3 pb-2" style="border-bottom: 1px solid #333;">
-        <div id="tabManual" class="dept-badge active" onclick="switchManualTab('MANUAL', this)">📖 คู่มือการทำงาน</div>
-        <div id="tabRule" class="dept-badge" onclick="switchManualTab('RULE', this)">⚖️ กติกาและเงื่อนไข</div>
-      </div>
-
-      <div class="filter-bar mb-4">
-        <div class="dept-badge active" onclick="filterManualView('ALL', this)">🔍 ดูทั้งหมด</div>
-        <div class="dept-badge" onclick="filterManualView('ทั่วไป (ALL)', this)">🌐 ทั่วไป</div>
-        <div class="dept-badge" onclick="filterManualView('ออดิท (OD)', this)">🔎 OD</div>
-        <div class="dept-badge" onclick="filterManualView('ออดิทออนไลน์ (ODOL)', this)">💻 ODOL</div>
-      </div>
-      
-      <div id="manualGridArea" class="manual-grid"></div>
-    </div>
-
-    <div id="penaltySection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-        <h4 class="fw-bold mb-0" style="color: #ff3366;">⚠️ ตารางบันทึกการลงโทษพนักงาน</h4>
-        <div class="d-flex gap-2 align-items-center flex-wrap">
-            <span class="text-white small">📅 เลือกเดือน:</span>
-            <input type="month" id="penaltyMonthFilter" class="form-control" style="width: auto; background: #111; color: #ff3366; border-color: #ff3366;" onchange="loadPenaltiesTable()">
-            <input type="text" id="penaltySearchInput" class="form-control neon-input-search" style="width: 200px; border-color: #ff3366;" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="loadPenaltiesTable()">
-            <button class="btn btn-outline-success px-3 ms-2" onclick="exportTableToExcel('penaltyTable', 'Penalty_Report')">📥 โหลด Excel</button>
-            <button id="addPenaltyBtn" class="btn btn-neon-red px-4 ms-2" style="display:none;" onclick="openPenaltyModal()">➕ บันทึกความผิด</button>
-        </div>
-      </div>
-      <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle" id="penaltyTable">
-          <thead><tr><th>เดือน/ปี</th><th>พนักงาน</th><th>แผนก</th><th>รายละเอียดความผิด</th><th>บทลงโทษ</th><th>ยอดหักสุทธิ</th><th>สถานะ</th><th class="text-center">จัดการ</th></tr></thead>
-          <tbody id="penaltyTableBody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <div id="discordSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
-        <div class="d-flex align-items-center gap-2">
-           <div class="spinner-grow spinner-grow-sm text-primary" role="status" id="discordLiveIndicator"></div>
-           <h4 class="fw-bold mb-0" style="color: #5865F2;">🎧 ศูนย์บัญชาการ Discord</h4>
-        </div>
-        <div class="d-flex align-items-center gap-2" style="background: #111; border: 1px solid #5865F2; border-radius: 8px;">
-            <button class="btn btn-outline-success btn-sm px-3 me-2" onclick="exportTableToExcel('discordTable', 'Discord_Attendance_Report')">📥 โหลด Excel</button>
-            <span class="px-3 text-white small">📅 วันที่:</span>
-            <input type="date" id="discordDatePicker" class="form-control w-auto border-0" style="background: transparent; color: #5865F2;" onchange="loadDiscordAttendance()">
-        </div>
-      </div>
-      
-      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
-        <div id="tabBtnDcAttendance" class="dept-badge active" onclick="switchDiscordTab('attendance')" style="font-size: 1.05rem; padding: 8px 25px;">⏰ 1. ตรวจสอบเวลาเข้างาน</div>
-        <div id="tabBtnDcMonitor" class="dept-badge" onclick="switchDiscordTab('monitor')" style="font-size: 1.05rem; padding: 8px 25px;">📡 2. ติดตามสถานะ (กล้องวงจรปิด)</div>
-      </div>
-
-      <div id="dcAttendanceFilterContainer" class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="filter-bar" id="dcFilterBar">
-          <div class="dept-badge active" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
-          <div class="dept-badge" onclick="filterDiscord('LATE', this)">🔴 มาสาย</div>
-          <div class="dept-badge" onclick="filterDiscord('MISSING', this)">⚪ ยังไม่เข้างาน</div>
-          <div class="dept-badge" onclick="filterDiscord('LEAVE', this)" style="border-color:#ffcc00; color:#ffcc00;">🛏️ วันหยุด / ลา (X, TX, KL)</div>
-        </div>
-      </div>
-
-      <div id="dcMonitorFilterContainer" class="d-none justify-content-between align-items-center mb-3 flex-wrap gap-2">
-        <div class="filter-bar" id="dcMonitorBar">
-          <div class="dept-badge active" onclick="filterMonitorShift('ALL', this)">👥 แสดงคนในระบบทั้งหมด</div>
-          <div class="dept-badge" onclick="filterMonitorShift('A', this)">☀️ เฉพาะ กะ A (08:00 - 20:00)</div>
-          <div class="dept-badge" onclick="filterMonitorShift('B', this)">🌙 เฉพาะ กะ B (20:00 - 08:00)</div>
-          <div class="dept-badge" onclick="filterMonitorShift('UNKNOWN', this)" style="border-color:#ff9900; color:#ff9900;">👽 ดูรายชื่อคนนอก (ไม่มีในระบบ)</div>
-        </div>
-      </div>
-
-      <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle" id="discordTable">
-          <thead id="discordThead"></thead>
-          <tbody id="discordTableBody">
-             <tr><td colspan="7" class="text-center text-muted py-5">กำลังเชื่อมต่อกับระบบ...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-      
-    <div id="portalSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">🌐 จัดการเว็บไซต์ (Websites)</h4>
-        <div>
-            <button id="addPortalBtn" class="btn btn-neon-blue px-4" style="display:none;" onclick="openPortalModal()">➕ เพิ่มเว็บหน้าบ้าน</button>
-            <button id="addBackendBtn" class="btn btn-neon-yellow px-4 ms-2" style="display:none;" onclick="openBackendModal()">➕ เพิ่มเว็บหลังบ้าน</button>
-        </div>
-      </div>
-      <div class="filter-bar mb-4 pb-3" style="border-bottom: 1px solid #333;">
-        <div id="tabFrontEnd" class="dept-badge active" onclick="switchWebZone('frontend', this)">🌐 เว็บหน้าบ้าน (Front-End)</div>
-        <div id="tabBackEnd" class="dept-badge" onclick="switchWebZone('backend', this)">⚙️ เว็บหลังบ้าน (Back-End)</div>
-      </div>
-      <div id="portalGridArea" class="manual-grid"></div>
-      <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
-    </div>
-
-  </div> 
-</div>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 <script>
   // ==========================================
   // ⚡ เริ่มต้นระบบ JavaScript
@@ -1751,7 +1484,14 @@
   }
 
   function renderStampPalette() { let html = ''; for (const [code, style] of Object.entries(stampConfig)) { let isDisabled = ""; let opacityStyle = ""; if (myRole === 'Member' && code !== 'X' && code !== '') { isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; } html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; } document.getElementById('stampPalette').innerHTML = html; }
-  function selectStamp(code, btn) { if (myRole === 'Member' && code !== 'X' && code !== '') { Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); return; } currentStamp = code; document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); }
+  
+  function selectStamp(code, btn) { 
+      if (myRole === 'Member' && code !== 'X' && code !== '') { Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); return; } 
+      currentStamp = code; 
+      document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); 
+      btn.classList.add('active'); 
+      if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); 
+  }
   
   let currentSchDept = 'ALL';
   let currentSchShift = 'ALL';
@@ -2621,6 +2361,197 @@
           if(saveBtn) { saveBtn.innerText = myRole === 'Member' ? '💾 บันทึกเวลาทานข้าวของฉัน' : '💾 บันทึกตารางทานข้าว'; saveBtn.disabled = false; }
       } 
   }
+
+  // ==========================================
+  // 🚀 7. คู่มือการทำงานและกติกา (Manuals)
+  // ==========================================
+  let currentManualMainTab = 'MANUAL'; 
+  
+  function switchManualTab(tab, btn) {
+      currentManualMainTab = tab;
+      document.getElementById('tabManual').classList.remove('active');
+      document.getElementById('tabRule').classList.remove('active');
+      document.getElementById('tabManual').style.borderColor = "#444";
+      document.getElementById('tabManual').style.color = "#ccc";
+      document.getElementById('tabRule').style.borderColor = "#444";
+      document.getElementById('tabRule').style.color = "#ccc";
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
+      renderManualGrid();
+  }
+
+  function handleManualSearch(term) { manualSearchTerm = term.toLowerCase().trim(); renderManualGrid(); }
+  function processStepImage(b64) { document.getElementById('stepImagePreview').src = b64; document.getElementById('stepImagePreview').style.display = 'block'; document.getElementById('stepMediaBase64').value = b64; document.getElementById('stepPasteText').style.display = 'none'; document.getElementById('btnStepClearImage').style.display = 'block'; }
+  function clearStepImage() { document.getElementById('stepImagePreview').src = ''; document.getElementById('stepImagePreview').style.display = 'none'; document.getElementById('stepMediaBase64').value = ''; document.getElementById('stepPasteText').style.display = 'block'; document.getElementById('btnStepClearImage').style.display = 'none'; document.getElementById('stepMediaFile').value = ''; }
+  function openLightbox(src) { document.getElementById('lightboxImg').src = src; document.getElementById('imageLightbox').classList.add('active'); }
+  function closeLightbox() { document.getElementById('imageLightbox').classList.remove('active'); setTimeout(() => { document.getElementById('lightboxImg').src = ''; }, 300); }
+  function resetManualForm() { document.getElementById('addManualForm').reset(); document.getElementById('manualModalTitle').innerText = '📝 สร้างหมวดหมู่เนื้อหาใหม่'; }
+  
+  async function handleManualSubmit(e) { 
+      e.preventDefault(); 
+      const packedDept = document.getElementById('manMainType').value + "|" + document.getElementById('manDept').value;
+      const payload = { department: packedDept, category: document.getElementById('manCat').value, title: document.getElementById('manTitle').value, stepsData: "[]" }; 
+      
+      const btn = document.querySelector('#addManualForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳...';
+      try {
+          await supabaseClient.from('manuals').insert([payload]); 
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).hide(); 
+          refreshData(document.getElementById('refreshBtn')); 
+          Swal.fire({toast:true, position:'top-end', title:'สร้างสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกและสร้าง'; }
+  }
+
+  function filterManualView(dept, btn) { currentManualFilter = dept; document.querySelectorAll('#manualSection .dept-badge').forEach(b => { if(b.id !== 'tabManual' && b.id !== 'tabRule'){ b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc"; } }); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderManualGrid(); }
+  
+  function renderManualGrid() {
+    const area = document.getElementById('manualGridArea'); area.innerHTML = ''; let hasContent = false;
+    allManualsData.forEach(r => {
+      const [mId, rawDept, mCat, mTitle] = r; 
+      
+      let mainType = 'MANUAL';
+      let actualDept = rawDept ? rawDept.toString() : '';
+      if(actualDept.includes('|')) {
+          const parts = actualDept.split('|');
+          mainType = parts[0];
+          actualDept = parts[1];
+      }
+
+      if(mainType !== currentManualMainTab) return; 
+      if(currentManualFilter !== 'ALL' && actualDept !== currentManualFilter && actualDept !== 'ทั่วไป (ALL)') return; 
+      if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; 
+      
+      hasContent = true; 
+      const admin = myRole !== 'Member' ? `<div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); confirmDeleteManual('${mId}')">✖ ลบ</button></div>` : ''; 
+      
+      let icon = mainType === 'RULE' ? "⚖️" : "📁"; 
+      if(actualDept.includes("ODOL")) icon = mainType === 'RULE' ? "📜" : "🌐"; 
+      else if(actualDept.includes("OD")) icon = mainType === 'RULE' ? "📌" : "🔎"; 
+      
+      area.innerHTML += `<div class="manual-card" onclick="openViewManual('${mId}')">${admin}<div class="d-flex align-items-start"><span class="icon">${icon}</span><div><h5 class="title">${mTitle}</h5><div class="small text-muted mt-1">[${actualDept}] ${mCat}</div></div></div><div class="read-more">คลิกเพื่อเข้าดู &rarr;</div></div>`;
+    });
+    if(!hasContent) area.innerHTML = `<div class="text-center py-5 w-100 text-muted">ไม่พบข้อมูลในหมวดหมู่นี้</div>`;
+  }
+
+  function openViewManual(id) { 
+      const manual = allManualsData.find(r => r[0].toString()===id.toString()); if(!manual) return; 
+      currentlyViewingManualId = id; 
+      
+      let actualDept = manual[1] ? manual[1].toString() : '';
+      if(actualDept.includes('|')) actualDept = actualDept.split('|')[1];
+
+      document.getElementById('viewManTitle').innerText = manual[3]; 
+      document.getElementById('viewManDept').innerText = "📌 " + actualDept; 
+      document.getElementById('viewManCat').innerText = "🏷️ " + manual[2]; 
+      try { currentlyViewingSteps = JSON.parse(manual[4]); if (!Array.isArray(currentlyViewingSteps)) currentlyViewingSteps = []; } catch(e) { currentlyViewingSteps = []; } 
+      renderSteps(); 
+      document.getElementById('btnAddStep').style.display = myRole!=='Member' ? 'block' : 'none'; 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('viewManualModal')).show(); 
+  }
+
+  function renderSteps() { const area = document.getElementById('viewManStepsArea'); area.innerHTML = ''; if(currentlyViewingSteps.length===0){ area.innerHTML=`<div class="text-center text-muted py-5">ยังไม่มีข้อมูล</div>`; return; } currentlyViewingSteps.forEach((s, i) => { const imgHtml = s.img ? `<div class="mt-3 text-center"><img src="${s.img}" class="manual-step-img" onclick="openLightbox('${s.img}')"></div>` : ''; const admin = myRole!=='Member' ? `<div class="step-tools"><button class="btn btn-sm btn-outline-info" onclick="editStep(${i})">✏️ แก้ไข</button><button class="btn btn-sm btn-outline-danger" onclick="deleteStep(${i})">✖ ลบ</button></div>` : ''; area.innerHTML += `<div class="manual-step-card">${admin}<div class="manual-step-number">ส่วนที่ ${i+1}</div><div class="manual-step-text">${s.text}</div>${imgHtml}</div>`; }); }
+  function openNewManualModal() { resetManualForm(); bootstrap.Modal.getOrCreateInstance(document.getElementById('manualModal')).show(); }
+  function openStepModal() { document.getElementById('addStepForm').reset(); document.getElementById('editStepIndex').value = ''; document.getElementById('stepModalTitle').innerText = '➕ เพิ่มเนื้อหา/ขั้นตอน'; clearStepImage(); bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).show(); }
+  function editStep(idx) { const step = currentlyViewingSteps[idx]; document.getElementById('addStepForm').reset(); document.getElementById('editStepIndex').value = idx; document.getElementById('stepModalTitle').innerText = '✏️ แก้ไขเนื้อหาส่วนที่ ' + (idx + 1); document.getElementById('stepContent').value = step.text; if (step.img) processStepImage(step.img); else clearStepImage(); bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).show(); }
+  
+  async function handleStepSubmit(e) { 
+      e.preventDefault(); const newText = document.getElementById('stepContent').value; const newImg = document.getElementById('stepMediaBase64').value; const idx = document.getElementById('editStepIndex').value; const btn = document.querySelector('#stepModal button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังอัปโหลด...'; 
+      try { 
+          let uploadedImg = newImg; 
+          if (newImg && newImg.startsWith('data:image')) { 
+              Swal.fire({title:'กำลังอัปโหลดรูป (HQ)...', didOpen:()=>Swal.showLoading()}); 
+              uploadedImg = await uploadToSupabase(newImg, 'manual_hq'); 
+          } 
+          if(idx !== "") currentlyViewingSteps[idx] = { text: newText, img: uploadedImg }; 
+          else currentlyViewingSteps.push({ text: newText, img: uploadedImg }); 
+          
+          const { error } = await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); 
+          if(error) throw error; 
+          
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('stepModal')).hide(); renderSteps(); refreshData(document.getElementById('refreshBtn')); 
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch(err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกขั้นตอน'; } 
+  }
+  
+  function deleteStep(idx) { Swal.fire({title:'ลบส่วนนี้ทิ้ง?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { currentlyViewingSteps.splice(idx, 1); await supabaseClient.from('manuals').update({ stepsData: JSON.stringify(currentlyViewingSteps) }).eq('id', currentlyViewingManualId); renderSteps(); refreshData(document.getElementById('refreshBtn')); } }); }
+  function confirmDeleteManual(id) { Swal.fire({title:'ลบหมวดหมู่นี้?', text:'ข้อมูลด้านในจะหายทั้งหมด', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { await supabaseClient.from('manuals').delete().eq('id', id); refreshData(document.getElementById('refreshBtn')); } }); }
+  
+  // ==========================================
+  // 🚀 8. จัดการเว็บไซต์ (Portals/Backends)
+  // ==========================================
+  async function loadSupabaseWebsites() { try { const { data: pData } = await supabaseClient.from('portals').select('*').order('id', { ascending: false }); allPortalsData = (pData || []).map(r => [r.id, r.title, r.linkUrl, r.imageUrl]); renderPortalGrid(); const { data: bData } = await supabaseClient.from('backends').select('*').order('id', { ascending: false }); allBackendsData = (bData || []).map(r => [r.id, r.title, r.linkUrl, r.imageUrl]); renderBackendGrid(); } catch (err) { console.error('Supabase error:', err); } }
+  async function uploadToSupabase(base64Data, prefix) { if (!base64Data.startsWith('data:image')) return base64Data; const res = await fetch(base64Data); const blob = await res.blob(); const fileName = prefix + '_' + new Date().getTime() + '.jpg'; const { error } = await supabaseClient.storage.from('images').upload(fileName, blob, { upsert: true }); if (error) throw error; const { data: urlData } = supabaseClient.storage.from('images').getPublicUrl(fileName); return urlData.publicUrl; }
+  function switchWebZone(zone, btn) { document.getElementById('tabFrontEnd').classList.remove('active'); document.getElementById('tabBackEnd').classList.remove('active'); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; if(zone==='frontend'){document.getElementById('tabBackEnd').style.borderColor="#444"; document.getElementById('tabBackEnd').style.color="#ccc";} else {document.getElementById('tabFrontEnd').style.borderColor="#444"; document.getElementById('tabFrontEnd').style.color="#ccc";} document.getElementById('portalGridArea').style.display = zone==='frontend'?'grid':'none'; document.getElementById('backendGridArea').style.display = zone==='backend'?'grid':'none'; document.getElementById('addPortalBtn').style.display = zone==='frontend'?'block':'none'; document.getElementById('addBackendBtn').style.display = zone==='backend'?'block':'none'; }
+  function processPortalImage(b64) { document.getElementById('portalImagePreview').src = b64; document.getElementById('portalImagePreview').style.display = 'block'; document.getElementById('portalMediaBase64').value = b64; document.getElementById('portalPasteText').style.display = 'none'; document.getElementById('btnPortalClearImage').style.display = 'block'; }
+  function clearPortalImage() { document.getElementById('portalImagePreview').src = ''; document.getElementById('portalImagePreview').style.display = 'none'; document.getElementById('portalMediaBase64').value = ''; document.getElementById('portalPasteText').style.display = 'block'; document.getElementById('btnPortalClearImage').style.display = 'none'; document.getElementById('portalMediaFile').value = ''; }
+  function processBackendImage(b64) { document.getElementById('backendImagePreview').src = b64; document.getElementById('backendImagePreview').style.display = 'block'; document.getElementById('backendMediaBase64').value = b64; document.getElementById('backendPasteText').style.display = 'none'; document.getElementById('btnBackendClearImage').style.display = 'block'; }
+  function clearBackendImage() { document.getElementById('backendImagePreview').src = ''; document.getElementById('backendImagePreview').style.display = 'none'; document.getElementById('backendMediaBase64').value = ''; document.getElementById('backendPasteText').style.display = 'block'; document.getElementById('btnBackendClearImage').style.display = 'none'; document.getElementById('backendMediaFile').value = ''; }
+  function openPortalModal() { document.getElementById('addPortalForm').reset(); document.getElementById('editPortalId').value = ''; clearPortalImage(); document.getElementById('portalModalTitle').innerText='🌐 เพิ่มเว็บไซต์หน้าบ้าน'; bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).show(); }
+  function openBackendModal() { document.getElementById('addBackendForm').reset(); document.getElementById('editBackendId').value = ''; clearBackendImage(); document.getElementById('backendModalTitle').innerText='⚙️ เพิ่มเว็บไซต์หลังบ้าน'; bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).show(); }
+  async function handlePortalSubmit(e) { e.preventDefault(); const btn = document.getElementById('btnSavePortal'); btn.disabled = true; btn.innerText = '⏳ อัปโหลดรูป...'; try { const title = document.getElementById('portalTitle').value; const linkUrl = document.getElementById('portalLink').value; let imageUrl = document.getElementById('portalMediaBase64').value; const id = document.getElementById('editPortalId').value; if(!imageUrl){ Swal.fire({toast:true, position:'top', title:'ใส่รูปด้วยครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); btn.disabled=false; btn.innerText='💾 บันทึกและเผยแพร่'; return; } imageUrl = await uploadToSupabase(imageUrl, 'portal'); if(id) await supabaseClient.from('portals').update({ title, linkUrl, imageUrl }).eq('id', id); else await supabaseClient.from('portals').insert([{ title, linkUrl, imageUrl }]); bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).hide(); Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); await loadSupabaseWebsites(); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกและเผยแพร่'; } }
+  async function handleBackendSubmit(e) { e.preventDefault(); const btn = document.getElementById('btnSaveBackend'); btn.disabled = true; btn.innerText = '⏳ อัปโหลดรูป...'; try { const title = document.getElementById('backendTitle').value; const linkUrl = document.getElementById('backendLink').value; let imageUrl = document.getElementById('backendMediaBase64').value; const id = document.getElementById('editBackendId').value; if(!imageUrl){ Swal.fire({toast:true, position:'top', title:'ใส่รูปด้วยครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); btn.disabled=false; btn.innerText='💾 บันทึกและเผยแพร่'; return; } imageUrl = await uploadToSupabase(imageUrl, 'backend'); if(id) await supabaseClient.from('backends').update({ title, linkUrl, imageUrl }).eq('id', id); else await supabaseClient.from('backends').insert([{ title, linkUrl, imageUrl }]); bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).hide(); Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); await loadSupabaseWebsites(); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกและเผยแพร่'; } }
+  function renderPortalGrid() { const area = document.getElementById('portalGridArea'); area.innerHTML = ''; if(allPortalsData.length===0){area.innerHTML=`<div class="text-center py-5 w-100 text-muted">ไม่มีเว็บ</div>`; return;} allPortalsData.forEach(r => { const [pId, pTitle, pLink, pImg] = r; const admin = myRole!=='Member' ? `<div class="card-actions"><button class="btn-action edit" onclick="event.preventDefault(); openEditPortal('${pId}')">✏️</button><button class="btn-action delete" onclick="event.preventDefault(); confirmDeletePortal('${pId}')">✖</button></div>` : ''; area.innerHTML += `<a href="${pLink}" target="_blank" class="portal-card">${admin}<div class="portal-img-container"><img src="${pImg}" class="portal-img"></div><div class="portal-info"><div class="portal-title">${pTitle}</div><div class="portal-link-text">เข้าสู่เว็บไซต์ ↗</div></div></a>`; }); }
+  function renderBackendGrid() { const area = document.getElementById('backendGridArea'); area.innerHTML = ''; if(allBackendsData.length===0){area.innerHTML=`<div class="text-center py-5 w-100 text-muted">ไม่มีเว็บ</div>`; return;} allBackendsData.forEach(r => { const [pId, pTitle, pLink, pImg] = r; const admin = myRole!=='Member' ? `<div class="card-actions"><button class="btn-action edit" onclick="event.preventDefault(); openEditBackend('${pId}')">✏️</button><button class="btn-action delete" onclick="event.preventDefault(); confirmDeleteBackend('${pId}')">✖</button></div>` : ''; area.innerHTML += `<a href="${pLink}" target="_blank" class="portal-card backend-mode">${admin}<div class="portal-img-container"><img src="${pImg}" class="portal-img"></div><div class="portal-info"><div class="portal-title">${pTitle}</div><div class="portal-link-text">เข้าระบบ ↗</div></div></a>`; }); }
+  function openEditPortal(id) { const p = allPortalsData.find(r=>r[0].toString()===id.toString()); if(!p) return; document.getElementById('editPortalId').value = id; document.getElementById('portalTitle').value = p[1]; document.getElementById('portalLink').value = p[2]; if(p[3]) processPortalImage(p[3]); else clearPortalImage(); document.getElementById('portalModalTitle').innerText='✏️ แก้ไขเว็บหน้าบ้าน'; bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).show(); }
+  function openEditBackend(id) { const p = allBackendsData.find(r=>r[0].toString()===id.toString()); if(!p) return; document.getElementById('editBackendId').value = id; document.getElementById('backendTitle').value = p[1]; document.getElementById('backendLink').value = p[2]; if(p[3]) processBackendImage(p[3]); else clearBackendImage(); document.getElementById('backendModalTitle').innerText='✏️ แก้ไขเว็บหลังบ้าน'; bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).show(); }
+  async function confirmDeletePortal(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('portals').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
+  async function confirmDeleteBackend(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('backends').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
+
+  // ==========================================
+  // 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests) & 🌟 AUTO SYNC 🌟
+  // ==========================================
+  let allLeavesData = []; let currentLeavePage = 1; const leavesPerPage = 10;
+  async function loadSupabaseLeaves() { try { const { data } = await supabaseClient.from('leave_requests').select('*').order('created_at', { ascending: false }); allLeavesData = data || []; checkLeaveAlerts(); } catch (err) { console.error('Error loading leaves:', err); } }
+  function checkLeaveAlerts() { const btnLeave = document.getElementById('btnLeaveSystem'); if (!btnLeave) return; const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : ''; let hasPendingInCurrentMonth = false; if (myRole === 'SuperAdmin') { hasPendingInCurrentMonth = allLeavesData.some(L => { const reqMonth = L.leave_date.substring(0, 7); return L.status === 'Pending' && (!currentMonth || reqMonth === currentMonth); }); } if (hasPendingInCurrentMonth) { btnLeave.classList.add('btn-alert-blink'); btnLeave.innerText = '🚨 มีคำขอลาใหม่!'; } else { btnLeave.classList.remove('btn-alert-blink'); btnLeave.innerText = '📩 ระบบแจ้งลา'; } }
+  function openLeaveHistoryModal() { const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : ''; if(document.getElementById('leaveMonthFilter')) document.getElementById('leaveMonthFilter').value = currentMonth; loadLeavesPage(1); bootstrap.Modal.getOrCreateInstance(document.getElementById('leaveHistoryModal')).show(); }
+  function openSubmitLeaveModal() { document.getElementById('leaveForm').reset(); const now = new Date(); document.getElementById('leaveDateInput').value = now.toISOString().split('T')[0]; bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).show(); }
+  async function handleLeaveSubmit(e) { e.preventDefault(); const btn = document.querySelector('#leaveForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังส่งคำขอ...'; const myNick = localStorage.getItem('okvip_nick'); const me = allUsersData.find(u => u[1] === myNick); const myDept = me ? me[3] : 'ไม่ระบุ'; const payload = { nickname: myNick, department: myDept, leave_date: document.getElementById('leaveDateInput').value, leave_type: document.getElementById('leaveTypeInput').value, reason: document.getElementById('leaveReasonInput').value, status: 'Pending' }; try { await supabaseClient.from('leave_requests').insert([payload]); bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).hide(); await loadSupabaseLeaves(); loadLeavesPage(currentLeavePage); Swal.fire({toast:true, position:'top-end', title:'ส่งคำขอลาสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); } catch(err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = 'ส่งคำขอลา'; } }
+  function loadLeavesPage(page) { currentLeavePage = page; const tb = document.getElementById('leaveTableBody'); const pagArea = document.getElementById('leavePaginationArea'); tb.innerHTML = ''; pagArea.innerHTML = ''; const filterMonth = document.getElementById('leaveMonthFilter').value; const myNick = localStorage.getItem('okvip_nick'); let filteredData = allLeavesData.filter(L => { const reqMonth = L.leave_date ? L.leave_date.substring(0, 7) : ''; return !filterMonth || reqMonth === filterMonth; }); if(filteredData.length === 0) { tb.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลการแจ้งลาในเดือนที่เลือก</td></tr>`; return; } const totalPages = Math.ceil(filteredData.length / leavesPerPage); if (currentLeavePage > totalPages) currentLeavePage = totalPages; const startIndex = (currentLeavePage - 1) * leavesPerPage; const paginatedData = filteredData.slice(startIndex, startIndex + leavesPerPage); paginatedData.forEach(L => { let statusBadge = ''; if(L.status === 'Pending') statusBadge = `<span class="badge bg-warning text-dark border">⏳ รออนุมัติ</span>`; else if(L.status === 'Approved') statusBadge = `<span class="badge bg-success border">✅ อนุมัติแล้ว</span>`; else if(L.status === 'Rejected') statusBadge = `<span class="badge bg-danger border">❌ ปฏิเสธ</span>`; let actionBtns = '-'; if(myRole === 'SuperAdmin' && L.status === 'Pending') { actionBtns = `<button class="btn btn-sm btn-outline-success me-1" onclick="updateLeaveStatus('${L.id}', 'Approved')">✔️</button><button class="btn btn-sm btn-outline-danger" onclick="updateLeaveStatus('${L.id}', 'Rejected')">❌</button>`; } else if ((myRole === 'SuperAdmin' || myNick === L.nickname) && L.status === 'Pending') { actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ยกเลิกคำขอ</button>`; } else if (myRole === 'SuperAdmin') { actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ลบประวัติ</button>`; } let displayNick = L.nickname; if (L.nickname === myNick) displayNick = `<span class="text-warning">${L.nickname} (คุณ)</span>`; tb.innerHTML += `<tr><td>${new Date(L.leave_date).toLocaleDateString('th-TH')}</td><td class="fw-bold text-white">${displayNick} <br><small class="text-muted">${L.department.split(' ')[0]}</small></td><td class="text-info">${L.leave_type}</td><td class="small text-muted" style="max-width: 200px; white-space: normal;">${L.reason}</td><td>${statusBadge}</td><td class="text-center">${actionBtns}</td></tr>`; }); if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage - 1})" ${currentLeavePage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) { pageHtml += `<button class="page-btn ${i === currentLeavePage ? 'active' : ''}" onclick="loadLeavesPage(${i})">${i}</button>`; } pageHtml += `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage + 1})" ${currentLeavePage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; pagArea.innerHTML = pageHtml; } }
+  
+  function updateLeaveStatus(id, newStatus) { 
+      Swal.fire({ 
+          title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?', 
+          icon: 'question', showCancelButton: true, 
+          confirmButtonColor: newStatus === 'Approved' ? '#00ff66' : '#ff3366', 
+          confirmButtonText: 'ยืนยัน', background:'#111', color:'#fff' 
+      }).then(async r => { 
+          if(r.isConfirmed) { 
+              Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()}); 
+              await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id); 
+              
+              // 🌟 ฟีเจอร์ AUTO-SYNC: อนุมัติแล้วอัปเดตตารางเป็น KL อัตโนมัติ 🌟
+              if(newStatus === 'Approved') {
+                  try {
+                      const leaveReq = allLeavesData.find(l => l.id.toString() === id.toString());
+                      if(leaveReq) {
+                          const lDate = new Date(leaveReq.leave_date);
+                          const ym = `${lDate.getFullYear()}-${String(lDate.getMonth()+1).padStart(2,'0')}`;
+                          const dayNum = lDate.getDate();
+                          const nick = leaveReq.nickname;
+
+                          const { data: existingSch } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym).eq('nickname', nick).limit(1);
+                          let dData = {}; let rId = null;
+                          if(existingSch && existingSch.length > 0) {
+                              dData = existingSch[0].daysData ? JSON.parse(existingSch[0].daysData) : {};
+                              rId = existingSch[0].id;
+                          }
+                          dData[dayNum] = 'KL'; // ลงสถานะลากิจ/ป่วย ให้เลย!
+
+                          if(rId) {
+                              await supabaseClient.from('schedules').update({daysData: JSON.stringify(dData)}).eq('id', rId);
+                          } else {
+                              await supabaseClient.from('schedules').insert([{nickname: nick, department: leaveReq.department, yearMonth: ym, daysData: JSON.stringify(dData)}]);
+                          }
+                      }
+                  } catch(e) { console.error('Auto-Sync Leave Error:', e); }
+              }
+
+              await loadSupabaseLeaves(); 
+              loadLeavesPage(currentLeavePage); 
+              Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          } 
+      }); 
+  }
+  
+  function deleteLeave(id) { Swal.fire({title: 'ยกเลิกคำขอนี้?', text: 'ข้อมูลจะถูกลบออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').delete().eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(1); Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
   // ==========================================
   // 🚀 10. ระบบ Discord (แยกแท็บสมบูรณ์แบบ + โหมดคนนอก)
