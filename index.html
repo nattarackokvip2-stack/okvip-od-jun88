@@ -8,6 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
   /* ================= DARK NEON THEME ================= */
   :root { 
@@ -224,6 +225,22 @@
         <h2 class="fw-bold" style="color: var(--neon-blue); text-shadow: 0 0 15px rgba(0,240,255,0.6);">ศูนย์ควบคุมระบบ (Control Center)</h2>
         <p class="text-muted">เลือกโหมดการทำงานที่คุณต้องการ</p>
       </div>
+
+      <div id="dashboardWidgets" class="d-flex gap-3 mb-4 flex-wrap" style="display:none !important;">
+          <div style="flex:1; min-width: 200px; background: rgba(0, 240, 255, 0.05); border: 1px solid var(--neon-blue); border-radius: 12px; padding: 20px; text-align: center;">
+              <div class="text-info mb-2 fw-bold" style="font-size: 1rem;">👥 พนักงาน Active</div>
+              <div id="widgetActiveUsers" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(0,240,255,0.5);">0</div>
+          </div>
+          <div style="flex:1; min-width: 200px; background: rgba(255, 204, 0, 0.05); border: 1px solid var(--neon-yellow); border-radius: 12px; padding: 20px; text-align: center;">
+              <div class="text-warning mb-2 fw-bold" style="font-size: 1rem;">📩 รออนุมัติลา</div>
+              <div id="widgetPendingLeaves" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(255,204,0,0.5);">0</div>
+          </div>
+          <div style="flex:1; min-width: 200px; background: rgba(255, 51, 102, 0.05); border: 1px solid var(--neon-red); border-radius: 12px; padding: 20px; text-align: center;">
+              <div class="text-danger mb-2 fw-bold" style="font-size: 1rem;">⚠️ ยอดปรับเดือนนี้</div>
+              <div id="widgetPenaltySum" class="fw-bold text-white" style="font-size: 2rem; text-shadow: 0 0 10px rgba(255,51,102,0.5);">0 ฿</div>
+          </div>
+      </div>
+
       <div class="hub-grid">
         <div class="hub-card hub-staff" onclick="switchMainTab('staffSection')"><div class="hub-icon">👥</div><div class="hub-title">จัดการรายชื่อสมาชิก</div></div>
         <div class="hub-card hub-schedule" onclick="switchMainTab('holidaySection')"><div class="hub-icon">📅</div><div class="hub-title">ตารางวันทำงาน/วันหยุด</div></div>
@@ -274,6 +291,7 @@
       </div>
       <div id="paginationArea" class="d-flex justify-content-center mt-4 gap-2 flex-wrap"></div>
     </div>
+
     <div id="holidaySection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div class="d-flex align-items-center gap-2">
@@ -447,6 +465,7 @@
         </table>
       </div>
     </div>
+    
     <div id="manualSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">📖 คู่มือการทำงาน และ กติกา</h4>
@@ -478,11 +497,12 @@
             <span class="text-white small">📅 เลือกเดือน:</span>
             <input type="month" id="penaltyMonthFilter" class="form-control" style="width: auto; background: #111; color: #ff3366; border-color: #ff3366;" onchange="loadPenaltiesTable()">
             <input type="text" id="penaltySearchInput" class="form-control neon-input-search" style="width: 200px; border-color: #ff3366;" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="loadPenaltiesTable()">
+            <button class="btn btn-outline-success px-3 ms-2" onclick="exportTableToExcel('penaltyTable', 'Penalty_Report')">📥 โหลด Excel</button>
             <button id="addPenaltyBtn" class="btn btn-neon-red px-4 ms-2" style="display:none;" onclick="openPenaltyModal()">➕ บันทึกความผิด</button>
         </div>
       </div>
       <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle" id="penaltyTable">
           <thead><tr><th>เดือน/ปี</th><th>พนักงาน</th><th>แผนก</th><th>รายละเอียดความผิด</th><th>บทลงโทษ</th><th>ยอดหักสุทธิ</th><th>สถานะ</th><th class="text-center">จัดการ</th></tr></thead>
           <tbody id="penaltyTableBody"></tbody>
         </table>
@@ -496,6 +516,7 @@
            <h4 class="fw-bold mb-0" style="color: #5865F2;">🎧 ศูนย์บัญชาการ Discord</h4>
         </div>
         <div class="d-flex align-items-center gap-2" style="background: #111; border: 1px solid #5865F2; border-radius: 8px;">
+            <button class="btn btn-outline-success btn-sm px-3 me-2" onclick="exportTableToExcel('discordTable', 'Discord_Attendance_Report')">📥 โหลด Excel</button>
             <span class="px-3 text-white small">📅 วันที่:</span>
             <input type="date" id="discordDatePicker" class="form-control w-auto border-0" style="background: transparent; color: #5865F2;" onchange="loadDiscordAttendance()">
         </div>
@@ -525,7 +546,7 @@
       </div>
 
       <div class="table-responsive mt-3">
-        <table class="table table-hover align-middle">
+        <table class="table table-hover align-middle" id="discordTable">
           <thead id="discordThead"></thead>
           <tbody id="discordTableBody">
              <tr><td colspan="7" class="text-center text-muted py-5">กำลังเชื่อมต่อกับระบบ...</td></tr>
@@ -596,6 +617,7 @@
     </form>
   </div></div></div>
 </div>
+
 <div class="modal fade" id="shiftModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center text-info">🔄 จัดกะการทำงาน (รายเดือน)</h4>
@@ -632,6 +654,13 @@
       </div>
     </div>
     <button class="btn btn-neon-yellow w-100 py-2 mt-4" onclick="saveAdminJobSettings()">บันทึกการตั้งค่าระบบ</button>
+    
+    <div id="cleanupSection" class="mt-4 pt-3 border-top border-secondary text-center" style="display: none;">
+        <h6 class="text-danger fw-bold">🧹 การบำรุงรักษาระบบฐานข้อมูล</h6>
+        <p class="small text-muted mb-2">ลบข้อมูลสถิติและ Discord ที่เก่ากว่า 3 เดือนทิ้ง เพื่อให้เว็บโหลดเร็วขึ้น</p>
+        <button class="btn btn-outline-danger btn-sm px-4" onclick="cleanupOldData()">🗑️ ล้างข้อมูลขยะ</button>
+    </div>
+
   </div></div></div>
 </div>
 
@@ -882,7 +911,6 @@
   let scheduleSearchTerm = ''; 
   let currentScheduleFilter = 'ALL';
   
-  // 🌟 ปรับโครงสร้าง sysSettings ให้ dutyTypes แยก OD กับ ODOL 🌟
   let sysSettings = { websites: [], dutyTypes: { OD: [], ODOL: [] }, statMetrics: [], userSites: {} };
   let dailyDutiesData = {}; 
   let dailyStatsData = {}; 
@@ -916,9 +944,10 @@
     'D':  { bg: 'rgba(0, 255, 102, 0.2)', text: '#00ff66', label: 'D (ดึก)', limit: 99 }, 
     'N':  { bg: 'rgba(0, 240, 255, 0.2)', text: '#00f0ff', label: 'N (เช้า)', limit: 99 }, 
     'M':  { bg: 'rgba(255, 253, 208, 0.2)', text: '#ffffe0', label: 'M (อื่นๆ)', limit: 99 }, 
+    'KL': { bg: 'rgba(255, 204, 0, 0.5)', text: '#000000', label: 'KL (ลา)', limit: 99 },
     '':   { bg: 'transparent', text: '#aaaaaa', label: 'ลบ (ยางลบ)', limit: 99 }
   };
-  const offDutyStamps = ['X', 'XX', 'TX', 'PN', 'KP'];
+  const offDutyStamps = ['X', 'XX', 'TX', 'PN', 'KP', 'KL', 'X4'];
 
   const mealTimeBlocks = [
       { name: "OD ปอยเปต / ODOL (รอบ 1) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD_POIPET" },
@@ -931,6 +960,68 @@
       { name: "OD ลาว (รอบ 3) [16:00-18:00]", start: "16:00", end: "18:00", type: "OD_LAOS" },
       { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD_LAOS" }
   ];
+
+  // 🌟 ระบบ Export to Excel 🌟
+  function exportTableToExcel(tableId, filename = '') {
+      Swal.fire({title:'กำลังเตรียมไฟล์ Excel...', timer:1000, didOpen:()=>Swal.showLoading()});
+      setTimeout(() => {
+          let table = document.getElementById(tableId);
+          // ดึงตารางมาแปลงเป็น WorkBook
+          let wb = XLSX.utils.table_to_book(table, {sheet: "Sheet1"});
+          // จัดชื่อไฟล์ใส่วันที่
+          let dateStr = new Date().toISOString().split('T')[0];
+          filename = filename ? filename + '_' + dateStr + '.xlsx' : 'ExportData_' + dateStr + '.xlsx';
+          XLSX.writeFile(wb, filename);
+          Swal.fire({toast:true, position:'top-end', title:'ดาวน์โหลดสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
+      }, 500);
+  }
+
+  // 🌟 ระบบ Auto-Cleanup ล้างข้อมูลขยะ 🌟
+  async function cleanupOldData() {
+      Swal.fire({
+          title: 'ล้างข้อมูลเก่ากว่า 3 เดือน?',
+          text: 'ข้อมูล Discord, ตารางหน้าที่, สถิติ จะถูกลบถาวร!',
+          icon: 'warning', showCancelButton: true, confirmButtonText: 'ดำเนินการลบ', confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+      }).then(async r => {
+          if(r.isConfirmed) {
+              Swal.fire({title:'กำลังล้างข้อมูล...', didOpen:()=>Swal.showLoading()});
+              try {
+                  const threeMonthsAgo = new Date();
+                  threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+                  const limitDate = `${threeMonthsAgo.getFullYear()}-${String(threeMonthsAgo.getMonth()+1).padStart(2,'0')}-${String(threeMonthsAgo.getDate()).padStart(2,'0')}`;
+                  
+                  await Promise.all([
+                      supabaseClient.from('discord_attendance').delete().lt('dateStr', limitDate),
+                      supabaseClient.from('daily_duties').delete().lt('dateStr', limitDate),
+                      supabaseClient.from('daily_stats').delete().lt('dateStr', limitDate),
+                      supabaseClient.from('meal_schedules').delete().lt('dateStr', limitDate)
+                  ]);
+                  Swal.fire({toast:true, position:'top-end', title:'ล้างข้อมูลเรียบร้อย', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
+              } catch(e) {
+                  Swal.fire('Error', 'เกิดข้อผิดพลาดในการลบข้อมูล', 'error');
+              }
+          }
+      });
+  }
+
+  // 🌟 แดชบอร์ดสรุปยอด 🌟
+  function updateDashboardWidgets() {
+      if (myRole === 'Member') return;
+      const today = new Date();
+      const ym = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+      
+      let activeCount = allUsersData.filter(u => u[7] === 'Active').length;
+      let pendingCount = allLeavesData.filter(l => l.status === 'Pending').length;
+      
+      let penaltySum = 0;
+      allPenalties.forEach(p => {
+          if (p[9] === ym && p[8]) penaltySum += parseFloat(p[8]);
+      });
+
+      document.getElementById('widgetActiveUsers').innerText = activeCount;
+      document.getElementById('widgetPendingLeaves').innerText = pendingCount;
+      document.getElementById('widgetPenaltySum').innerText = penaltySum.toLocaleString() + ' ฿';
+  }
 
   function generateTimeSlots(start, end) {
       let slots = []; let [sH, sM] = start.split(':').map(Number); let [eH, eM] = end.split(':').map(Number);
@@ -1049,7 +1140,10 @@
           await loadDailyJobData();
           await loadDailyMealData(); 
           
-          await loadDiscordAttendance(); // 🌟 เพิ่มบรรทัดนี้เข้ามาครับ! เพื่อให้มันโหลดทันที 🌟
+          await loadDiscordAttendance(); 
+
+          // 🌟 อัปเดตตัวเลขใน Dashboard 🌟
+          updateDashboardWidgets();
 
           if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
           if(isLoginEvent) showLoginAnnouncement();
@@ -1201,12 +1295,15 @@
     myRole = role; currentUsername = user; document.getElementById('userDisplay').innerText = nick; document.getElementById('roleLabel').innerText = role; document.getElementById('roleLabel').className = `role-${role}`;
     document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
     if(myRole !== 'Member') { 
+        document.getElementById('dashboardWidgets').style.setProperty('display', 'flex', 'important');
         document.getElementById('btnClearSchedule').style.display = 'inline-block'; document.getElementById('btnAssignShift').style.display = 'inline-block'; document.getElementById('addBtn').style.display = 'block'; 
         document.getElementById('addPenaltyBtn').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; document.getElementById('addManualBtn').style.display = 'block'; document.getElementById('btnJobSettings').style.display = 'block'; 
         document.getElementById('addAnnounceBtn').style.display = 'block'; 
         const isFrontend = document.getElementById('tabFrontEnd').classList.contains('active'); 
         document.getElementById('addPortalBtn').style.display = isFrontend ? 'block' : 'none'; document.getElementById('addBackendBtn').style.display = isFrontend ? 'none' : 'block'; document.getElementById('thAnnounceManage').style.display = 'table-cell'; document.getElementById('mealActionBtns').style.display = 'flex';
+        if(myRole === 'SuperAdmin') document.getElementById('cleanupSection').style.display = 'block';
     } else { 
+        document.getElementById('dashboardWidgets').style.setProperty('display', 'none', 'important');
         document.getElementById('btnClearSchedule').style.display = 'none'; document.getElementById('btnAssignShift').style.display = 'none'; document.getElementById('addAnnounceBtn').style.display = 'none'; document.getElementById('thAnnounceManage').style.display = 'none'; document.getElementById('mealActionBtns').style.display = 'none';
     }
     renderStampPalette(); switchMainTab('hubSection'); refreshData(document.getElementById('refreshBtn'), isLoginEvent);
@@ -1398,6 +1495,7 @@
     bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).hide();
     if(appliedCount > 0) { document.getElementById('btnSaveSchedule').style.display = 'flex'; Swal.fire({toast:true, position:'top', title:`ลงกะสำเร็จ!`, text:'กรุณากดบันทึกข้อมูลตาราง', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); } else { Swal.fire({toast:true, position:'top', title:'ไม่มีการเปลี่ยนแปลง', icon:'info', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); }
   }
+
   // ==========================================
   // 🚀 6. หน้าที่ & สถิติ (Jobs & Stats)
   // ==========================================
@@ -1427,7 +1525,6 @@
       const [y, m, d] = dateStr.split('-'); const ym = `${y}-${m}`;
       const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); dailyScheduleData = {}; if (schData) { schData.forEach(r => { const days = r.daysData ? JSON.parse(r.daysData) : {}; dailyScheduleData[r.nickname] = days[parseInt(d)] || ''; }); }
       
-      // เซ็ตค่าเริ่มต้นของตัวแปรบังคับเลือกกะ (ถ้ายังไม่เคยเลือก)
       if(currentJobShiftSet === 'ALL') currentJobShiftSet = '';
       renderJobTables(); 
   }
@@ -1435,7 +1532,6 @@
   function buildDutyTable() {
     const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = '';
     
-    // 🌟 ดักจับถ้ายังไม่ได้เลือกกะ ให้หยุดและโชว์แจ้งเตือน
     if(!currentJobShiftSet || currentJobShiftSet === '') {
         tbody.innerHTML=`<tr><td colspan="6" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; 
         document.getElementById('siteSummaryArea').style.display='none'; return;
@@ -1455,7 +1551,6 @@
       const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
       const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; 
       
-      // 🌟 แยกเว็บหลัก / เว็บรอง จากข้อมูลเก่า
       let mainSite = ''; let subSite = '';
       if(curData.site) {
           let parts = curData.site.split(',');
@@ -1474,7 +1569,6 @@
       let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
       availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
 
-      // 🌟 Dropdown เลือกเว็บเอง
       let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
       let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
       (sysSettings.websites || []).forEach(w => {
@@ -1496,7 +1590,6 @@
     updateSiteSummary();
   }
 
-  // 🌟 ฟังก์ชันสรุปยอดเว็บหลัก/รอง แบบ Realtime
   function updateSiteSummary() {
       let counts = {};
       (sysSettings.websites || []).forEach(w => counts[w] = { main: 0, sub: 0 });
@@ -1530,7 +1623,6 @@
       summaryArea.style.display = 'flex';
   }
 
-  // 🌟 ฟังก์ชันล้างข้อมูลหน้างาน (Clear)
   function confirmClearDuty() {
       Swal.fire({
           title: 'ล้างตารางหน้าที่?', text: 'ข้อมูลหน้าที่ของทุกคนในกะนี้จะถูกรีเซ็ต (หากต้องการลบออกจากระบบ ต้องกดปุ่ม "บันทึกหน้าที่" ด้วย)', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
@@ -1900,7 +1992,7 @@
   // ==========================================
   // 🚀 7. คู่มือการทำงานและกติกา (Manuals)
   // ==========================================
-  let currentManualMainTab = 'MANUAL'; // เก็บค่าแท็บหลัก (คู่มือ / กติกา)
+  let currentManualMainTab = 'MANUAL'; 
   
   function switchManualTab(tab, btn) {
       currentManualMainTab = tab;
@@ -1923,7 +2015,6 @@
   
   async function handleManualSubmit(e) { 
       e.preventDefault(); 
-      // 🌟 นำประเภทหลัก (MANUAL/RULE) มารวมกับแผนก เพื่อประหยัดการสร้าง Column ใหม่ใน Database
       const packedDept = document.getElementById('manMainType').value + "|" + document.getElementById('manDept').value;
       const payload = { department: packedDept, category: document.getElementById('manCat').value, title: document.getElementById('manTitle').value, stepsData: "[]" }; 
       
@@ -1943,7 +2034,6 @@
     allManualsData.forEach(r => {
       const [mId, rawDept, mCat, mTitle] = r; 
       
-      // ถอดรหัสข้อมูลแยกประเภทหลัก (ถ้าของเก่าไม่มีขีดคั่น ให้ถือว่าเป็น คู่มือปกติ)
       let mainType = 'MANUAL';
       let actualDept = rawDept ? rawDept.toString() : '';
       if(actualDept.includes('|')) {
@@ -1952,9 +2042,9 @@
           actualDept = parts[1];
       }
 
-      if(mainType !== currentManualMainTab) return; // กรองตามแท็บหลัก
-      if(currentManualFilter !== 'ALL' && actualDept !== currentManualFilter && actualDept !== 'ทั่วไป (ALL)') return; // กรองตามแผนก
-      if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; // ค้นหา
+      if(mainType !== currentManualMainTab) return; 
+      if(currentManualFilter !== 'ALL' && actualDept !== currentManualFilter && actualDept !== 'ทั่วไป (ALL)') return; 
+      if(manualSearchTerm && (!mTitle.toLowerCase().includes(manualSearchTerm) && !mCat.toLowerCase().includes(manualSearchTerm))) return; 
       
       hasContent = true; 
       const admin = myRole !== 'Member' ? `<div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); confirmDeleteManual('${mId}')">✖ ลบ</button></div>` : ''; 
@@ -1973,7 +2063,7 @@
       currentlyViewingManualId = id; 
       
       let actualDept = manual[1] ? manual[1].toString() : '';
-      if(actualDept.includes('|')) actualDept = actualDept.split('|')[1]; // ถอดรหัสโชว์เฉพาะแผนก
+      if(actualDept.includes('|')) actualDept = actualDept.split('|')[1];
 
       document.getElementById('viewManTitle').innerText = manual[3]; 
       document.getElementById('viewManDept').innerText = "📌 " + actualDept; 
@@ -2033,7 +2123,7 @@
   async function confirmDeleteBackend(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('backends').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
   // ==========================================
-  // 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests)
+  // 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests) & 🌟 AUTO SYNC 🌟
   // ==========================================
   let allLeavesData = []; let currentLeavePage = 1; const leavesPerPage = 10;
   async function loadSupabaseLeaves() { try { const { data } = await supabaseClient.from('leave_requests').select('*').order('created_at', { ascending: false }); allLeavesData = data || []; checkLeaveAlerts(); } catch (err) { console.error('Error loading leaves:', err); } }
@@ -2042,7 +2132,52 @@
   function openSubmitLeaveModal() { document.getElementById('leaveForm').reset(); const now = new Date(); document.getElementById('leaveDateInput').value = now.toISOString().split('T')[0]; bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).show(); }
   async function handleLeaveSubmit(e) { e.preventDefault(); const btn = document.querySelector('#leaveForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังส่งคำขอ...'; const myNick = localStorage.getItem('okvip_nick'); const me = allUsersData.find(u => u[1] === myNick); const myDept = me ? me[3] : 'ไม่ระบุ'; const payload = { nickname: myNick, department: myDept, leave_date: document.getElementById('leaveDateInput').value, leave_type: document.getElementById('leaveTypeInput').value, reason: document.getElementById('leaveReasonInput').value, status: 'Pending' }; try { await supabaseClient.from('leave_requests').insert([payload]); bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).hide(); await loadSupabaseLeaves(); loadLeavesPage(currentLeavePage); Swal.fire({toast:true, position:'top-end', title:'ส่งคำขอลาสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); } catch(err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = 'ส่งคำขอลา'; } }
   function loadLeavesPage(page) { currentLeavePage = page; const tb = document.getElementById('leaveTableBody'); const pagArea = document.getElementById('leavePaginationArea'); tb.innerHTML = ''; pagArea.innerHTML = ''; const filterMonth = document.getElementById('leaveMonthFilter').value; const myNick = localStorage.getItem('okvip_nick'); let filteredData = allLeavesData.filter(L => { const reqMonth = L.leave_date ? L.leave_date.substring(0, 7) : ''; return !filterMonth || reqMonth === filterMonth; }); if(filteredData.length === 0) { tb.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลการแจ้งลาในเดือนที่เลือก</td></tr>`; return; } const totalPages = Math.ceil(filteredData.length / leavesPerPage); if (currentLeavePage > totalPages) currentLeavePage = totalPages; const startIndex = (currentLeavePage - 1) * leavesPerPage; const paginatedData = filteredData.slice(startIndex, startIndex + leavesPerPage); paginatedData.forEach(L => { let statusBadge = ''; if(L.status === 'Pending') statusBadge = `<span class="badge bg-warning text-dark border">⏳ รออนุมัติ</span>`; else if(L.status === 'Approved') statusBadge = `<span class="badge bg-success border">✅ อนุมัติแล้ว</span>`; else if(L.status === 'Rejected') statusBadge = `<span class="badge bg-danger border">❌ ปฏิเสธ</span>`; let actionBtns = '-'; if(myRole === 'SuperAdmin' && L.status === 'Pending') { actionBtns = `<button class="btn btn-sm btn-outline-success me-1" onclick="updateLeaveStatus('${L.id}', 'Approved')">✔️</button><button class="btn btn-sm btn-outline-danger" onclick="updateLeaveStatus('${L.id}', 'Rejected')">❌</button>`; } else if ((myRole === 'SuperAdmin' || myNick === L.nickname) && L.status === 'Pending') { actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ยกเลิกคำขอ</button>`; } else if (myRole === 'SuperAdmin') { actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ลบประวัติ</button>`; } let displayNick = L.nickname; if (L.nickname === myNick) displayNick = `<span class="text-warning">${L.nickname} (คุณ)</span>`; tb.innerHTML += `<tr><td>${new Date(L.leave_date).toLocaleDateString('th-TH')}</td><td class="fw-bold text-white">${displayNick} <br><small class="text-muted">${L.department.split(' ')[0]}</small></td><td class="text-info">${L.leave_type}</td><td class="small text-muted" style="max-width: 200px; white-space: normal;">${L.reason}</td><td>${statusBadge}</td><td class="text-center">${actionBtns}</td></tr>`; }); if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage - 1})" ${currentLeavePage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) { pageHtml += `<button class="page-btn ${i === currentLeavePage ? 'active' : ''}" onclick="loadLeavesPage(${i})">${i}</button>`; } pageHtml += `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage + 1})" ${currentLeavePage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; pagArea.innerHTML = pageHtml; } }
-  function updateLeaveStatus(id, newStatus) { Swal.fire({ title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?', icon: 'question', showCancelButton: true, confirmButtonColor: newStatus === 'Approved' ? '#00ff66' : '#ff3366', confirmButtonText: 'ยืนยัน', background:'#111', color:'#fff' }).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(currentLeavePage); Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
+  
+  function updateLeaveStatus(id, newStatus) { 
+      Swal.fire({ 
+          title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?', 
+          icon: 'question', showCancelButton: true, 
+          confirmButtonColor: newStatus === 'Approved' ? '#00ff66' : '#ff3366', 
+          confirmButtonText: 'ยืนยัน', background:'#111', color:'#fff' 
+      }).then(async r => { 
+          if(r.isConfirmed) { 
+              Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()}); 
+              await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id); 
+              
+              // 🌟 ฟีเจอร์ AUTO-SYNC: อนุมัติแล้วอัปเดตตารางเป็น KL อัตโนมัติ 🌟
+              if(newStatus === 'Approved') {
+                  try {
+                      const leaveReq = allLeavesData.find(l => l.id.toString() === id.toString());
+                      if(leaveReq) {
+                          const lDate = new Date(leaveReq.leave_date);
+                          const ym = `${lDate.getFullYear()}-${String(lDate.getMonth()+1).padStart(2,'0')}`;
+                          const dayNum = lDate.getDate();
+                          const nick = leaveReq.nickname;
+
+                          const { data: existingSch } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym).eq('nickname', nick).limit(1);
+                          let dData = {}; let rId = null;
+                          if(existingSch && existingSch.length > 0) {
+                              dData = existingSch[0].daysData ? JSON.parse(existingSch[0].daysData) : {};
+                              rId = existingSch[0].id;
+                          }
+                          dData[dayNum] = 'KL'; // ลงสถานะลากิจ/ป่วย ให้เลย!
+
+                          if(rId) {
+                              await supabaseClient.from('schedules').update({daysData: JSON.stringify(dData)}).eq('id', rId);
+                          } else {
+                              await supabaseClient.from('schedules').insert([{nickname: nick, department: leaveReq.department, yearMonth: ym, daysData: JSON.stringify(dData)}]);
+                          }
+                      }
+                  } catch(e) { console.error('Auto-Sync Leave Error:', e); }
+              }
+
+              await loadSupabaseLeaves(); 
+              loadLeavesPage(currentLeavePage); 
+              Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          } 
+      }); 
+  }
+  
   function deleteLeave(id) { Swal.fire({title: 'ยกเลิกคำขอนี้?', text: 'ข้อมูลจะถูกลบออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').delete().eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(1); Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
   // ==========================================
@@ -2107,7 +2242,8 @@
                   dailyScheduleData[r.nickname] = days[parseInt(d)] || '';
               });
           }
-          const { data, error } = await supabaseClient.from('discord_attendance').select('*').eq('dateStr', dateStr);
+          const { data, error } = await supabaseClient.from('discord_attendance').select
+        ('*').eq('dateStr', dateStr);
           if (error) throw error;
           allDiscordData = data || [];
           renderDiscordTable();
