@@ -1543,6 +1543,29 @@
   }
 
   function handleScheduleSearch(term) { scheduleSearchTerm = term.toLowerCase().trim(); loadScheduleTable(); }
+
+  async function confirmClearSchedule() { 
+      const ym = document.getElementById('monthPicker').value; 
+      Swal.fire({ 
+          title: `ไม่บันทึก ${ym}?`, 
+          text: "ข้อมูลของเดือนนี้จะถูกลบทั้งหมด!", 
+          icon: 'warning', 
+          showCancelButton: true, 
+          confirmButtonColor: '#ff3366', 
+          confirmButtonText: 'ล้างทั้งหมด', 
+          background: '#111', 
+          color: '#fff' 
+      }).then(async r => { 
+          if(r.isConfirmed) { 
+              Swal.fire({title:'กำลังล้าง...', didOpen:()=>Swal.showLoading()}); 
+              await supabaseClient.from('schedules').delete().eq('yearMonth', ym); 
+              unsavedChanges = {}; 
+              document.getElementById('btnSaveSchedule').style.display = 'none'; 
+              await loadScheduleTable(); 
+              Swal.fire({toast:true, position:'top-end', title:'ล้างข้อมูลเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          } 
+      }); 
+  }
   
   async function loadScheduleTable() {
     unsavedChanges = {}; document.getElementById('btnSaveSchedule').style.display = 'none'; const ym = document.getElementById('monthPicker').value; if(!ym || allUsersData.length === 0) { document.getElementById('scheduleLoading').style.display = 'none'; return; } 
