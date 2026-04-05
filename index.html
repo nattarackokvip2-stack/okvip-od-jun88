@@ -297,16 +297,14 @@
         <div class="d-flex align-items-center gap-3">
            <div class="d-flex align-items-center gap-2">
                <div class="hub-icon mb-0" style="font-size: 1.5rem;">📅</div>
-               <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">ตารางงานพนักงาน</h4>
+               <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">ระบบจัดการตารางงาน</h4>
            </div>
-           <button class="btn btn-outline-warning btn-sm fw-bold px-3 py-1" style="border-radius: 8px;" onclick="openShiftSwapModal()" id="btnAutoSwapShift" style="display:none;">🔀 สลับกะอัตโนมัติ</button>
         </div>
         <div class="d-flex gap-3 align-items-center flex-wrap">
             <div class="input-group" style="background: #111; border: 1px solid var(--neon-blue); border-radius: 8px; overflow: hidden; width: 250px;">
                <span class="input-group-text bg-transparent border-0 text-white">🔍</span>
                <input type="text" id="searchSchedule" class="form-control bg-transparent border-0 text-white shadow-none px-0" placeholder="ค้นหาพนักงาน..." oninput="handleScheduleSearch(this.value)">
             </div>
-            
             <div class="d-flex align-items-center gap-3">
                 <div class="d-flex align-items-center gap-2">
                     <button type="button" class="btn btn-outline-info btn-sm" onclick="changeMonth(-1)" style="border-radius: 8px; padding: 6px 12px;">◀</button>
@@ -318,11 +316,16 @@
         </div>
       </div>
 
+      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
+        <div id="tabBtnRealSchedule" class="dept-badge active" onclick="switchScheduleTab('REAL')" style="font-size: 1rem; padding: 8px 20px;">📅 1. ตารางวันทำงาน (ตารางจริง)</div>
+        <div id="tabBtnSwapSandbox" class="dept-badge" onclick="switchScheduleTab('SANDBOX')" style="font-size: 1rem; padding: 8px 20px; border-color: #ff9900; color: #ff9900;">🔀 2. โหมดจำลองสลับกะ (Sandbox)</div>
+      </div>
+
       <div class="schedule-toolbar d-flex flex-column gap-3 mb-3 p-3" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
            <div class="d-flex flex-column gap-2">
                <div class="filter-bar" id="schDeptFilterBar">
-                 <span class="text-muted small me-2">กลุ่มพนักงาน:</span>
+                 <span class="text-muted small me-2" id="labelSchDept">กลุ่มพนักงาน:</span>
                  <div class="dept-badge active" onclick="filterScheduleDept('ALL', this)">ทั้งหมด</div>
                  <div class="dept-badge" onclick="filterScheduleDept('ออดิท (OD)', this)">🔎 OD</div>
                  <div class="dept-badge" onclick="filterScheduleDept('ออดิทออนไลน์ (ODOL)', this)">🌐 ODOL</div>
@@ -331,19 +334,26 @@
                <div class="filter-bar" id="schShiftFilterBar" style="display: none; padding-left: 10px; border-left: 2px solid #444;">
                  <span class="text-muted small me-2">เลือกเซ็ตกะ:</span>
                  <div class="dept-badge active" onclick="filterScheduleShift('ALL', this)">แสดงทั้งหมด</div>
-                 <div class="dept-badge" onclick="filterScheduleShift('A', this)" style="border-color:#00f0ff; color:#00f0ff;">☀️ กะ A</div>
-                 <div class="dept-badge" onclick="filterScheduleShift('B', this)" style="border-color:#ffcc00; color:#ffcc00;">🌙 กะ B</div>
+                 <div class="badge" onclick="filterScheduleShift('A', this)" style="border: 1px solid #00f0ff; color:#00f0ff; cursor:pointer; padding:6px 18px; border-radius:50px;">☀️ กะ A</div>
+                 <div class="badge" onclick="filterScheduleShift('B', this)" style="border: 1px solid #ffcc00; color:#ffcc00; cursor:pointer; padding:6px 18px; border-radius:50px;">🌙 กะ B</div>
                </div>
            </div>
 
-           <div>
+           <div id="realScheduleActions" style="display: flex; gap: 8px;">
              <button id="btnClearSchedule" onclick="confirmClearSchedule()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🗑️ ล้างตาราง</button>
-             <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3 ms-1" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะทำงาน</button>
+             <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะทำงาน</button>
+             <button id="btnSyncSandbox" onclick="syncSandboxToReal()" class="btn btn-warning btn-sm px-3 fw-bold text-dark" style="display: none; border-radius: 8px; box-shadow: 0 0 10px rgba(255, 204, 0, 0.4);">⬇️ ดึงข้อมูลจาก Sandbox มาใช้จริง</button>
+           </div>
+           
+           <div id="sandboxScheduleActions" style="display: none; gap: 8px;">
+             <button class="btn btn-outline-warning btn-sm fw-bold px-3 py-1" style="border-radius: 8px;" onclick="openShiftSwapModal()">⚙️ ตั้งค่าและรัน AI สลับกะ</button>
            </div>
         </div>
+        
         <div id="stampToolbox" class="d-flex justify-content-between align-items-center flex-wrap gap-3" style="display: none !important;">
           <div class="stamp-palette" id="stampPalette"></div>
-          <button id="btnSaveSchedule" onclick="saveAllScheduleChanges()" class="neon-save-button" style="display: none;">💾 บันทึกข้อมูลตาราง</button>
+          <button id="btnSaveSchedule" onclick="saveAllScheduleChanges()" class="neon-save-button" style="display: none;">💾 บันทึกข้อมูลตารางจริง</button>
+          <button id="btnSaveSandbox" onclick="saveSandboxSchedule()" class="neon-save-button" style="display: none; background-color: #995c00; border-color: #ff9900; color: #ffcc00; box-shadow: 0 0 10px rgba(255, 153, 0, 0.4);">💾 บันทึกตารางจำลอง</button>
         </div>
       </div>
 
@@ -1626,7 +1636,10 @@
         if(document.getElementById('btnSaveSandbox')) document.getElementById('btnSaveSandbox').style.display = 'none'; 
         
         const ym = document.getElementById('monthPicker').value; 
-        if(!ym || allUsersData.length === 0) { document.getElementById('scheduleLoading').style.display = 'none'; return; } 
+        if(!ym || allUsersData.length === 0) { 
+            if(document.getElementById('scheduleLoading')) document.getElementById('scheduleLoading').style.display = 'none'; 
+            return; 
+        } 
         
         document.getElementById('scheduleTable').style.display = 'none'; 
         document.getElementById('scheduleLoading').style.display = 'block'; 
@@ -1673,10 +1686,13 @@
                 shiftSet = sandboxUserShiftCache[nick];
             }
             
+            // 🌟 แก้ไขให้การกรองแผนกแม่นยำ 100% ไม่ดึงแผนกมั่ว
             if (currentSchDept !== 'ALL') {
-                const filterBase = currentSchDept.split(' ')[0]; const deptBase = dept.split(' ')[0]; 
-                if (dept !== currentSchDept && filterBase !== deptBase) return; 
+                if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) return;
+                if (currentSchDept === 'ออดิทออนไลน์ (ODOL)' && !dept.includes('ODOL')) return;
+                if (currentSchDept === 'อื่นๆ (OTHER)' && (dept.includes('OD') || dept.includes('ODOL'))) return;
             }
+            
             if (currentSchShift !== 'ALL') {
                 if (currentSchShift === 'A' && !shiftSet.includes('(A)')) return;
                 if (currentSchShift === 'B' && !shiftSet.includes('(B)')) return;
@@ -1720,185 +1736,8 @@
     }
   }
 
-  function startStampDrag(cell, nick, dept, day) { 
-      if(currentStamp===null){ Swal.fire({toast:true, position:'top', title:'เลือกตรายางก่อนครับ', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return;} 
-      isDraggingStamp = true; applyStamp(cell, nick, dept, day); 
-  }
-  
-  function enterStampDrag(e, cell, nick, dept, day) { 
-      if(isDraggingStamp && currentStamp !== null && e.buttons === 1) { applyStamp(cell, nick, dept, day); } 
-      else { isDraggingStamp = false; } 
-  }
-  
-  function applyStamp(cell, nick, dept, day) {
-      if(currentStamp===null || cell.innerText===currentStamp) return; 
-      const conf = stampConfig[currentStamp];
-      if(myRole === 'Member' && currentStamp === 'X') { 
-          let count = 0; cell.parentElement.querySelectorAll('.cell-day').forEach(c => { if(c.innerText === 'X') count++; }); 
-          if(count >= conf.limit) { isDraggingStamp = false; Swal.fire({toast:true, position:'top', title:'โควต้าเต็ม!', text:`ใช้ X ได้ไม่เกิน ${conf.limit} ครั้งต่อเดือน`, icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); return; } 
-      }
-      cell.innerText = currentStamp; cell.style.backgroundColor = conf.bg; cell.style.color = conf.text; 
-      if (cell.getAttribute('data-original') !== currentStamp) cell.classList.add('unsaved-mark'); 
-      else cell.classList.remove('unsaved-mark');
-      if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
-      unsavedChanges[nick][day] = currentStamp; unsavedChanges[nick]['dept'] = dept; 
-      
-      if(currentScheduleMode === 'SANDBOX') {
-          document.getElementById('btnSaveSandbox').style.display = 'flex';
-      } else {
-          document.getElementById('btnSaveSchedule').style.display = 'flex';
-      }
-  }
-  
-  async function saveAllScheduleChanges() {
-      if (Object.keys(unsavedChanges).length === 0) return; 
-      const btn = document.getElementById('btnSaveSchedule'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...'; 
-      const ym = document.getElementById('monthPicker').value;
-      const { data: existingSchedules } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
-      const existingMap = {}; 
-      if (existingSchedules) { existingSchedules.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); }
-      
-      for (const nick in unsavedChanges) { 
-          const changes = unsavedChanges[nick]; const dept = changes['dept'] || ''; delete changes['dept']; 
-          let currentDays = {}; let rowId = null; 
-          if (existingMap[nick]) { currentDays = existingMap[nick].days; rowId = existingMap[nick].id; } 
-          for (const d in changes) { if (changes[d] === '') delete currentDays[d]; else currentDays[d] = changes[d]; } 
-          if (rowId) { await supabaseClient.from('schedules').update({ daysData: JSON.stringify(currentDays) }).eq('id', rowId); } 
-          else { await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); } 
-      }
-      
-      btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูลตาราง'; btn.style.display = 'none'; unsavedChanges = {}; 
-      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
-      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางเรียบร้อย!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
-  }
 
-  // 🌟 บันทึกตารางจำลอง (Sandbox) ลง LocalStorage 🌟
-  function saveSandboxSchedule() {
-      if (Object.keys(unsavedChanges).length === 0) return;
-      const ym = document.getElementById('monthPicker').value;
-      const btn = document.getElementById('btnSaveSandbox');
-      btn.disabled = true; btn.innerText = '⏳...';
-
-      for (const nick in unsavedChanges) {
-          const changes = unsavedChanges[nick];
-          delete changes['dept'];
-          if(!sandboxDataCache[nick]) sandboxDataCache[nick] = {};
-          for (const d in changes) {
-              if (changes[d] === '') delete sandboxDataCache[nick][d];
-              else sandboxDataCache[nick][d] = changes[d];
-          }
-      }
-
-      localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({
-          schedules: sandboxDataCache,
-          shifts: sandboxUserShiftCache
-      }));
-
-      btn.disabled = false; btn.innerText = '💾 บันทึกตารางจำลอง'; btn.style.display = 'none';
-      unsavedChanges = {};
-      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
-      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจำลองสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
-  }
-
-  // 🌟 ดึงข้อมูลจาก Sandbox มาทับตารางจริง 🌟
-  async function syncSandboxToReal() {
-      const ym = document.getElementById('monthPicker').value;
-      let storedSandbox = localStorage.getItem('okvip_sandbox_' + ym);
-      if (!storedSandbox) { Swal.fire('Error', 'ไม่พบข้อมูล Sandbox', 'error'); return; }
-      
-      let parsed = JSON.parse(storedSandbox);
-      let sbSchedules = parsed.schedules || {};
-      let sbShifts = parsed.shifts || {};
-
-      Swal.fire({
-          title: 'ยืนยันดึงตารางจำลอง?',
-          text: 'ระบบจะนำตารางจำลองมาทับตารางจริง และย้ายกะพนักงานในระบบอย่างถาวร!',
-          icon: 'warning', showCancelButton: true, confirmButtonText: 'ดึงข้อมูลมาใช้เลย', confirmButtonColor: '#ffcc00', background: '#111', color: '#fff'
-      }).then(async r => {
-          if(r.isConfirmed) {
-              Swal.fire({title: 'กำลังซิงค์ข้อมูล...', didOpen: ()=>Swal.showLoading()});
-              try {
-                  const { data: schData } = await supabaseClient.from('schedules').select('id, nickname').eq('yearMonth', ym);
-                  let idMap = {}; if(schData) schData.forEach(r => idMap[r.nickname] = r.id);
-
-                  let updates = []; let inserts = [];
-                  for(let nick in sbSchedules) {
-                      let uData = allUsersData.find(u => u[1] === nick);
-                      let dept = uData ? uData[3] : 'ไม่ระบุ';
-                      if(idMap[nick]) updates.push({ id: idMap[nick], nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(sbSchedules[nick]) });
-                      else inserts.push({ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(sbSchedules[nick]) });
-                  }
-                  if(inserts.length > 0) await supabaseClient.from('schedules').insert(inserts);
-                  for(let up of updates) { await supabaseClient.from('schedules').update({ daysData: up.daysData }).eq('id', up.id); }
-                  
-                  // อัปเดตการย้ายกะ A/B
-                  for(let nick in sbShifts) {
-                      let uData = allUsersData.find(u => u[1] === nick);
-                      if (uData) await supabaseClient.from('users').update({ shiftSet: sbShifts[nick] }).eq('id', uData[0]);
-                  }
-
-                  localStorage.removeItem('okvip_sandbox_' + ym);
-                  Swal.fire({toast:true, position:'top-end', title:'ซิงค์ตารางสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
-                  refreshData(document.getElementById('refreshBtn'));
-              } catch(e) { Swal.fire('Error', e.message, 'error'); }
-          }
-      });
-  }
-
-  function openShiftModal() { bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).show(); }
-  
-  function applyShiftToSet(e) {
-      e.preventDefault(); const targetSet = document.getElementById('shiftSetSelect').value; const targetStamp = document.getElementById('shiftStampSelect').value; let appliedCount = 0;
-      document.querySelectorAll('#schTbody tr').forEach(tr => {
-          const nick = tr.getAttribute('data-nick'); const user = allUsersData.find(u => u[1] === nick);
-          if(user && user[9] === targetSet) { 
-              tr.querySelectorAll('.cell-day').forEach(cell => { 
-                  const currentVal = cell.innerText.trim(); 
-                  if(currentVal === '' || currentVal === 'N' || currentVal === 'D' || currentVal === 'M') { 
-                      const day = cell.getAttribute('data-day'); const conf = stampConfig[targetStamp]; 
-                      cell.innerText = targetStamp; cell.style.backgroundColor = conf.bg; cell.style.color = conf.text; 
-                      cell.classList.add('unsaved-mark'); 
-                      if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
-                      unsavedChanges[nick][day] = targetStamp; unsavedChanges[nick]['dept'] = tr.getAttribute('data-dept'); 
-                      appliedCount++; 
-                  } 
-              });
-          }
-      });
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).hide();
-      if(appliedCount > 0) { 
-          if(currentScheduleMode === 'SANDBOX') document.getElementById('btnSaveSandbox').style.display = 'flex';
-          else document.getElementById('btnSaveSchedule').style.display = 'flex'; 
-          Swal.fire({toast:true, position:'top', title:`ลงกะสำเร็จ!`, text:'กรุณากดบันทึกข้อมูลตาราง', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); 
-      } 
-      else { Swal.fire({toast:true, position:'top', title:'ไม่มีการเปลี่ยนแปลง', icon:'info', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); }
-  }
-
-  // ==========================================
-  // 🚀 ระบบสลับกะอัตโนมัติ (Auto Shift Swap)
-  // ==========================================
-  function checkSwapButtonPermission() {
-      const btn = document.getElementById('btnAutoSwapShift');
-      if(btn) btn.style.display = (myRole === 'SuperAdmin' || myRole === 'Admin') ? 'inline-block' : 'none';
-  }
-
-  function openShiftSwapModal() {
-      const ym = document.getElementById('monthPicker').value;
-      if(!ym) return;
-      const [year, month] = ym.split('-');
-      const daysInMonth = new Date(year, month, 0).getDate();
-      
-      let html = '';
-      for(let i=1; i<=daysInMonth; i++) html += `<option value="${i}">วันที่ ${i}</option>`;
-      
-      document.getElementById('swapStartDay').innerHTML = html;
-      document.getElementById('swapEndDay').innerHTML = html;
-      document.getElementById('swapEndDay').value = Math.min(5, daysInMonth);
-      
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftSwapModal')).show();
-  }
-
-  // 🌟 สมองกลรันการสลับกะ (ทำใน Sandbox Local Storage)
+  // 🌟 ฟังก์ชันสลับกะ ที่แยกแผนกเด็ดขาด 100%
   async function executeShiftSwap(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSubmitSwap');
@@ -1915,6 +1754,111 @@
           btn.disabled = false; btn.innerText = '🔀 ยืนยันการสลับกะ';
           return;
       }
+
+      try {
+          const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
+          let workingMap = {}; 
+          if (schData) schData.forEach(r => workingMap[r.nickname] = r.daysData ? JSON.parse(r.daysData) : {});
+          
+          // 🌟 ตัวกรองที่แยกระหว่าง OD และ ODOL ออกจากกันอย่างเด็ดขาด
+          let targetUsers = allUsersData.filter(u => {
+              if (u[7] !== 'Active') return false;
+              let d = u[3] || '';
+              if (dept === 'OD' && d.includes('OD') && !d.includes('ODOL')) return true;
+              if (dept === 'ODOL' && d.includes('ODOL')) return true;
+              return false;
+          });
+
+          let shiftA_Users = []; let shiftB_Users = [];
+
+          if (targetShift === 'BOTH' || targetShift === 'A') shiftA_Users = targetUsers.filter(u => u[9] && u[9].includes('(A)'));
+          if (targetShift === 'BOTH' || targetShift === 'B') shiftB_Users = targetUsers.filter(u => u[9] && u[9].includes('(B)'));
+
+          let daysInMonth = new Date(ym.split('-')[0], ym.split('-')[1], 0).getDate();
+          let swapDates = [];
+          for (let i = startD; i <= endD; i++) swapDates.push(i);
+
+          function isValidSwapDay(nick, day) {
+              let dData = workingMap[nick] || {};
+              let offTypes = ['X', 'TX'];
+              if (offTypes.includes(dData[day])) return false; 
+              if (day > 1 && offTypes.includes(dData[day - 1])) return false; 
+              if (day < daysInMonth && offTypes.includes(dData[day + 1])) return false; 
+              return true;
+          }
+
+          function assignDates(users) {
+              let assignments = [];
+              let shuffled = users.sort(() => 0.5 - Math.random()); 
+              let dateIndex = 0;
+              
+              for (let u of shuffled) {
+                  let nick = u[1];
+                  let assignedDay = null;
+                  
+                  for (let attempt = 0; attempt < swapDates.length; attempt++) {
+                      let d = swapDates[(dateIndex + attempt) % swapDates.length];
+                      if (isValidSwapDay(nick, d)) {
+                          assignedDay = d;
+                          dateIndex = (dateIndex + 1) % swapDates.length; 
+                          break;
+                      }
+                  }
+                  if (assignedDay) assignments.push({ user: u, day: assignedDay });
+                  else console.warn(`ข้าม ${nick}: ไม่มีวันสลับกะที่ว่าง (ติดวันหยุด)`);
+              }
+              return assignments;
+          }
+
+          let assignA = assignDates(shiftA_Users); 
+          let assignB = assignDates(shiftB_Users); 
+          
+          sandboxDataCache = JSON.parse(JSON.stringify(workingMap));
+          sandboxUserShiftCache = {};
+
+          assignA.forEach(a => {
+              let nick = a.user[1];
+              let dData = sandboxDataCache[nick] || {};
+              for (let i = a.day; i <= daysInMonth; i++) {
+                  if (!['X', 'TX', 'XX', 'PN', 'KL', 'KP'].includes(dData[i])) dData[i] = 'N';
+              }
+              sandboxDataCache[nick] = dData;
+              sandboxUserShiftCache[nick] = a.user[9].replace('(A)', '(B)');
+          });
+
+          assignB.forEach(b => {
+              let nick = b.user[1];
+              let dData = sandboxDataCache[nick] || {};
+              dData[b.day] = 'XX';
+              for (let i = b.day + 1; i <= daysInMonth; i++) {
+                  if (!['X', 'TX', 'XX', 'PN', 'KL', 'KP'].includes(dData[i])) dData[i] = 'D';
+              }
+              sandboxDataCache[nick] = dData;
+              sandboxUserShiftCache[nick] = b.user[9].replace('(B)', '(A)');
+          });
+
+          if(assignA.length === 0 && assignB.length === 0) {
+              Swal.fire('แจ้งเตือน', 'ไม่พบพนักงานที่สามารถสลับกะได้ (อาจติดวันหยุดทั้งหมด)', 'warning');
+              return;
+          }
+
+          // บันทึกลง LocalStorage
+          localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({
+              schedules: sandboxDataCache,
+              shifts: sandboxUserShiftCache
+          }));
+
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftSwapModal')).hide();
+          Swal.fire({toast:true, position:'top-end', title:'จำลองตารางเสร็จสิ้น!', text:'ดูผลลัพธ์ในโหมด Sandbox ได้เลยครับ', icon:'success', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'});
+          
+          loadScheduleTable(); // โหลดหน้าตารางเพื่อรีเฟรช Sandbox
+
+      } catch(err) {
+          Swal.fire('Error', err.message, 'error');
+      } finally {
+          btn.disabled = false; btn.innerText = '🔀 ยืนยันการสลับกะ';
+      }
+  }
 
       try {
           const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
