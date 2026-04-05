@@ -2045,23 +2045,24 @@
   function deleteLeave(id) { Swal.fire({title: 'ยกเลิกคำขอนี้?', text: 'ข้อมูลจะถูกลบออกจากระบบ', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('leave_requests').delete().eq('id', id); await loadSupabaseLeaves(); loadLeavesPage(1); Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
   // ==========================================
-  // 🚀 10. ระบบ Discord (คำนวณเวลาอู้อัจฉริยะตามกะงาน)
+  // 🚀 10. ระบบ Discord (แยกแท็บ + ดึงกะอัตโนมัติ + จับคนอู้ + โซนคนแปลกหน้า)
   // ==========================================
   let allDiscordData = [];
   let currentDiscordFilter = 'ON_TIME'; 
   let currentDiscordTab = 'attendance'; 
-  let currentMonitorShiftFilter = 'ALL'; // ตัวกรองกะหน้ากล้องวงจรปิด
+  let currentMonitorShiftFilter = 'ALL'; 
 
   function switchDiscordTab(tab) {
       currentDiscordTab = tab;
       document.getElementById('tabBtnDcAttendance').classList.toggle('active', tab === 'attendance');
       document.getElementById('tabBtnDcMonitor').classList.toggle('active', tab === 'monitor');
       
-      // สลับแถบเมนูกรองให้ตรงกับหน้า
-      document.getElementById('dcAttendanceFilterContainer').classList.toggle('d-none', tab !== 'attendance');
-      document.getElementById('dcAttendanceFilterContainer').classList.toggle('d-flex', tab === 'attendance');
+      // 🌟 บังคับซ่อน/โชว์ เมนูกรองให้ตรงกับแท็บแบบเด็ดขาด 100%
+      const attFilter = document.getElementById('dcAttendanceFilterContainer');
+      const monFilter = document.getElementById('dcMonitorFilterContainer');
       
-      document.getElementById('dcMonitorFilterContainer').style.display = (tab === 'monitor') ? 'flex' : 'none';
+      if (attFilter) attFilter.style.display = (tab === 'attendance') ? 'flex' : 'none';
+      if (monFilter) monFilter.style.display = (tab === 'monitor') ? 'flex' : 'none';
       
       renderDiscordTable();
   }
@@ -2132,6 +2133,9 @@
           return coreName || fullName.trim().toUpperCase();
       }
 
+      // -----------------------------------------------------
+      // โซนที่ 1: จัดการคนที่มีรายชื่อในระบบ (พนักงานของเรา)
+      // -----------------------------------------------------
       allUsersData.forEach(u => {
           if (!u || u[7] !== 'Active') return;
           const nick = u[1]; 
@@ -2145,7 +2149,6 @@
           const sysNameCleaned = extractCoreName(nick);
           const dcRecord = allDiscordData.find(d => extractCoreName(d.nickname) === sysNameCleaned);
           
-          // 🎯 กำหนดเวลาเริ่มงานของพนักงานคนนี้
           let targetShiftTime = "-";
           let targetH = 0; let targetM = 0;
           let shiftStart = new Date(now);
@@ -2155,19 +2158,15 @@
               shiftStart.setHours(8, 0, 0, 0);
           } else if (shiftSet.includes('(B)')) { 
               targetShiftTime = "20:00"; targetH = 20; 
-              if (now.getHours() < 8) shiftStart.setDate(shiftStart.getDate() - 1); // ถ้าเลยเที่ยงคืนแล้ว กะดึกคือของเมื่อวาน
+              if (now.getHours() < 8) shiftStart.setDate(shiftStart.getDate() - 1); 
               shiftStart.setHours(20, 0, 0, 0);
           } else {
               shiftStart.setHours(0, 0, 0, 0);
           }
 
-          // 🌟 โชว์ชื่อระบบตัวใหญ่ๆ แล้วเอาชื่อ Discord เป็นตัวเล็กๆ ห้อยท้าย
           const displayNick = nick; 
-          const dcHint = dcRecord ? `<br><small class="text-muted" style="font-size: 0.75rem;">(ไอดีดิสคอร์ด: ${dcRecord.nickname})</small>` : '';
+          const dcHint = dcRecord ? `<br><small class="text-muted" style="font-size: 0.75rem;">(ดิสคอร์ด: ${dcRecord.nickname})</small>` : '';
 
-          // =====================================
-          // แท็บ 1: เช็คชื่อตอกบัตร
-          // =====================================
           if (currentDiscordTab === 'attendance') {
               let timeIn = '-';
               let statusBadge = '';
@@ -2211,13 +2210,9 @@
                   </tr>`;
               }
           } 
-          // =====================================
-          // แท็บ 2: ติดตามสถานะ (กล้องวงจรปิด)
-          // =====================================
           else {
-              if (!dcRecord || isLeave) return; // ไม่โชว์คนหยุดหรือยังไม่เข้างาน
+              if (!dcRecord || isLeave) return; 
 
-              // ระบบกรองกะ A หรือ B
               if (currentMonitorShiftFilter !== 'ALL' && !shiftSet.includes(`(${currentMonitorShiftFilter})`)) return;
 
               hasData = true;
@@ -2237,7 +2232,6 @@
               let totalIdleMins = 0;
               let histHtml = "";
 
-              // 🎯 คำนวณประวัติการหลับ (เอาเฉพาะเวลาที่เกินเวลางานมาแล้ว)
               let idleHistories = dcRecord.idle_history ? JSON.parse(dcRecord.idle_history) : [];
               if (idleHistories.length > 0) {
                   idleHistories.forEach((h, index) => {
@@ -2247,13 +2241,11 @@
                       let sDate = new Date(now); sDate.setHours(sh, sm, 0, 0);
                       let eDate = new Date(now); eDate.setHours(eh, em, 0, 0);
                       
-                      // แก้บัคเวลาข้ามเที่ยงคืน
                       if (eh < sh) { if (now.getHours() < 12) sDate.setDate(sDate.getDate() - 1); else eDate.setDate(eDate.getDate() + 1); } 
                       else if (now.getHours() < 12 && eh > 12) { sDate.setDate(sDate.getDate() - 1); eDate.setDate(eDate.getDate() - 1); }
 
-                      // 🌟 เช็คว่าการอู้นี้เกิดขึ้นในเวลางานหรือเปล่า?
                       if (eDate > shiftStart) {
-                          if (sDate < shiftStart) sDate = shiftStart; // บีบเวลาเริ่มให้นับจากเวลาเข้ากะ
+                          if (sDate < shiftStart) sDate = shiftStart;
                           let realDur = Math.floor((eDate.getTime() - sDate.getTime()) / 60000);
                           if (realDur > 0) {
                               totalIdleMins += realDur;
@@ -2263,10 +2255,9 @@
                   });
               }
 
-              // 🎯 คำนวณคนที่กำลังอู้อยู่ตอนนี้
               if (isCurrentlyIdle && dcRecord.idle_start_time) {
                   let startObj = new Date(dcRecord.idle_start_time);
-                  if (startObj < shiftStart) startObj = shiftStart; // ถ้าหลับก่อนเริ่มกะ ให้นับว่าเริ่มหลับตอนเข้ากะ
+                  if (startObj < shiftStart) startObj = shiftStart; 
                   
                   if (now > startObj) {
                       let currentIdleMins = Math.floor((now.getTime() - startObj.getTime()) / 60000);
@@ -2297,8 +2288,66 @@
           }
       });
 
-      if (!hasData || html === '') tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">ไม่มีข้อมูลพนักงานตามเงื่อนไขที่เลือก</td></tr>`;
-      else tbody.innerHTML = html;
+      // -----------------------------------------------------
+      // โซนที่ 2: ผู้อื่นที่อยู่ในดิส (บุคคลนอกระบบ หรือตั้งชื่อผิด)
+      // -----------------------------------------------------
+      let unknownHtml = '';
+      let hasUnknown = false;
+
+      allDiscordData.forEach(dc => {
+          const dcNameCleaned = extractCoreName(dc.nickname);
+          const foundInSys = allUsersData.find(u => extractCoreName(u[1]) === dcNameCleaned);
+          
+          if (!foundInSys) {
+              hasUnknown = true;
+              const timeObj = new Date(dc.check_in_time);
+              const timeIn = timeObj.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+              let channel = dc.channel_name || 'ไม่ระบุห้อง';
+              let presence = dc.presence_status || "🟢 ออนไลน์";
+              let lastMove = dc.last_moved_at || "-";
+              
+              let channelClass = "text-info fw-bold";
+              if (channel.includes('❌') || channel.includes('ออก')) channelClass = "text-danger fw-bold";
+              let presenceClass = presence.includes("🌙") ? "text-warning fw-bold" : "text-success";
+
+              if (currentDiscordTab === 'attendance') {
+                  unknownHtml += `<tr>
+                      <td class="fw-bold text-warning">${dc.nickname}</td>
+                      <td class="text-muted small">-</td>
+                      <td class="text-warning fw-bold fs-6">${timeIn}</td>
+                      <td class="text-info">-</td>
+                      <td><span class="badge bg-secondary fs-6">ไม่มีรายชื่อในระบบ</span></td>
+                  </tr>`;
+              } else {
+                  unknownHtml += `<tr>
+                      <td class="fw-bold text-warning">${dc.nickname}</td>
+                      <td class="text-muted small">-</td>
+                      <td class="${presenceClass}">${presence}</td>
+                      <td class="${channelClass}">${channel}</td>
+                      <td class="text-white-50">${lastMove}</td>
+                      <td><span class="text-muted small">ไม่มีประวัติการคำนวณ (บุคคลนอก)</span></td>
+                  </tr>`;
+              }
+          }
+      });
+
+      // 🌟 นำข้อมูลทั้งหมดมาต่อกัน และแสดงแถบแบ่งโซนคนนอก
+      if (hasData || hasUnknown) {
+          let finalHtml = html;
+          if (hasUnknown) {
+              const colSpan = currentDiscordTab === 'attendance' ? 5 : 6;
+              finalHtml += `
+              <tr style="background: rgba(255, 204, 0, 0.1);">
+                  <td colspan="${colSpan}" class="text-center text-warning fw-bold py-3" style="border-top: 2px solid #ffcc00; border-bottom: 2px solid #ffcc00; font-size: 1.1rem; letter-spacing: 1px;">
+                      👀 ผู้อื่นที่อยู่ในห้องเสียง (ไม่มีรายชื่อในระบบ หรือตั้งชื่อผิด)
+                  </td>
+              </tr>`;
+              finalHtml += unknownHtml;
+          }
+          tbody.innerHTML = finalHtml || `<tr><td colspan="6" class="text-center text-muted py-5">ไม่มีข้อมูลพนักงานตามเงื่อนไขที่เลือก</td></tr>`;
+      } else {
+          tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">ไม่มีข้อมูลพนักงานตามเงื่อนไขที่เลือก</td></tr>`;
+      }
   }
 
   supabaseClient
