@@ -1499,17 +1499,97 @@
   // ==========================================
   // 🚀 6. หน้าที่ & สถิติ (Jobs & Stats)
   // ==========================================
+  
+  // 🌟 ฟังก์ชันเปิดหน้าตั้งค่าระบบ (ภาพรวม)
+  function openJobSettingsModal() {
+      document.getElementById('setWebsites').value = (sysSettings.websites || []).join('\n');
+      let odDuties = [];
+      if (sysSettings.dutyTypes && sysSettings.dutyTypes.OD) odDuties = sysSettings.dutyTypes.OD;
+      else if (Array.isArray(sysSettings.dutyTypes)) odDuties = sysSettings.dutyTypes; 
+      document.getElementById('setDutiesOD').value = odDuties.join('\n');
+      let odolDuties = [];
+      if (sysSettings.dutyTypes && sysSettings.dutyTypes.ODOL) odolDuties = sysSettings.dutyTypes.ODOL;
+      else if (Array.isArray(sysSettings.dutyTypes)) odolDuties = sysSettings.dutyTypes; 
+      document.getElementById('setDutiesODOL').value = odolDuties.join('\n');
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).show();
+  }
+
+  // 🌟 ฟังก์ชันบันทึกหน้าตั้งค่าระบบ
+  async function saveAdminJobSettings() {
+      const websites = document.getElementById('setWebsites').value.split('\n').map(s => s.trim()).filter(s => s !== '');
+      const dutiesOD = document.getElementById('setDutiesOD').value.split('\n').map(s => s.trim()).filter(s => s !== '');
+      const dutiesODOL = document.getElementById('setDutiesODOL').value.split('\n').map(s => s.trim()).filter(s => s !== '');
+      const packedDuties = { OD: dutiesOD, ODOL: dutiesODOL };
+      const btn = document.querySelector('#jobSettingsModal .btn-neon-yellow');
+      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
+      try {
+          const { data: existing } = await supabaseClient.from('job_settings').select('id').limit(1);
+          if (existing && existing.length > 0) {
+              await supabaseClient.from('job_settings').update({ websites: JSON.stringify(websites), dutyTypes: JSON.stringify(packedDuties) }).eq('id', existing[0].id);
+          } else {
+              await supabaseClient.from('job_settings').insert([{ websites: JSON.stringify(websites), dutyTypes: JSON.stringify(packedDuties) }]);
+          }
+          sysSettings.websites = websites; sysSettings.dutyTypes = packedDuties;
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).hide();
+          Swal.fire({toast: true, position: 'top-end', title: 'บันทึกการตั้งค่าสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
+          renderJobTables(); 
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } 
+      finally { if(btn) { btn.disabled = false; btn.innerText = 'บันทึกการตั้งค่าระบบ'; } }
+  }
+
+  // 🌟 ฟังก์ชันตั้งค่ารายบุคคล (ปุ่มฟันเฟืองในตาราง)
+  function openUserSiteModal(nick) {
+      tempSetupNick = nick;
+      document.getElementById('siteNickName').innerText = nick;
+      const capable = sysSettings.userSites[nick] || [];
+      document.getElementById('chkExcludeDuty').checked = capable.includes('EXCLUDE_DUTY');
+      let html = '';
+      (sysSettings.websites || []).forEach(w => {
+          const isChecked = capable.includes(w) ? 'checked' : '';
+          html += `<div class="form-check bg-dark p-2 rounded border border-secondary" style="min-width: 120px;">
+                      <input class="form-check-input ms-1 me-2 site-checkbox" type="checkbox" value="${w}" id="chk_${w}" ${isChecked}>
+                      <label class="form-check-label text-info small" for="chk_${w}">${w}</label>
+                   </div>`;
+      });
+      if(html === '') html = '<div class="text-muted small">ยังไม่ได้เพิ่มรายชื่อเว็บในระบบ</div>';
+      document.getElementById('userSiteCheckboxes').innerHTML = html;
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).show();
+  }
+
+  function selectAllUserSites() {
+      const checkboxes = document.querySelectorAll('.site-checkbox');
+      let allChecked = true;
+      checkboxes.forEach(chk => { if(!chk.checked) allChecked = false; });
+      checkboxes.forEach(chk => chk.checked = !allChecked);
+  }
+
+  async function saveUserCapableSitesBtn() {
+      const nick = tempSetupNick; let selectedSites = [];
+      if (document.getElementById('chkExcludeDuty').checked) selectedSites.push('EXCLUDE_DUTY');
+      document.querySelectorAll('.site-checkbox').forEach(chk => { if (chk.checked) selectedSites.push(chk.value); });
+      const btn = document.querySelector('#userSiteModal .btn-neon-blue');
+      btn.disabled = true; btn.innerText = '⏳...';
+      try {
+          const { data: existing } = await supabaseClient.from('user_sites').select('id').eq('nickname', nick).limit(1);
+          if (existing && existing.length > 0) await supabaseClient.from('user_sites').update({ capableSites: JSON.stringify(selectedSites) }).eq('id', existing[0].id);
+          else await supabaseClient.from('user_sites').insert([{ nickname: nick, capableSites: JSON.stringify(selectedSites) }]);
+          sysSettings.userSites[nick] = selectedSites;
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).hide();
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+          renderJobTables();
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } 
+      finally { btn.disabled = false; btn.innerText = 'บันทึกข้อมูล'; }
+  }
+
+  // 🌟 ฟังก์ชันจัดการตาราง 🌟
   function toggleJobTab(tabName) { 
       currentJobTab = tabName; 
       document.getElementById('tabBtnDuty').classList.toggle('active', tabName==='duty'); 
       document.getElementById('tabBtnStat').classList.toggle('active', tabName==='stat'); 
-      
       document.getElementById('dutyWorkspace').style.display = tabName==='duty' ? 'block' : 'none'; 
       document.getElementById('statWorkspace').style.display = tabName==='stat' ? 'block' : 'none'; 
-      
       if(tabName==='duty') document.getElementById('searchJob').value = jobSearchTerm;
       else document.getElementById('searchStat').value = jobSearchTerm;
-      
       renderJobTables(); 
   }
   function filterJobDept(dept, btn) { currentJobFilter = dept; document.querySelectorAll('#jobSection .dept-badge').forEach(b => { if(b.id!=='tabBtnDuty'&&b.id!=='tabBtnStat') { b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc"; }}); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderJobTables(); }
@@ -1531,7 +1611,6 @@
 
   function buildDutyTable() {
     const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = '';
-    
     if(!currentJobShiftSet || currentJobShiftSet === '') {
         tbody.innerHTML=`<tr><td colspan="6" class="text-center py-5 text-warning fw-bold fs-5">⚠️ กรุณาเลือก "เซ็ตกะการทำงาน" ก่อนครับ</td></tr>`; 
         document.getElementById('siteSummaryArea').style.display='none'; return;
@@ -1693,7 +1772,6 @@
       document.querySelectorAll('#dutyTableBody tr').forEach(r => { 
           if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; 
           const n = r.getAttribute('data-nick'); const d = r.getAttribute('data-dept'); 
-          
           const sMain = r.querySelector('.sel-site-main')?.value || '';
           const sSub = r.querySelector('.sel-site-sub')?.value || '';
           let s = '';
