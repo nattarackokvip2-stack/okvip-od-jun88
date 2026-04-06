@@ -1903,9 +1903,13 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       } else {
           document.getElementById('btnSaveSchedule').style.display = 'flex';
       }
-    if (typeof recalcScheduleSummary === "function") {
+      if (typeof recalcScheduleSummary === "function") {
           recalcScheduleSummary();
+      }
   }
+
+  // 🌟 ฟังก์ชันใหม่: ตัวเดียวจัดการได้ 2 โหมด
+  function handleUnifiedSave() {
 
   // 🌟 ฟังก์ชันใหม่: ตัวเดียวจัดการได้ 2 โหมด
   function handleUnifiedSave() {
