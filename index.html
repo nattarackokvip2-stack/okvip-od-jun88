@@ -713,29 +713,6 @@
     </div>
     <button class="btn btn-neon-yellow w-100 py-2 mt-4" onclick="saveAdminJobSettings()">บันทึกการตั้งค่าระบบ</button>
     
-    <div id="quotaSettingsSection" class="mt-4 pt-3 border-top border-secondary" style="display: none;">
-        <h6 class="text-danger fw-bold">🛑 ตั้งค่าโควต้าคนหยุดสูงสุดต่อวัน (SuperAdmin)</h6>
-        <p class="small text-muted mb-2">กำหนดจำนวนพนักงานที่อนุญาตให้หยุดพร้อมกันในแต่ละกะ (รวม X, TX, PN)</p>
-        <div class="row g-2">
-            <div class="col-3">
-                <label class="small text-info">OD (A) / วัน</label>
-                <input type="number" id="quotaODA" class="form-control bg-dark text-white text-center border-info fw-bold" min="0">
-            </div>
-            <div class="col-3">
-                <label class="small text-info">OD (B) / วัน</label>
-                <input type="number" id="quotaODB" class="form-control bg-dark text-white text-center border-info fw-bold" min="0">
-            </div>
-            <div class="col-3">
-                <label class="small text-warning">ODOL (A) / วัน</label>
-                <input type="number" id="quotaODOLA" class="form-control bg-dark text-white text-center border-warning fw-bold" min="0">
-            </div>
-            <div class="col-3">
-                <label class="small text-warning">ODOL (B) / วัน</label>
-                <input type="number" id="quotaODOLB" class="form-control bg-dark text-white text-center border-warning fw-bold" min="0">
-            </div>
-        </div>
-    </div>
-
     <div id="cleanupSection" class="mt-4 pt-3 border-top border-secondary text-center" style="display: none;">
         <h6 class="text-danger fw-bold">🧹 การบำรุงรักษาระบบฐานข้อมูล</h6>
         <p class="small text-muted mb-2">ลบข้อมูลสถิติและ Discord ที่เก่ากว่า 3 เดือนทิ้ง เพื่อให้เว็บโหลดเร็วขึ้น</p>
@@ -1036,6 +1013,7 @@
   let currentScheduleFilter = 'ALL';
   
   let sysSettings = { websites: [], dutyTypes: { OD: [], ODOL: [] }, statMetrics: [], userSites: {} };
+  let dailyDutiesData = {}; 
   let dailyStatsData = {}; 
   let dailyScheduleData = {}; 
   let dailyMealData = {}; 
@@ -1279,14 +1257,10 @@
       }
   }
 
-  // 🌟 เพิ่มตัวแปรเก็บโควต้า
-  let sysSettings = { websites: [], dutyTypes: { OD: [], ODOL: [] }, statMetrics: [], userSites: {}, leaveQuotas: { 'OD (A)': 2, 'OD (B)': 2, 'ODOL (A)': 2, 'ODOL (B)': 2 } };
-
   async function loadSupabaseSettings() {
       try {
           const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
           sysSettings.dutyTypes = { OD: [], ODOL: [] };
-          sysSettings.leaveQuotas = { 'OD (A)': 2, 'OD (B)': 2, 'ODOL (A)': 2, 'ODOL (B)': 2 }; // ค่าเริ่มต้น
           
           if (jsData && jsData.length > 0) {
               sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : [];
@@ -1301,10 +1275,6 @@
                               OD: Array.isArray(parsedDuties.OD) ? parsedDuties.OD : [],
                               ODOL: Array.isArray(parsedDuties.ODOL) ? parsedDuties.ODOL : []
                           };
-                          // 🌟 ดึงค่าโควต้าที่แอบฝังไว้ในก้อน JSON ออกมา
-                          if(parsedDuties.QUOTAS) {
-                              sysSettings.leaveQuotas = parsedDuties.QUOTAS;
-                          }
                       }
                   } catch(e) {
                       console.warn("ข้อมูลหน้าที่พัง ระบบจะล้างค่าเริ่มต้นให้ใหม่:", e);
@@ -2003,11 +1973,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       const conf = stampConfig[currentStamp];
       const rowCells = cell.parentElement.querySelectorAll('.cell-day');
       
-      // =========================================
-      // 🛑 โซนตรวจสอบโควต้า (Validation)
-      // =========================================
-
-      // กฎข้อ 1: โควต้ารายเดือน -> X (หยุด) และ TX (สลับหยุด) รวมกันต้องไม่เกิน 4
+      // กฎข้อ 1: X (หยุด) และ TX (สลับหยุด) รวมกันต้องไม่เกิน 4
       if (currentStamp === 'X' || currentStamp === 'TX') {
           let countXTX = 0;
           rowCells.forEach(c => {
@@ -2015,12 +1981,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           });
           if (countXTX >= 4) {
               isDraggingStamp = false; 
-              Swal.fire({toast:true, position:'top', title:'โควต้าวันหยุดรายเดือนเต็ม!', text:'X และ TX รวมกันได้สูงสุด 4 วัน/เดือน เท่านั้น', icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
+              Swal.fire({toast:true, position:'top', title:'โควต้าวันหยุดเต็ม!', text:'X และ TX รวมกันได้สูงสุด 4 วัน/เดือน เท่านั้น', icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
               return; 
           }
       }
       
-      // กฎข้อ 2: โควต้ารายเดือน -> ตรวจสอบของ XX(2), PN(15), X4(1)
+      // กฎข้อ 2: ตรวจสอบโควต้าของ XX(2), PN(15), X4(1)
       if (currentStamp === 'XX' || currentStamp === 'PN' || currentStamp === 'X4') {
           let countType = 0;
           rowCells.forEach(c => {
@@ -2029,62 +1995,11 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           let limit = conf.limit; 
           if (countType >= limit) {
               isDraggingStamp = false;
-              Swal.fire({toast:true, position:'top', title:'โควต้าเดือนนี้เต็ม!', text:`ใช้ ${conf.label} ได้สูงสุด ${limit} ครั้ง/เดือน`, icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
+              Swal.fire({toast:true, position:'top', title:'โควต้าเต็ม!', text:`ใช้ ${conf.label} ได้สูงสุด ${limit} ครั้ง/เดือน`, icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
               return; 
           }
       }
 
-      // 🌟 ดึงค่าโควต้ามาจากระบบตั้งค่าที่ SuperAdmin กรอกไว้
-      const dailyOffLimits = sysSettings.leaveQuotas || { 'OD (A)': 2, 'OD (B)': 2, 'ODOL (A)': 2, 'ODOL (B)': 2 };
-      
-      // ตัวย่อที่นับว่าเป็น "วันหยุด" (รวม PN เข้าไปด้วยตามที่คุณต้องการ)
-      const offStampsToCount = ['X', 'TX', 'PN']; 
-
-      if (offStampsToCount.includes(currentStamp)) {
-          // 1. หาว่าคนที่กำลังจะลงวันหยุด อยู่กะไหน
-          const myUserObj = allUsersData.find(u => u[1] === nick);
-          const myShiftSet = myUserObj && myUserObj[9] ? myUserObj[9] : '';
-
-          // 2. ถ้ากะนั้นถูกตั้งโควต้าไว้ ให้เริ่มนับคนในวันนั้น
-          if (myShiftSet && dailyOffLimits[myShiftSet] !== undefined) {
-              let currentDayOffCount = 0;
-              const colIndex = cell.cellIndex; // ดูว่ากำลังกดวันที่เท่าไหร่ในตาราง
-              const allRows = cell.closest('tbody').querySelectorAll('tr'); // ดึงมาทุกแถวในตาราง
-
-              allRows.forEach(row => {
-                  const rowNick = row.getAttribute('data-nick');
-                  const rowUserObj = allUsersData.find(u => u[1] === rowNick);
-                  const rowShiftSet = rowUserObj && rowUserObj[9] ? rowUserObj[9] : '';
-
-                  // ถ้ารายชื่อนี้อยู่ในกะเดียวกันกับคนที่กำลังจะหยุด
-                  if (rowShiftSet === myShiftSet) {
-                      const dayCell = row.cells[colIndex]; // ดูช่องของวันนั้นเป๊ะๆ
-                      
-                      // ไม่นับช่องที่กำลังกด (เพื่อดูว่าโควต้าเดิมเต็มหรือยัง)
-                      if (dayCell && dayCell !== cell && offStampsToCount.includes(dayCell.innerText)) {
-                          currentDayOffCount++;
-                      }
-                  }
-              });
-
-              const limit = dailyOffLimits[myShiftSet];
-              // ถ้านับรวมแล้วเท่ากับหรือเกินโควต้า ให้บล็อกทันที!
-              if (currentDayOffCount >= limit) {
-                  isDraggingStamp = false;
-                  Swal.fire({
-                      toast:true, position:'top', 
-                      title:'⚠️ โควต้าคนหยุดรายวันเต็ม!', 
-                      text:`กะ ${myShiftSet} ในวันนี้ มีคนหยุด (X, TX, PN) เต็มโควต้า ${limit} คนแล้วครับ`, 
-                      icon:'error', background:'#111', color:'#fff', timer:4000, showConfirmButton:false
-                  });
-                  return; // ดีดออก ไม่ให้ประทับตรา!
-              }
-          }
-      }
-
-      // =========================================
-      // ✅ ผ่านเงื่อนไขทั้งหมด ทำการประทับตราลงตาราง
-      // =========================================
       cell.innerText = currentStamp; 
       cell.style.backgroundColor = conf.bg; 
       cell.style.color = conf.text; 
@@ -2094,13 +2009,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       
       if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
       unsavedChanges[nick][day] = currentStamp; unsavedChanges[nick]['dept'] = dept; 
-      
-      // โชว์ปุ่มบันทึกให้ถูกโหมด
-      if(currentScheduleMode === 'SANDBOX') {
-          document.getElementById('btnSaveSandbox').style.display = 'flex';
-      } else {
-          document.getElementById('btnSaveSchedule').style.display = 'flex';
-      }
   }
 
   // 🌟 ฟังก์ชันใหม่: ตัวเดียวจัดการได้ 2 โหมด
@@ -2110,74 +2018,31 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   async function saveAllScheduleChanges() {
-      if (Object.keys(unsavedChanges).length === 0) { 
-          Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); 
-          return; 
+      if (Object.keys(unsavedChanges).length === 0) { Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return; }
+      const btn = document.querySelector('.neon-save-button'); btn.disabled = true; btn.innerText = '⏳...'; 
+      const ym = document.getElementById('monthPicker').value;
+      const { data: existingSchedules } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
+      const existingMap = {}; 
+      if (existingSchedules) { existingSchedules.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); }
+      
+      for (const nick in unsavedChanges) { 
+          const changes = unsavedChanges[nick]; const dept = changes['dept'] || ''; delete changes['dept']; 
+          let currentDays = {}; let rowId = null; 
+          if (existingMap[nick]) { currentDays = existingMap[nick].days; rowId = existingMap[nick].id; } 
+          for (const d in changes) { if (changes[d] === '') delete currentDays[d]; else currentDays[d] = changes[d]; } 
+          if (rowId) { await supabaseClient.from('schedules').update({ daysData: JSON.stringify(currentDays) }).eq('id', rowId); } 
+          else { await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); } 
       }
       
-      const btn = document.querySelector('.neon-save-button'); 
-      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
-      
-      try {
-          const ym = document.getElementById('monthPicker').value;
-          const { data: existingSchedules, error: fetchErr } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
-          if (fetchErr) throw fetchErr;
-          
-          const existingMap = {}; 
-          if (existingSchedules) { 
-              existingSchedules.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); 
-          }
-          
-          for (const nick in unsavedChanges) { 
-              const changes = unsavedChanges[nick]; 
-              const dept = changes['dept'] || ''; 
-              delete changes['dept']; 
-              
-              let currentDays = {}; 
-              let rowId = null; 
-              
-              if (existingMap[nick]) { 
-                  currentDays = existingMap[nick].days; 
-                  rowId = existingMap[nick].id; 
-              } 
-              
-              for (const d in changes) { 
-                  if (changes[d] === '') delete currentDays[d]; 
-                  else currentDays[d] = changes[d]; 
-              } 
-              
-              if (rowId) { 
-                  await supabaseClient.from('schedules').update({ daysData: JSON.stringify(currentDays) }).eq('id', rowId); 
-              } else { 
-                  await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); 
-              } 
-          }
-          
-          unsavedChanges = {}; 
-          document.querySelectorAll('.unsaved-mark').forEach(c=>{
-              c.setAttribute('data-original', c.innerText); 
-              c.classList.remove('unsaved-mark');
-          }); 
-          if(btn) btn.style.display = 'none'; // ซ่อนปุ่มเมื่อเซฟเสร็จ
-          Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจริงสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
-          
-      } catch(err) {
-          console.error("Save Schedule Error: ", err);
-          Swal.fire('Error', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-      } finally {
-          if(btn) { btn.disabled = false; btn.innerText = '💾 บันทึก'; }
-      }
+      btn.disabled = false; btn.innerText = '💾 บันทึก'; unsavedChanges = {}; 
+      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
+      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจริงสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
   }
 
   function saveSandboxSchedule() {
-      if (Object.keys(unsavedChanges).length === 0) { 
-          Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); 
-          return; 
-      }
-      
+      if (Object.keys(unsavedChanges).length === 0) { Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return; }
       const ym = document.getElementById('monthPicker').value;
-      const btn = document.querySelector('.neon-save-button'); 
-      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
+      const btn = document.querySelector('.neon-save-button'); btn.disabled = true; btn.innerText = '⏳...';
 
       for (const nick in unsavedChanges) {
           const changes = unsavedChanges[nick];
@@ -2190,21 +2055,39 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       }
 
       localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({ schedules: sandboxDataCache, shifts: sandboxUserShiftCache }));
-      
-      unsavedChanges = {};
-      document.querySelectorAll('.unsaved-mark').forEach(c=>{
-          c.setAttribute('data-original', c.innerText); 
-          c.classList.remove('unsaved-mark');
-      }); 
-      
-      if(btn) { 
-          btn.disabled = false; 
-          btn.innerText = '💾 บันทึก'; 
-          btn.style.display = 'none'; // ซ่อนปุ่มเมื่อเซฟเสร็จ
-      }
+      btn.disabled = false; btn.innerText = '💾 บันทึก'; unsavedChanges = {};
+      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
       Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจำลองสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
   }
-  
+
+  // 🌟 บันทึกตารางจำลอง (Sandbox) ลง LocalStorage 🌟
+  function saveSandboxSchedule() {
+      if (Object.keys(unsavedChanges).length === 0) return;
+      const ym = document.getElementById('monthPicker').value;
+      const btn = document.getElementById('btnSaveSandbox');
+      btn.disabled = true; btn.innerText = '⏳...';
+
+      for (const nick in unsavedChanges) {
+          const changes = unsavedChanges[nick];
+          delete changes['dept'];
+          if(!sandboxDataCache[nick]) sandboxDataCache[nick] = {};
+          for (const d in changes) {
+              if (changes[d] === '') delete sandboxDataCache[nick][d];
+              else sandboxDataCache[nick][d] = changes[d];
+          }
+      }
+
+      localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({
+          schedules: sandboxDataCache,
+          shifts: sandboxUserShiftCache
+      }));
+
+      btn.disabled = false; btn.innerText = '💾 บันทึก'; btn.style.display = 'none';
+      unsavedChanges = {};
+      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
+      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจำลองสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+  }
+
   // 🌟 ดึงข้อมูลจาก Sandbox มาทับตารางจริง 🌟
   async function syncSandboxToReal() {
       const ym = document.getElementById('monthPicker').value;
@@ -2255,20 +2138,14 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   // ==========================================
   function openJobSettingsModal() {
       document.getElementById('setWebsites').value = (sysSettings.websites || []).join('\n');
-      
-      let odDuties = Array.isArray(sysSettings.dutyTypes.OD) ? sysSettings.dutyTypes.OD : [];
+      let odDuties = [];
+      if (sysSettings.dutyTypes && sysSettings.dutyTypes.OD) odDuties = sysSettings.dutyTypes.OD;
+      else if (Array.isArray(sysSettings.dutyTypes)) odDuties = sysSettings.dutyTypes; 
       document.getElementById('setDutiesOD').value = odDuties.join('\n');
-      
-      let odolDuties = Array.isArray(sysSettings.dutyTypes.ODOL) ? sysSettings.dutyTypes.ODOL : [];
+      let odolDuties = [];
+      if (sysSettings.dutyTypes && sysSettings.dutyTypes.ODOL) odolDuties = sysSettings.dutyTypes.ODOL;
+      else if (Array.isArray(sysSettings.dutyTypes)) odolDuties = sysSettings.dutyTypes; 
       document.getElementById('setDutiesODOL').value = odolDuties.join('\n');
-
-      // 🌟 ใส่ค่าโควต้าลงในช่อง (โชว์กล่องเฉพาะ SuperAdmin)
-      document.getElementById('quotaODA').value = sysSettings.leaveQuotas['OD (A)'] || 2;
-      document.getElementById('quotaODB').value = sysSettings.leaveQuotas['OD (B)'] || 2;
-      document.getElementById('quotaODOLA').value = sysSettings.leaveQuotas['ODOL (A)'] || 2;
-      document.getElementById('quotaODOLB').value = sysSettings.leaveQuotas['ODOL (B)'] || 2;
-      document.getElementById('quotaSettingsSection').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none';
-
       bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).show();
   }
 
@@ -2276,18 +2153,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       const websites = document.getElementById('setWebsites').value.split('\n').map(s => s.trim()).filter(s => s !== '');
       const dutiesOD = document.getElementById('setDutiesOD').value.split('\n').map(s => s.trim()).filter(s => s !== '');
       const dutiesODOL = document.getElementById('setDutiesODOL').value.split('\n').map(s => s.trim()).filter(s => s !== '');
-      
-      // 🌟 ดึงค่าจากช่องใส่ตัวเลข (ถ้าไม่ใช่ SuperAdmin หรือช่องว่าง ให้ดึงค่าเดิมมาใช้)
-      const qODA = parseInt(document.getElementById('quotaODA').value) || sysSettings.leaveQuotas['OD (A)'] || 2;
-      const qODB = parseInt(document.getElementById('quotaODB').value) || sysSettings.leaveQuotas['OD (B)'] || 2;
-      const qODOLA = parseInt(document.getElementById('quotaODOLA').value) || sysSettings.leaveQuotas['ODOL (A)'] || 2;
-      const qODOLB = parseInt(document.getElementById('quotaODOLB').value) || sysSettings.leaveQuotas['ODOL (B)'] || 2;
-      
-      const newQuotas = { 'OD (A)': qODA, 'OD (B)': qODB, 'ODOL (A)': qODOLA, 'ODOL (B)': qODOLB };
-      
-      // ฝังโควต้าเข้าไปใน JSON ของ Duties
-      const packedDuties = { OD: dutiesOD, ODOL: dutiesODOL, QUOTAS: newQuotas };
-      
+      const packedDuties = { OD: dutiesOD, ODOL: dutiesODOL };
       const btn = document.querySelector('#jobSettingsModal .btn-neon-yellow');
       if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
       try {
@@ -2297,10 +2163,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           } else {
               await supabaseClient.from('job_settings').insert([{ websites: JSON.stringify(websites), dutyTypes: JSON.stringify(packedDuties) }]);
           }
-          sysSettings.websites = websites; 
-          sysSettings.dutyTypes = packedDuties;
-          sysSettings.leaveQuotas = newQuotas; // อัปเดตในระบบทันที
-
+          sysSettings.websites = websites; sysSettings.dutyTypes = packedDuties;
           bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).hide();
           Swal.fire({toast: true, position: 'top-end', title: 'บันทึกการตั้งค่าสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
           renderJobTables(); 
