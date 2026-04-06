@@ -449,6 +449,7 @@
              <div id="dutyActionBtns" style="display: flex; gap: 10px;">
                <button class="btn btn-outline-danger px-3" onclick="confirmClearDuty()">🗑️ ล้างข้อมูล</button>
                <button class="btn btn-neon-blue px-4" onclick="randomizeDuties()">🔀 สุ่มหน้าที่</button>
+               <button class="btn btn-outline-info px-3" onclick="openShiftLog()">📓 สมุดส่งกะ</button>
                <button class="btn btn-neon-green px-4" onclick="saveDutyTable()">💾 บันทึกหน้าที่</button>
              </div>
           </div>
@@ -1056,7 +1057,22 @@
   let mealSearchTerm = ''; 
   let allPenalties = []; 
   let tempSetupNick = "";
+  // ==========================================
+  // 🌟 ฟังก์ชันแจ้งเตือน Telegram
+  // ==========================================
+  const TG_BOT_TOKEN = '8126787571:AAGD1h1ltNI0KOs6jSYnyoFfIh5pGYJQlIA';
+  const TG_GROUP_ID = '-1003804445566';
 
+  async function sendTelegramMsg(message) {
+      try {
+          await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: TG_GROUP_ID, text: message, parse_mode: 'HTML' })
+          });
+      } catch (e) { console.error("Telegram Error:", e); }
+  }
+  
   // ตัวแปรคุมโหมดตารางและ Sandbox
   let currentSchDept = 'ALL';
   let currentSchShift = 'ALL';
@@ -1629,6 +1645,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     const payload = { nickname: val[0], department: val[1], date: new Date().toISOString(), monthYear: document.getElementById('penMonth').value, reason: document.getElementById('penReason').value, penaltyType: pType, damageAmt: dAmt.toString(), finePct: fPct.toString(), deductAmt: dDeduct.toString(), status: "บันทึกแล้ว" };
     const btn = document.querySelector('#penaltyForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
     try { await supabaseClient.from('penalties').insert([payload]); bootstrap.Modal.getOrCreateInstance(document.getElementById('penaltyModal')).hide(); await loadSupabasePenalties(); Swal.fire({toast:true, position:'top-end', title:'บันทึกความผิดแล้ว', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = 'บันทึกข้อมูลการลงโทษ'; }
+    // ส่งเข้ากลุ่ม Telegram
+          const msgPenalty = `⚠️ <b>บันทึกความผิดใหม่</b>\n👤 พนักงาน: ${payload.nickname}\n📑 บทลงโทษ: ${payload.penaltyType}\n💵 ยอดหักเงิน: ${payload.deductAmt} ฿\n📝 รายละเอียด: ${payload.reason}`;
+          sendTelegramMsg(msgPenalty);
   }
   
   async function deleteSupabasePenalty(id) { Swal.fire({title:'ลบประวัติลงโทษ?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('penalties').delete().eq('id', id); await loadSupabasePenalties(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); } }); }
@@ -2856,6 +2875,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       e.preventDefault(); const btn = document.querySelector('#leaveForm button[type="submit"]'); btn.disabled = true; btn.innerText = '⏳ กำลังส่งคำขอ...'; const myNick = localStorage.getItem('okvip_nick'); const me = allUsersData.find(u => u[1] === myNick); const myDept = me ? me[3] : 'ไม่ระบุ'; const payload = { nickname: myNick, department: myDept, leave_date: document.getElementById('leaveDateInput').value, leave_type: document.getElementById('leaveTypeInput').value, reason: document.getElementById('leaveReasonInput').value, status: 'Pending' }; 
       try { 
           await supabaseClient.from('leave_requests').insert([payload]); 
+          const msgLeave = `📩 <b>แจ้งลางานใหม่</b>\n👤 ผู้แจ้ง: ${myNick} (${myDept})\n🗓 วันที่ลา: ${payload.leave_date}\n📌 ประเภท: ${payload.leave_type}\n💬 เหตุผล: ${payload.reason}`;
+          sendTelegramMsg(msgLeave);
           bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).hide(); 
           await loadSupabaseLeaves(); 
           loadLeavesPage(currentLeavePage); 
@@ -3242,7 +3263,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               }
 
               const displayNick = nick; 
-              const dcHint = dcRecord ? `<br><small class="text-muted" style="font-size: 0.75rem;">(ดิสคอร์ด: ${dcRecord.nickname})</small>` : '';
+              let pokeBtn = (currentDiscordTab === 'monitor' && myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-warning ms-2 px-2 py-0" onclick="pokeUserDiscord('${displayNick}')" title="สะกิดเรียกผ่านแชทส่วนตัว">🔔 สะกิด</button>` : '';
+              const dcHint = dcRecord ? `<br><small class="text-muted" style="font-size: 0.75rem;">(ดิสคอร์ด: ${dcRecord.nickname})</small> ${pokeBtn}` : '';
 
               // แท็บ 1: เช็คชื่อ
               if (currentDiscordTab === 'attendance') {
@@ -3420,6 +3442,47 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           loadDiscordAttendance(); 
       })
       .subscribe();
+  async function pokeUserDiscord(targetNick) {
+      Swal.fire({title: 'กำลังส่งสัญญาณเรียก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+      const { error } = await supabaseClient.from('discord_commands').insert([
+          { nickname: targetNick, command_type: 'POKE' }
+      ]);
+      if (!error) {
+          Swal.fire({ toast: true, position: 'top-end', title: `สะกิดเรียก ${targetNick} แล้ว!`, icon: 'success', timer: 2000, showConfirmButton: false, background:'#111', color:'#fff' });
+      } else {
+          Swal.fire('Error', 'ส่งสัญญาณไม่สำเร็จ', 'error');
+      }
+  }
+  async function openShiftLog() {
+      // ดึงข้อความล่าสุด 3 อันมาก่อน
+      const { data } = await supabaseClient.from('shift_logs').select('*').order('created_at', {ascending: false}).limit(3);
+      let historyHtml = '<div class="text-start mb-3" style="max-height: 150px; overflow-y: auto; font-size: 0.85rem;">';
+      if(data && data.length > 0) {
+          data.forEach(log => {
+              historyHtml += `<div class="mb-2 pb-2 border-bottom border-secondary"><b class="text-info">${log.nickname} (${log.shift})</b> <span class="text-muted small">${new Date(log.created_at).toLocaleString('th-TH')}</span><br><span class="text-white">${log.message}</span></div>`;
+          });
+      } else { historyHtml += '<div class="text-muted">ยังไม่มีบันทึกส่งกะ...</div>'; }
+      historyHtml += '</div>';
+
+      const { value: text } = await Swal.fire({
+          title: '📓 สมุดบันทึกส่งกะ',
+          html: historyHtml,
+          input: 'textarea',
+          inputPlaceholder: 'พิมพ์ข้อความฝากถึงกะต่อไป...',
+          background: '#111', color: '#fff',
+          showCancelButton: true,
+          confirmButtonText: 'บันทึกส่งกะ',
+          confirmButtonColor: '#00f0ff'
+      });
+
+      if (text) {
+          const myNick = localStorage.getItem('okvip_nick');
+          const me = allUsersData.find(u => u[1] === myNick);
+          const myShift = me ? (me[9] || 'ไม่ระบุ') : 'ไม่ระบุ';
+          await supabaseClient.from('shift_logs').insert([{ nickname: myNick, shift: myShift, message: text }]);
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกสมุดส่งกะแล้ว', icon:'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
+      }
+  }
 </script>
 
 </body>
