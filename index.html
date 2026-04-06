@@ -352,14 +352,8 @@
         <div id="tabBtnSwapSandbox" class="dept-badge" onclick="switchScheduleTab('SANDBOX')" style="font-size: 1rem; padding: 8px 20px; border-color: #ff9900; color: #ff9900;">🔀 2. โหมดจำลองสลับกะ (Sandbox)</div>
       </div>
 
-      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
-        <div id="tabBtnRealSchedule" class="dept-badge active" onclick="switchScheduleTab('REAL')" style="font-size: 1rem; padding: 8px 20px;">📅 1. ตารางวันทำงาน (ตารางจริง)</div>
-        <div id="tabBtnSwapSandbox" class="dept-badge" onclick="switchScheduleTab('SANDBOX')" style="font-size: 1rem; padding: 8px 20px; border-color: #ff9900; color: #ff9900;">🔀 2. โหมดจำลองสลับกะ (Sandbox)</div>
-      </div>
-
       <div class="schedule-toolbar d-flex flex-column gap-3 mb-3 p-3" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-           
            <div class="d-flex flex-column gap-2">
                <div class="filter-bar" id="schDeptFilterBar">
                  <span class="text-muted small me-2" id="labelSchDept">กลุ่มพนักงาน:</span>
@@ -383,7 +377,6 @@
            </div>
 
            <div style="background: #111; padding: 10px 15px; border-radius: 12px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-               
                <div id="realScheduleActions" style="display: flex; gap: 8px; align-items: center;">
                  <button id="btnClearSchedule" onclick="confirmClearSchedule()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🗑️ ล้างตาราง</button>
                  <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะทำงาน</button>
@@ -396,31 +389,9 @@
                </div>
                
                <div style="border-left: 2px solid #444; padding-left: 10px; display: flex; align-items: center;">
-                 <button onclick="handleUnifiedSave()" class="neon-save-button">💾 บันทึก</button>
+                 <button onclick="handleUnifiedSave()" class="neon-save-button" id="btnSaveSchedule" style="display: none;">💾 บันทึก</button>
+                 <button onclick="handleUnifiedSave()" class="neon-save-button" id="btnSaveSandbox" style="display: none; border-color: #ff9900; color: #ff9900; text-shadow: 0 0 5px #ff9900;">💾 บันทึกจำลอง</button>
                </div>
-               
-           </div>
-        </div>
-
-           <div style="background: #111; padding: 10px 15px; border-radius: 12px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-
-           <div style="background: #111; padding: 10px 15px; border-radius: 12px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-               
-               <div id="realScheduleActions" style="display: flex; gap: 8px; align-items: center;">
-                 <button id="btnClearSchedule" onclick="confirmClearSchedule()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🗑️ ล้างตาราง</button>
-                 <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะทำงาน</button>
-                 <button id="btnSyncSandbox" onclick="syncSandboxToReal()" class="btn btn-warning btn-sm px-3 fw-bold text-dark" style="display: none; border-radius: 8px; box-shadow: 0 0 10px rgba(255, 204, 0, 0.4);">⬇️ ดึงข้อมูลจาก Sandbox มาใช้จริง</button>
-                 <button id="btnQuotaSettings" onclick="openQuotaSettingsModal()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🛑 ตั้งค่าโควต้าวันหยุด</button>
-               </div>
-               
-               <div id="sandboxScheduleActions" style="display: none; gap: 8px; align-items: center;">
-                 <button class="btn btn-outline-warning btn-sm fw-bold px-3 py-1" style="border-radius: 8px;" onclick="openShiftSwapModal()">⚙️ ตั้งค่าและรัน AI สลับกะ</button>
-               </div>
-               
-               <div style="border-left: 2px solid #444; padding-left: 10px; display: flex; align-items: center;">
-                 <button onclick="handleUnifiedSave()" class="neon-save-button">💾 บันทึก</button>
-               </div>
-               
            </div>
         </div>
         
