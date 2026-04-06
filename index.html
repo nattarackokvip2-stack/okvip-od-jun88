@@ -1432,7 +1432,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     
     if(myRole !== 'Member') { 
         document.getElementById('dashboardWidgets').style.setProperty('display', 'flex', 'important');
-        document.getElementById('btnClearSchedule').style.display = 'inline-block'; document.getElementById('btnAssignShift').style.display = 'inline-block'; document.getElementById('addBtn').style.display = 'block'; 
+        document.getElementById('btnClearSchedule').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
+        document.getElementById('btnAssignShift').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
+        document.getElementById('addBtn').style.display = 'block';
         document.getElementById('addPenaltyBtn').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; document.getElementById('addManualBtn').style.display = 'block'; document.getElementById('btnJobSettings').style.display = 'block'; 
         document.getElementById('addAnnounceBtn').style.display = 'block'; 
         const isFrontend = document.getElementById('tabFrontEnd').classList.contains('active'); 
@@ -1608,10 +1610,10 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     if (!hasData) tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูลที่ค้นหา</td></tr>`;
   }
 
-  function renderStampPalette() { let html = ''; for (const [code, style] of Object.entries(stampConfig)) { let isDisabled = ""; let opacityStyle = ""; if (myRole === 'Member' && code !== 'X' && code !== '') { isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; } html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; } document.getElementById('stampPalette').innerHTML = html; }
+  function renderStampPalette() { let html = ''; for (const [code, style] of Object.entries(stampConfig)) { let isDisabled = ""; let opacityStyle = ""; if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; } html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; } document.getElementById('stampPalette').innerHTML = html; }
   
   function selectStamp(code, btn) { 
-      if (myRole === 'Member' && code !== 'X' && code !== '') { Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); return; } 
+      if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); return; } 
       currentStamp = code; 
       document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); 
       btn.classList.add('active'); 
@@ -1670,7 +1672,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           document.getElementById('tabBtnSwapSandbox').style.borderColor = "#fff"; document.getElementById('tabBtnSwapSandbox').style.color = "#fff";
           document.getElementById('tabBtnRealSchedule').style.borderColor = "#444"; document.getElementById('tabBtnRealSchedule').style.color = "#ccc";
           document.getElementById('realScheduleActions').style.display = 'none';
-          document.getElementById('sandboxScheduleActions').style.display = (myRole !== 'Member') ? 'flex' : 'none';
+          document.getElementById('sandboxScheduleActions').style.display = (myRole === 'SuperAdmin') ? 'flex' : 'none';
           document.getElementById('stampToolbox').style.setProperty('display', 'none', 'important'); 
       }
       loadScheduleTable();
@@ -1797,7 +1799,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             hasData = true;
             
             const isMyRow = (nick === localStorage.getItem('okvip_nick')); 
-            const canEdit = (myRole !== 'Member' && currentScheduleMode === 'REAL') || (isMyRow && isNextMonthOrFuture && currentScheduleMode === 'REAL');
+            const canEdit = (myRole === 'SuperAdmin' && currentScheduleMode === 'REAL') || (isMyRow && isNextMonthOrFuture && currentScheduleMode === 'REAL');
             const nameClass = isMyRow ? 'name-col highlight-me' : 'name-col'; 
             const rowBg = currentScheduleMode === 'SANDBOX' ? 'background-color: rgba(255, 153, 0, 0.05);' : (isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : '');
             
@@ -1821,7 +1823,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
         if (!hasData) tb = `<tr><td colspan="${daysInMonth + 3}" class="text-center py-5 text-muted">ไม่พบข้อมูลพนักงานในกลุ่มนี้</td></tr>`;
         document.getElementById('schTbody').innerHTML = tb;
 
-        if (currentScheduleMode === 'REAL' && myRole !== 'Member') {
+        if (currentScheduleMode === 'REAL' && myRole === 'SuperAdmin') {
             let hasSandbox = localStorage.getItem('okvip_sandbox_' + ym) !== null;
             document.getElementById('btnSyncSandbox').style.display = hasSandbox ? 'inline-block' : 'none';
         }
