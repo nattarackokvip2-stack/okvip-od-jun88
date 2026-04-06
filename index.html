@@ -2969,29 +2969,16 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               let targetShiftTime = "-";
               let targetH = 0; let targetM = 0;
               let shiftStart = new Date(now);
-              let shiftEnd = new Date(now); // 🌟 เพิ่มตัวแปรเวลาเลิกงาน
-
-              // 🌟 ตั้งค่าจุดตัดเวลา เริ่มกะ - จบกะ ให้ชัดเจน
+              
               if (shiftSet.includes('(A)')) { 
                   targetShiftTime = "08:00"; targetH = 8; 
                   shiftStart.setHours(8, 0, 0, 0);
-                  shiftEnd.setHours(20, 0, 0, 0); // กะเช้าจบ 20:00 ของวันเดียวกัน
               } else if (shiftSet.includes('(B)')) { 
                   targetShiftTime = "20:00"; targetH = 20; 
-                  if (now.getHours() < 8) {
-                      // ถ้าเปิดดูตอนตี 1 - 7 โมงเช้า แปลว่าเป็นกะดึกของเมื่อวาน
-                      shiftStart.setDate(shiftStart.getDate() - 1); 
-                      shiftStart.setHours(20, 0, 0, 0);
-                      shiftEnd.setHours(8, 0, 0, 0); // จบ 8 โมงเช้าวันนี้
-                  } else {
-                      // ถ้าเปิดดูตอน 2 ทุ่มถึงเที่ยงคืน แปลว่าเป็นกะดึกของวันนี้
-                      shiftStart.setHours(20, 0, 0, 0);
-                      shiftEnd.setDate(shiftEnd.getDate() + 1); 
-                      shiftEnd.setHours(8, 0, 0, 0); // จบ 8 โมงเช้าพรุ่งนี้
-                  }
+                  if (now.getHours() < 8) shiftStart.setDate(shiftStart.getDate() - 1); 
+                  shiftStart.setHours(20, 0, 0, 0);
               } else {
                   shiftStart.setHours(0, 0, 0, 0);
-                  shiftEnd.setHours(23, 59, 59, 999);
               }
 
               const displayNick = nick; 
@@ -3040,86 +3027,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                           <td>${statusBadge}</td>
                       </tr>`;
                   }
-              } 
-              // แท็บ 2: กล้องวงจรปิด
-              else {
-                  if (!dcRecord || isLeave) return; 
-                  if (currentMonitorShiftFilter !== 'ALL' && !shiftSet.includes(`(${currentMonitorShiftFilter})`)) return;
-
-                  hasData = true;
-                  let presence = dcRecord.presence_status || "🟢 ออนไลน์";
-                  let channel = dcRecord.channel_name || 'ไม่ระบุห้อง';
-                  let lastMove = dcRecord.last_moved_at || "-";
-                  
-                  let presenceClass = "text-success";
-                  let channelClass = "text-info fw-bold";
-                  
-                  if (channel.includes('❌') || channel.includes('ออก')) channelClass = "text-danger fw-bold";
-
-                  let isCurrentlyIdle = presence.includes("🌙");
-                  if (isCurrentlyIdle) presenceClass = "text-warning fw-bold";
-
-                  let idleAlertHtml = `<span class="text-muted small">-</span>`;
-                  let totalIdleMins = 0;
-                  let validIdleCount = 0; // 🌟 เพิ่มตัวแปรนับจำนวนครั้งที่หายไป
-                  let histHtml = "";
-
-                  let idleHistories = dcRecord.idle_history ? JSON.parse(dcRecord.idle_history) : [];
-                  if (idleHistories.length > 0) {
-                      idleHistories.forEach((h) => {
-                          let [sh, sm] = h.start.split(':').map(Number);
-                          let [eh, em] = h.end.split(':').map(Number);
-                          let sDate = new Date(now); sDate.setHours(sh, sm, 0, 0);
-                          let eDate = new Date(now); eDate.setHours(eh, em, 0, 0);
-                          
-                          if (eh < sh) { if (now.getHours() < 12) sDate.setDate(sDate.getDate() - 1); else eDate.setDate(eDate.getDate() + 1); } 
-                          else if (now.getHours() < 12 && eh > 12) { sDate.setDate(sDate.getDate() - 1); eDate.setDate(eDate.getDate() - 1); }
-
-                          // 🌟 เช็คว่าเวลาที่หายไป อยู่ในกรอบเวลาของกะนี้เท่านั้น
-                          if (eDate > shiftStart && sDate < shiftEnd) {
-                              // 🌟 ถ้าอู้คร่อมกะ ให้ตัดเวลาให้นับเฉพาะที่อยู่ในกะ
-                              let calcStart = sDate < shiftStart ? shiftStart : sDate;
-                              let calcEnd = eDate > shiftEnd ? shiftEnd : eDate;
-                              
-                              let realDur = Math.floor((calcEnd.getTime() - calcStart.getTime()) / 60000);
-                              if (realDur > 0) {
-                                  totalIdleMins += realDur;
-                                  validIdleCount++; // นับจำนวนครั้ง
-                                  histHtml += `<div class="small text-white-50">ครั้งที่ ${validIdleCount}: ${calcStart.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}-${calcEnd.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} <b class="text-danger">(${realDur} น.)</b></div>`;
-                              }
-                          }
-                      });
-                  }
-
-                  if (isCurrentlyIdle && dcRecord.idle_start_time) {
-                      let startObj = new Date(dcRecord.idle_start_time);
-                      if (startObj < shiftStart) startObj = shiftStart; 
-                      
-                      if (now > startObj && startObj < shiftEnd) {
-                          let calcEnd = now > shiftEnd ? shiftEnd : now;
-                          let currentIdleMins = Math.floor((calcEnd.getTime() - startObj.getTime()) / 60000);
-                          if (currentIdleMins > 0) {
-                              totalIdleMins += currentIdleMins;
-                              validIdleCount++; // นับสถานะที่กำลังหายไปด้วย
-                              histHtml += `<div class="small text-warning fw-bold mt-1">⚠️ กำลังหายไป (ครั้งที่ ${validIdleCount}): ${currentIdleMins} นาที <br>(เริ่ม ${startObj.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</div>`;
-                          }
-                      }
-                  }
-
-                  // 🌟 เปลี่ยนข้อความเป็น "จำนวนครั้งที่หาย"
-                  if (validIdleCount > 0 || totalIdleMins > 0) {
-                      idleAlertHtml = `<div style="background: rgba(255, 51, 102, 0.1); border: 1px solid rgba(255,51,102,0.3); padding: 8px; border-radius: 8px;"><div class="text-danger fw-bold mb-1 border-bottom border-danger pb-1">🛑 จำนวนครั้งที่หาย: ${validIdleCount} ครั้ง <small class="text-white-50">(รวม ${totalIdleMins} น.)</small></div>${histHtml}</div>`;
-                  }
-
-                  html += `<tr>
-                      <td class="fw-bold text-white" style="font-size: 1.05rem;">${displayNick} ${dcHint}</td>
-                      <td class="text-info small">[${shiftSet}]</td>
-                      <td class="${presenceClass}">${presence}</td>
-                      <td class="${channelClass}">${channel}</td>
-                      <td class="text-white-50">${lastMove}</td>
-                      <td style="min-width: 250px;">${idleAlertHtml}</td>
-                  </tr>`;
-                 }
               } 
               // แท็บ 2: กล้องวงจรปิด
               else {
