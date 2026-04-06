@@ -1652,7 +1652,21 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   function renderStampPalette() { let html = ''; for (const [code, style] of Object.entries(stampConfig)) { let isDisabled = ""; let opacityStyle = ""; if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; } html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; } document.getElementById('stampPalette').innerHTML = html; }
   
   function selectStamp(code, btn) { 
-      if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); return; } 
+      if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
+          Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          return; 
+      } 
+      
+      // 🌟 บังคับเปิดโหมดเช็คยอดก่อนลง X หรือ PN
+      const restrictedStamps = ['X', 'PN', 'TX', 'XX'];
+      if (restrictedStamps.includes(code)) {
+          const toggleSum = document.getElementById('toggleScheduleSummary');
+          if (toggleSum && !toggleSum.checked) {
+              Swal.fire({title: 'โหมดป้องกัน', text: 'กรุณาติ๊กเปิดสวิตช์ [📊 เปิดโหมดเช็คยอด] ด้านบนก่อน เพื่อตรวจสอบจำนวนคนหยุดก่อนลงตรายางครับ', icon: 'warning', background:'#111', color:'#fff'});
+              return;
+          }
+      }
+
       currentStamp = code; 
       document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); 
       btn.classList.add('active'); 
@@ -1808,17 +1822,18 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
         const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate);
         document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table';
         
-        // 🌟 สร้างส่วนหัวตารางและแถบสรุปยอด
-        let isSummaryOn = document.getElementById('toggleScheduleSummary')?.checked;
+        // 🌟 1. เช็คว่าสวิตช์โหมดเช็คยอดเปิดอยู่ไหม
+        let isSummaryOn = document.getElementById('toggleScheduleSummary') && document.getElementById('toggleScheduleSummary').checked;
         
         let th1 = '<tr><th class="name-col">📅 วันที่ / พนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px;">กะ</th><th class="dept-col">แผนก</th>'; 
         for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th1 += `<th class="${c}">${d}</th>`; } 
         th1 += '</tr>'; 
         
+        // 🌟 2. สร้างแถบสรุปยอด ถ้าเปิดโหมดไว้
         let th2 = ''; let th3 = '';
         if (isSummaryOn) {
             th2 = '<tr><th class="name-col text-success" style="background:#0a120a !important; z-index:25;">🟢 รวมคนทำงาน (D,N)</th><th class="dept-col" style="background:#0a120a !important;"></th><th class="dept-col" style="background:#0a120a !important;"></th>';
-            th3 = '<tr><th class="name-col text-danger" style="background:#1a0505 !important; z-index:25;">🔴 รวมคนหยุด (X)</th><th class="dept-col" style="background:#1a0505 !important;"></th><th class="dept-col" style="background:#1a0505 !important;"></th>';
+            th3 = '<tr><th class="name-col text-danger" style="background:#1a0505 !important; z-index:25;">🔴 รวมคนหยุด (X,PN)</th><th class="dept-col" style="background:#1a0505 !important;"></th><th class="dept-col" style="background:#1a0505 !important;"></th>';
             
             for(let d=1; d<=daysInMonth; d++) {
                 let c = (isCurMonth && d === curD) ? 'today-column' : '';
@@ -1841,12 +1856,14 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                 shiftSet = sandboxUserShiftCache[nick];
             }
             
+            // กรองแผนก
             if (currentSchDept !== 'ALL') {
                 if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) return;
                 if (currentSchDept === 'ออดิทออนไลน์ (ODOL)' && !dept.includes('ODOL')) return;
                 if (currentSchDept === 'อื่นๆ (OTHER)' && (dept.includes('OD') || dept.includes('ODOL'))) return;
             }
             
+            // กรองกะ
             if (currentSchShift !== 'ALL') {
                 if (currentSchShift === 'A' && !shiftSet.includes('(A)')) return;
                 if (currentSchShift === 'B' && !shiftSet.includes('(B)')) return;
@@ -1884,6 +1901,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             let hasSandbox = localStorage.getItem('okvip_sandbox_' + ym) !== null;
             document.getElementById('btnSyncSandbox').style.display = hasSandbox ? 'inline-block' : 'none';
         }
+        
+        // 🌟 3. เรียกคำนวณตัวเลขหลังสร้างตารางเสร็จ
+        if(isSummaryOn && typeof recalcScheduleSummary === 'function') {
+            recalcScheduleSummary();
+        }
+
     } catch (err) {
         console.error("Load Schedule Error:", err); 
         document.getElementById('scheduleLoading').style.display = 'none';
@@ -2011,6 +2034,39 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           Swal.fire('Error', err.message, 'error');
       } finally {
           btn.disabled = false; btn.innerText = '🔀 ยืนยันการสลับกะ';
+      }
+  }
+
+  // 🌟 ฟังก์ชันคำนวณยอดคนทำงาน/หยุด เรียลไทม์
+  function recalcScheduleSummary() {
+      let isSummaryOn = document.getElementById('toggleScheduleSummary') && document.getElementById('toggleScheduleSummary').checked;
+      if(!isSummaryOn) return;
+
+      const ym = document.getElementById('monthPicker').value;
+      if(!ym) return;
+      const [year, month] = ym.split('-'); 
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      for(let d=1; d<=daysInMonth; d++) {
+          let workCount = 0;
+          let offCount = 0;
+          
+          // วนลูปนับจากแถวที่แสดงอยู่ปัจจุบัน (กรองกะ/แผนกมาแล้ว)
+          document.querySelectorAll('#schTbody tr').forEach(tr => {
+              let cell = tr.querySelector(`td[data-day="${d}"]`);
+              if(cell) {
+                  let val = cell.innerText.trim();
+                  // นับคนทำงาน
+                  if(val === 'D' || val === 'N' || val === 'M') workCount++;
+                  // นับคนหยุด (X, PN, TX, XX)
+                  if(val === 'X' || val === 'PN' || val === 'TX' || val === 'XX') offCount++; 
+              }
+          });
+
+          const wEl = document.getElementById(`sum-work-${d}`);
+          const oEl = document.getElementById(`sum-off-${d}`);
+          if(wEl) wEl.innerText = workCount;
+          if(oEl) oEl.innerText = offCount;
       }
   }
   
