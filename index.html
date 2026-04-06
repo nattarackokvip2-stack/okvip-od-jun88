@@ -1036,7 +1036,6 @@
   let currentScheduleFilter = 'ALL';
   
   let sysSettings = { websites: [], dutyTypes: { OD: [], ODOL: [] }, statMetrics: [], userSites: {} };
-  let dailyDutiesData = {}; 
   let dailyStatsData = {}; 
   let dailyScheduleData = {}; 
   let dailyMealData = {}; 
@@ -2111,31 +2110,74 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   async function saveAllScheduleChanges() {
-      if (Object.keys(unsavedChanges).length === 0) { Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return; }
-      const btn = document.querySelector('.neon-save-button'); btn.disabled = true; btn.innerText = '⏳...'; 
-      const ym = document.getElementById('monthPicker').value;
-      const { data: existingSchedules } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
-      const existingMap = {}; 
-      if (existingSchedules) { existingSchedules.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); }
-      
-      for (const nick in unsavedChanges) { 
-          const changes = unsavedChanges[nick]; const dept = changes['dept'] || ''; delete changes['dept']; 
-          let currentDays = {}; let rowId = null; 
-          if (existingMap[nick]) { currentDays = existingMap[nick].days; rowId = existingMap[nick].id; } 
-          for (const d in changes) { if (changes[d] === '') delete currentDays[d]; else currentDays[d] = changes[d]; } 
-          if (rowId) { await supabaseClient.from('schedules').update({ daysData: JSON.stringify(currentDays) }).eq('id', rowId); } 
-          else { await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); } 
+      if (Object.keys(unsavedChanges).length === 0) { 
+          Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); 
+          return; 
       }
       
-      btn.disabled = false; btn.innerText = '💾 บันทึก'; unsavedChanges = {}; 
-      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
-      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจริงสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+      const btn = document.querySelector('.neon-save-button'); 
+      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
+      
+      try {
+          const ym = document.getElementById('monthPicker').value;
+          const { data: existingSchedules, error: fetchErr } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
+          if (fetchErr) throw fetchErr;
+          
+          const existingMap = {}; 
+          if (existingSchedules) { 
+              existingSchedules.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); 
+          }
+          
+          for (const nick in unsavedChanges) { 
+              const changes = unsavedChanges[nick]; 
+              const dept = changes['dept'] || ''; 
+              delete changes['dept']; 
+              
+              let currentDays = {}; 
+              let rowId = null; 
+              
+              if (existingMap[nick]) { 
+                  currentDays = existingMap[nick].days; 
+                  rowId = existingMap[nick].id; 
+              } 
+              
+              for (const d in changes) { 
+                  if (changes[d] === '') delete currentDays[d]; 
+                  else currentDays[d] = changes[d]; 
+              } 
+              
+              if (rowId) { 
+                  await supabaseClient.from('schedules').update({ daysData: JSON.stringify(currentDays) }).eq('id', rowId); 
+              } else { 
+                  await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); 
+              } 
+          }
+          
+          unsavedChanges = {}; 
+          document.querySelectorAll('.unsaved-mark').forEach(c=>{
+              c.setAttribute('data-original', c.innerText); 
+              c.classList.remove('unsaved-mark');
+          }); 
+          if(btn) btn.style.display = 'none'; // ซ่อนปุ่มเมื่อเซฟเสร็จ
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจริงสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+          
+      } catch(err) {
+          console.error("Save Schedule Error: ", err);
+          Swal.fire('Error', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+      } finally {
+          if(btn) { btn.disabled = false; btn.innerText = '💾 บันทึก'; }
+      }
   }
 
   function saveSandboxSchedule() {
-      if (Object.keys(unsavedChanges).length === 0) { Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return; }
+      if (Object.keys(unsavedChanges).length === 0) { 
+          Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); 
+          return; 
+      }
+      
       const ym = document.getElementById('monthPicker').value;
-      const btn = document.querySelector('.neon-save-button'); btn.disabled = true; btn.innerText = '⏳...';
+      const btn = document.querySelector('.neon-save-button'); 
+      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
 
       for (const nick in unsavedChanges) {
           const changes = unsavedChanges[nick];
@@ -2148,39 +2190,21 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       }
 
       localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({ schedules: sandboxDataCache, shifts: sandboxUserShiftCache }));
-      btn.disabled = false; btn.innerText = '💾 บันทึก'; unsavedChanges = {};
-      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
-      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจำลองสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
-  }
-
-  // 🌟 บันทึกตารางจำลอง (Sandbox) ลง LocalStorage 🌟
-  function saveSandboxSchedule() {
-      if (Object.keys(unsavedChanges).length === 0) return;
-      const ym = document.getElementById('monthPicker').value;
-      const btn = document.getElementById('btnSaveSandbox');
-      btn.disabled = true; btn.innerText = '⏳...';
-
-      for (const nick in unsavedChanges) {
-          const changes = unsavedChanges[nick];
-          delete changes['dept'];
-          if(!sandboxDataCache[nick]) sandboxDataCache[nick] = {};
-          for (const d in changes) {
-              if (changes[d] === '') delete sandboxDataCache[nick][d];
-              else sandboxDataCache[nick][d] = changes[d];
-          }
-      }
-
-      localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({
-          schedules: sandboxDataCache,
-          shifts: sandboxUserShiftCache
-      }));
-
-      btn.disabled = false; btn.innerText = '💾 บันทึก'; btn.style.display = 'none';
+      
       unsavedChanges = {};
-      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
+      document.querySelectorAll('.unsaved-mark').forEach(c=>{
+          c.setAttribute('data-original', c.innerText); 
+          c.classList.remove('unsaved-mark');
+      }); 
+      
+      if(btn) { 
+          btn.disabled = false; 
+          btn.innerText = '💾 บันทึก'; 
+          btn.style.display = 'none'; // ซ่อนปุ่มเมื่อเซฟเสร็จ
+      }
       Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจำลองสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
   }
-
+  
   // 🌟 ดึงข้อมูลจาก Sandbox มาทับตารางจริง 🌟
   async function syncSandboxToReal() {
       const ym = document.getElementById('monthPicker').value;
