@@ -1968,15 +1968,45 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
   
   function applyStamp(cell, nick, dept, day) {
-      if(currentStamp===null || cell.innerText===currentStamp) return; 
+      if(currentStamp === null || cell.innerText === currentStamp) return; 
+      
       const conf = stampConfig[currentStamp];
-      if(myRole === 'Member' && currentStamp === 'X') { 
-          let count = 0; cell.parentElement.querySelectorAll('.cell-day').forEach(c => { if(c.innerText === 'X') count++; }); 
-          if(count >= conf.limit) { isDraggingStamp = false; Swal.fire({toast:true, position:'top', title:'โควต้าเต็ม!', text:`ใช้ X ได้ไม่เกิน ${conf.limit} ครั้งต่อเดือน`, icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); return; } 
+      const rowCells = cell.parentElement.querySelectorAll('.cell-day');
+      
+      // กฎข้อ 1: X (หยุด) และ TX (สลับหยุด) รวมกันต้องไม่เกิน 4
+      if (currentStamp === 'X' || currentStamp === 'TX') {
+          let countXTX = 0;
+          rowCells.forEach(c => {
+              if (c !== cell && (c.innerText === 'X' || c.innerText === 'TX')) countXTX++;
+          });
+          if (countXTX >= 4) {
+              isDraggingStamp = false; 
+              Swal.fire({toast:true, position:'top', title:'โควต้าวันหยุดเต็ม!', text:'X และ TX รวมกันได้สูงสุด 4 วัน/เดือน เท่านั้น', icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
+              return; 
+          }
       }
-      cell.innerText = currentStamp; cell.style.backgroundColor = conf.bg; cell.style.color = conf.text; 
+      
+      // กฎข้อ 2: ตรวจสอบโควต้าของ XX(2), PN(15), X4(1)
+      if (currentStamp === 'XX' || currentStamp === 'PN' || currentStamp === 'X4') {
+          let countType = 0;
+          rowCells.forEach(c => {
+              if (c !== cell && c.innerText === currentStamp) countType++;
+          });
+          let limit = conf.limit; 
+          if (countType >= limit) {
+              isDraggingStamp = false;
+              Swal.fire({toast:true, position:'top', title:'โควต้าเต็ม!', text:`ใช้ ${conf.label} ได้สูงสุด ${limit} ครั้ง/เดือน`, icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
+              return; 
+          }
+      }
+
+      cell.innerText = currentStamp; 
+      cell.style.backgroundColor = conf.bg; 
+      cell.style.color = conf.text; 
+      
       if (cell.getAttribute('data-original') !== currentStamp) cell.classList.add('unsaved-mark'); 
       else cell.classList.remove('unsaved-mark');
+      
       if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
       unsavedChanges[nick][day] = currentStamp; unsavedChanges[nick]['dept'] = dept; 
   }
