@@ -362,10 +362,13 @@
                  <div class="dept-badge" onclick="filterScheduleDept('ออดิทออนไลน์ (ODOL)', this)">🌐 ODOL</div>
                  <div class="dept-badge" onclick="filterScheduleDept('อื่นๆ (OTHER)', this)">🔘 อื่นๆ</div>
                </div>
-               <div class="form-check form-switch ms-3" style="background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.4); padding: 5px 15px; border-radius: 8px;">
-                 <input class="form-check-input mt-1 ms-0 me-2" type="checkbox" id="toggleScheduleSummary" onchange="loadScheduleTable()" style="cursor:pointer;">
-                 <label class="form-check-label text-warning fw-bold" for="toggleScheduleSummary" style="cursor:pointer; padding-top: 2px;">📊 เปิดโหมดเช็คยอด (เพื่อลง X)</label>
+               <div class="filter-bar" id="schShiftFilterBar" style="display: none; padding-left: 10px; border-left: 2px solid #444;">
+                 <span class="text-muted small me-2">เลือกเซ็ตกะ:</span>
+                 <div class="dept-badge active" onclick="filterScheduleShift('ALL', this)">แสดงทั้งหมด</div>
+                 <div class="badge" onclick="filterScheduleShift('A', this)" style="border: 1px solid #00f0ff; color:#00f0ff; cursor:pointer; padding:6px 18px; border-radius:50px;">☀️ กะ A</div>
+                 <div class="badge" onclick="filterScheduleShift('B', this)" style="border: 1px solid #ffcc00; color:#ffcc00; cursor:pointer; padding:6px 18px; border-radius:50px;">🌙 กะ B</div>
                </div>
+           </div>
 
            <div style="background: #111; padding: 10px 15px; border-radius: 12px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                
