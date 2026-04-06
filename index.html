@@ -1666,15 +1666,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           document.getElementById('realScheduleActions').style.display = 'flex';
           document.getElementById('sandboxScheduleActions').style.display = 'none';
           document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
-          document.getElementById('btnSaveSchedule').style.display = 'none';
-          document.getElementById('btnSaveSandbox').style.display = 'none';
       } else {
           document.getElementById('tabBtnSwapSandbox').style.borderColor = "#fff"; document.getElementById('tabBtnSwapSandbox').style.color = "#fff";
           document.getElementById('tabBtnRealSchedule').style.borderColor = "#444"; document.getElementById('tabBtnRealSchedule').style.color = "#ccc";
           document.getElementById('realScheduleActions').style.display = 'none';
           document.getElementById('sandboxScheduleActions').style.display = (myRole !== 'Member') ? 'flex' : 'none';
           document.getElementById('stampToolbox').style.setProperty('display', 'none', 'important'); 
-          document.getElementById('btnSaveSchedule').style.display = 'none';
       }
       loadScheduleTable();
   }
@@ -1980,17 +1977,17 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       else cell.classList.remove('unsaved-mark');
       if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
       unsavedChanges[nick][day] = currentStamp; unsavedChanges[nick]['dept'] = dept; 
-      
-      if(currentScheduleMode === 'SANDBOX') {
-          document.getElementById('btnSaveSandbox').style.display = 'flex';
-      } else {
-          document.getElementById('btnSaveSchedule').style.display = 'flex';
-      }
   }
-  
+
+  // 🌟 ฟังก์ชันใหม่: ตัวเดียวจัดการได้ 2 โหมด
+  function handleUnifiedSave() {
+      if (currentScheduleMode === 'SANDBOX') { saveSandboxSchedule(); } 
+      else { saveAllScheduleChanges(); }
+  }
+
   async function saveAllScheduleChanges() {
-      if (Object.keys(unsavedChanges).length === 0) return; 
-      const btn = document.getElementById('btnSaveSchedule'); btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...'; 
+      if (Object.keys(unsavedChanges).length === 0) { Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return; }
+      const btn = document.querySelector('.neon-save-button'); btn.disabled = true; btn.innerText = '⏳...'; 
       const ym = document.getElementById('monthPicker').value;
       const { data: existingSchedules } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
       const existingMap = {}; 
@@ -2005,9 +2002,30 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           else { await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); } 
       }
       
-      btn.disabled = false; btn.innerText = '💾 บันทึก'; btn.style.display = 'none'; unsavedChanges = {}; 
+      btn.disabled = false; btn.innerText = '💾 บันทึก'; unsavedChanges = {}; 
       document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
-      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางเรียบร้อย!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจริงสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+  }
+
+  function saveSandboxSchedule() {
+      if (Object.keys(unsavedChanges).length === 0) { Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return; }
+      const ym = document.getElementById('monthPicker').value;
+      const btn = document.querySelector('.neon-save-button'); btn.disabled = true; btn.innerText = '⏳...';
+
+      for (const nick in unsavedChanges) {
+          const changes = unsavedChanges[nick];
+          delete changes['dept'];
+          if(!sandboxDataCache[nick]) sandboxDataCache[nick] = {};
+          for (const d in changes) {
+              if (changes[d] === '') delete sandboxDataCache[nick][d];
+              else sandboxDataCache[nick][d] = changes[d];
+          }
+      }
+
+      localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({ schedules: sandboxDataCache, shifts: sandboxUserShiftCache }));
+      btn.disabled = false; btn.innerText = '💾 บันทึก'; unsavedChanges = {};
+      document.querySelectorAll('.unsaved-mark').forEach(c=>{c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark');}); 
+      Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจำลองสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
   }
 
   // 🌟 บันทึกตารางจำลอง (Sandbox) ลง LocalStorage 🌟
