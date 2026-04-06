@@ -72,32 +72,24 @@
       width: 100%;
   }
   
-  /* 🌟 ฝังปุ่มบันทึกให้อยู่ชิดขวาของกรอบ และยกเลิกการลอยตามหน้าจอ */
+  /* 🌟 ปุ่มบันทึกตารางแบบฝังตัว (อยู่มุมขวาบนถาวร ไม่ลอยตามจอ) */
   .neon-save-button { 
-      position: absolute; 
-      right: 0; 
-      top: 0; 
-      z-index: 10;
       background-color: #004d26; 
       border: 1px solid rgba(0, 255, 95, 0.5); 
       color: #00ff5f; 
-      padding: 8px 20px; 
-      font-size: 1rem; 
+      padding: 6px 15px; 
+      font-size: 0.95rem; 
       border-radius: 8px; 
       cursor: pointer; 
-      display: flex; 
+      display: flex !important; /* บังคับให้โชว์ตลอดเวลา ไม่ให้ JS ซ่อน */
       align-items: center; 
-      gap: 10px; 
+      gap: 8px; 
       font-weight: bold; 
       text-shadow: 0 0 5px #00ff5f; 
-      box-shadow: 0 0 8px rgba(0, 255, 95, 0.4), 0 0 15px rgba(0, 255, 95, 0.2); 
+      box-shadow: 0 0 8px rgba(0, 255, 95, 0.4); 
       transition: all 0.2s ease; 
   }
-  
-  .neon-save-button:hover { 
-      background-color: #006633; 
-      transform: scale(1.02); 
-  }
+  .neon-save-button:hover { background-color: #006633; transform: scale(1.05); }
   
   .table { color: var(--text-white-neon); border-color: var(--border-color); }
   .table th { border-bottom: 2px solid #444; color: #fff; font-weight: 500; text-shadow: var(--neon-white-glow); background-color: rgba(255,255,255,0.05); white-space: nowrap;}
