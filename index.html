@@ -369,11 +369,6 @@
                  <div class="badge" onclick="filterScheduleShift('A', this)" style="border: 1px solid #00f0ff; color:#00f0ff; cursor:pointer; padding:6px 18px; border-radius:50px;">☀️ กะ A</div>
                  <div class="badge" onclick="filterScheduleShift('B', this)" style="border: 1px solid #ffcc00; color:#ffcc00; cursor:pointer; padding:6px 18px; border-radius:50px;">🌙 กะ B</div>
                </div>
-
-               <div class="form-check form-switch ms-3 mt-2" style="background: rgba(255, 204, 0, 0.1); border: 1px solid rgba(255, 204, 0, 0.4); padding: 5px 15px; border-radius: 8px; width: fit-content;">
-                 <input class="form-check-input mt-1 ms-0 me-2" type="checkbox" id="toggleScheduleSummary" onchange="loadScheduleTable()" style="cursor:pointer;">
-                 <label class="form-check-label text-warning fw-bold" for="toggleScheduleSummary" style="cursor:pointer; padding-top: 2px;">📊 เปิดโหมดเช็คยอด (เพื่อลง X, PN)</label>
-               </div>
            </div>
 
            <div style="background: #111; padding: 10px 15px; border-radius: 12px; border: 1px solid #333; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
@@ -1827,27 +1822,23 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
         const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate);
         document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table';
         
-        // 🌟 1. เช็คว่าสวิตช์โหมดเช็คยอดเปิดอยู่ไหม
-        let isSummaryOn = document.getElementById('toggleScheduleSummary') && document.getElementById('toggleScheduleSummary').checked;
-        
-        let th1 = '<tr><th class="name-col">📅 วันที่ / พนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px;">กะ</th><th class="dept-col">แผนก</th>'; 
-        for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th1 += `<th class="${c}">${d}</th>`; } 
+        // 🌟 1. สร้างหัวตาราง (ชั้นที่ 1) - ฝังแบบ Sticky
+        let th1 = '<tr style="height: 45px;"><th class="name-col" style="top: 0px; z-index: 40 !important;">📅 วันที่ / พนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px; top: 0px; z-index: 40 !important;">กะ</th><th class="dept-col" style="top: 0px; z-index: 40 !important;">แผนก</th>'; 
+        for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th1 += `<th class="${c}" style="top: 0px; z-index: 20 !important;">${d}</th>`; } 
         th1 += '</tr>'; 
         
-        // 🌟 2. สร้างแถบสรุปยอด ถ้าเปิดโหมดไว้
-        let th2 = ''; let th3 = '';
-        if (isSummaryOn) {
-            th2 = '<tr><th class="name-col text-success" style="background:#0a120a !important; z-index:25;">🟢 รวมคนทำงาน (D,N)</th><th class="dept-col" style="background:#0a120a !important;"></th><th class="dept-col" style="background:#0a120a !important;"></th>';
-            th3 = '<tr><th class="name-col text-danger" style="background:#1a0505 !important; z-index:25;">🔴 รวมคนหยุด (X,PN)</th><th class="dept-col" style="background:#1a0505 !important;"></th><th class="dept-col" style="background:#1a0505 !important;"></th>';
-            
-            for(let d=1; d<=daysInMonth; d++) {
-                let c = (isCurMonth && d === curD) ? 'today-column' : '';
-                th2 += `<th class="text-success fw-bold ${c}" id="sum-work-${d}" style="background:#0a120a; font-size:1.05rem;">0</th>`;
-                th3 += `<th class="text-danger fw-bold ${c}" id="sum-off-${d}" style="background:#1a0505; font-size:1.05rem;">0</th>`;
-            }
-            th2 += '</tr>';
-            th3 += '</tr>';
+        // 🌟 2. สร้างแถบสรุปยอด (ชั้นที่ 2 และ 3) - ฝังแบบ Sticky กะระยะลงมา 45px และ 90px
+        let th2 = '<tr style="height: 45px;"><th class="name-col text-success" style="background:#0a120a !important; top: 45px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;">🟢 รวมคนทำงาน (D,N)</th><th class="dept-col" style="background:#0a120a !important; top: 45px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;"></th><th class="dept-col" style="background:#0a120a !important; top: 45px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;"></th>';
+        let th3 = '<tr style="height: 45px;"><th class="name-col text-danger" style="background:#1a0505 !important; top: 90px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;">🔴 รวมคนหยุด (X,PN)</th><th class="dept-col" style="background:#1a0505 !important; top: 90px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;"></th><th class="dept-col" style="background:#1a0505 !important; top: 90px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;"></th>';
+        
+        for(let d=1; d<=daysInMonth; d++) {
+            let c = (isCurMonth && d === curD) ? 'today-column' : '';
+            th2 += `<th class="text-success fw-bold ${c}" id="sum-work-${d}" style="background:#0a120a !important; font-size:1.05rem; top: 45px; z-index: 20 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;">0</th>`;
+            th3 += `<th class="text-danger fw-bold ${c}" id="sum-off-${d}" style="background:#1a0505 !important; font-size:1.05rem; top: 90px; z-index: 20 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;">0</th>`;
         }
+        th2 += '</tr>';
+        th3 += '</tr>';
+        
         document.getElementById('schThead').innerHTML = th1 + th2 + th3;
         
         let tb = ''; let hasData = false;
@@ -1861,14 +1852,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                 shiftSet = sandboxUserShiftCache[nick];
             }
             
-            // กรองแผนก
             if (currentSchDept !== 'ALL') {
                 if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) return;
                 if (currentSchDept === 'ออดิทออนไลน์ (ODOL)' && !dept.includes('ODOL')) return;
                 if (currentSchDept === 'อื่นๆ (OTHER)' && (dept.includes('OD') || dept.includes('ODOL'))) return;
             }
             
-            // กรองกะ
             if (currentSchShift !== 'ALL') {
                 if (currentSchShift === 'A' && !shiftSet.includes('(A)')) return;
                 if (currentSchShift === 'B' && !shiftSet.includes('(B)')) return;
@@ -1907,8 +1896,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             document.getElementById('btnSyncSandbox').style.display = hasSandbox ? 'inline-block' : 'none';
         }
         
-        // 🌟 3. เรียกคำนวณตัวเลขหลังสร้างตารางเสร็จ
-        if(isSummaryOn && typeof recalcScheduleSummary === 'function') {
+        // 🌟 เรียกคำนวณยอดสรุปแบบเปิดถาวร
+        if (typeof recalcScheduleSummary === 'function') {
             recalcScheduleSummary();
         }
 
@@ -1918,135 +1907,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     }
   }
 
-
-  // 🌟 ฟังก์ชันสลับกะ ที่แยกแผนกเด็ดขาด 100%
-  async function executeShiftSwap(e) {
-      e.preventDefault();
-      const btn = document.getElementById('btnSubmitSwap');
-      btn.disabled = true; btn.innerText = '⏳ กำลังคำนวณในกระบะทราย...';
-
-      const dept = document.getElementById('swapDept').value;
-      const targetShift = document.getElementById('swapTargetShift').value; 
-      const startD = parseInt(document.getElementById('swapStartDay').value);
-      const endD = parseInt(document.getElementById('swapEndDay').value);
-      const ym = document.getElementById('monthPicker').value;
-
-      if (startD > endD) {
-          Swal.fire('Error', 'วันเริ่มต้นต้องไม่มากกว่าวันสิ้นสุด!', 'error');
-          btn.disabled = false; btn.innerText = '🔀 ยืนยันการสลับกะ';
-          return;
-      }
-
-      try {
-          const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
-          let workingMap = {}; 
-          if (schData) schData.forEach(r => workingMap[r.nickname] = r.daysData ? JSON.parse(r.daysData) : {});
-          
-          // 🌟 ตัวกรองที่แยกระหว่าง OD และ ODOL ออกจากกันอย่างเด็ดขาด
-          let targetUsers = allUsersData.filter(u => {
-              if (u[7] !== 'Active') return false;
-              let d = u[3] || '';
-              if (dept === 'OD' && d.includes('OD') && !d.includes('ODOL')) return true;
-              if (dept === 'ODOL' && d.includes('ODOL')) return true;
-              return false;
-          });
-
-          let shiftA_Users = []; let shiftB_Users = [];
-
-          if (targetShift === 'BOTH' || targetShift === 'A') shiftA_Users = targetUsers.filter(u => u[9] && u[9].includes('(A)'));
-          if (targetShift === 'BOTH' || targetShift === 'B') shiftB_Users = targetUsers.filter(u => u[9] && u[9].includes('(B)'));
-
-          let daysInMonth = new Date(ym.split('-')[0], ym.split('-')[1], 0).getDate();
-          let swapDates = [];
-          for (let i = startD; i <= endD; i++) swapDates.push(i);
-
-          function isValidSwapDay(nick, day) {
-              let dData = workingMap[nick] || {};
-              let offTypes = ['X', 'TX'];
-              if (offTypes.includes(dData[day])) return false; 
-              if (day > 1 && offTypes.includes(dData[day - 1])) return false; 
-              if (day < daysInMonth && offTypes.includes(dData[day + 1])) return false; 
-              return true;
-          }
-
-          function assignDates(users) {
-              let assignments = [];
-              let shuffled = users.sort(() => 0.5 - Math.random()); 
-              let dateIndex = 0;
-              
-              for (let u of shuffled) {
-                  let nick = u[1];
-                  let assignedDay = null;
-                  
-                  for (let attempt = 0; attempt < swapDates.length; attempt++) {
-                      let d = swapDates[(dateIndex + attempt) % swapDates.length];
-                      if (isValidSwapDay(nick, d)) {
-                          assignedDay = d;
-                          dateIndex = (dateIndex + 1) % swapDates.length; 
-                          break;
-                      }
-                  }
-                  if (assignedDay) assignments.push({ user: u, day: assignedDay });
-                  else console.warn(`ข้าม ${nick}: ไม่มีวันสลับกะที่ว่าง (ติดวันหยุด)`);
-              }
-              return assignments;
-          }
-
-          let assignA = assignDates(shiftA_Users); 
-          let assignB = assignDates(shiftB_Users); 
-          
-          sandboxDataCache = JSON.parse(JSON.stringify(workingMap));
-          sandboxUserShiftCache = {};
-
-          assignA.forEach(a => {
-              let nick = a.user[1];
-              let dData = sandboxDataCache[nick] || {};
-              for (let i = a.day; i <= daysInMonth; i++) {
-                  if (!['X', 'TX', 'XX', 'PN', 'KL', 'KP'].includes(dData[i])) dData[i] = 'N';
-              }
-              sandboxDataCache[nick] = dData;
-              sandboxUserShiftCache[nick] = a.user[9].replace('(A)', '(B)');
-          });
-
-          assignB.forEach(b => {
-              let nick = b.user[1];
-              let dData = sandboxDataCache[nick] || {};
-              dData[b.day] = 'XX';
-              for (let i = b.day + 1; i <= daysInMonth; i++) {
-                  if (!['X', 'TX', 'XX', 'PN', 'KL', 'KP'].includes(dData[i])) dData[i] = 'D';
-              }
-              sandboxDataCache[nick] = dData;
-              sandboxUserShiftCache[nick] = b.user[9].replace('(B)', '(A)');
-          });
-
-          if(assignA.length === 0 && assignB.length === 0) {
-              Swal.fire('แจ้งเตือน', 'ไม่พบพนักงานที่สามารถสลับกะได้ (อาจติดวันหยุดทั้งหมด)', 'warning');
-              return;
-          }
-
-          // บันทึกลง LocalStorage
-          localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({
-              schedules: sandboxDataCache,
-              shifts: sandboxUserShiftCache
-          }));
-
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftSwapModal')).hide();
-          Swal.fire({toast:true, position:'top-end', title:'จำลองตารางเสร็จสิ้น!', text:'ดูผลลัพธ์ในโหมด Sandbox ได้เลยครับ', icon:'success', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'});
-          
-          loadScheduleTable(); // โหลดหน้าตารางเพื่อรีเฟรช Sandbox
-
-      } catch(err) {
-          Swal.fire('Error', err.message, 'error');
-      } finally {
-          btn.disabled = false; btn.innerText = '🔀 ยืนยันการสลับกะ';
-      }
-  }
-
-  // 🌟 ฟังก์ชันคำนวณยอดคนทำงาน/หยุด เรียลไทม์
+  // 🌟 ฟังก์ชันคำนวณยอดคนทำงาน/หยุด เรียลไทม์ (เปิดถาวร ไม่ต้องพึ่งสวิตช์)
   function recalcScheduleSummary() {
-      let isSummaryOn = document.getElementById('toggleScheduleSummary') && document.getElementById('toggleScheduleSummary').checked;
-      if(!isSummaryOn) return;
-
       const ym = document.getElementById('monthPicker').value;
       if(!ym) return;
       const [year, month] = ym.split('-'); 
@@ -2056,7 +1918,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           let workCount = 0;
           let offCount = 0;
           
-          // วนลูปนับจากแถวที่แสดงอยู่ปัจจุบัน (กรองกะ/แผนกมาแล้ว)
           document.querySelectorAll('#schTbody tr').forEach(tr => {
               let cell = tr.querySelector(`td[data-day="${d}"]`);
               if(cell) {
@@ -2064,7 +1925,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   // นับคนทำงาน
                   if(val === 'D' || val === 'N' || val === 'M') workCount++;
                   // นับคนหยุด (X, PN, TX, XX)
-                  if(val === 'X' || val === 'PN' || val === 'TX' || val === 'XX') offCount++; 
+                  if(['X', 'PN', 'TX', 'XX'].includes(val)) offCount++; 
               }
           });
 
@@ -2073,6 +1934,20 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if(wEl) wEl.innerText = workCount;
           if(oEl) oEl.innerText = offCount;
       }
+  }
+
+  function selectStamp(code, btn) { 
+      if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
+          Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          return; 
+      } 
+      
+      // เอาเงื่อนไขที่บังคับให้กดเปิดสวิตช์ออกไป เพราะระบบเปิดถาวรแล้ว
+
+      currentStamp = code; 
+      document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); 
+      btn.classList.add('active'); 
+      if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); 
   }
   
   function startStampDrag(cell, nick, dept, day) { 
