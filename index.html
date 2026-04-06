@@ -1973,7 +1973,11 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       const conf = stampConfig[currentStamp];
       const rowCells = cell.parentElement.querySelectorAll('.cell-day');
       
-      // กฎข้อ 1: X (หยุด) และ TX (สลับหยุด) รวมกันต้องไม่เกิน 4
+      // =========================================
+      // 🛑 โซนตรวจสอบโควต้า (Validation)
+      // =========================================
+
+      // กฎข้อ 1: โควต้ารายเดือน -> X (หยุด) และ TX (สลับหยุด) รวมกันต้องไม่เกิน 4
       if (currentStamp === 'X' || currentStamp === 'TX') {
           let countXTX = 0;
           rowCells.forEach(c => {
@@ -1981,12 +1985,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           });
           if (countXTX >= 4) {
               isDraggingStamp = false; 
-              Swal.fire({toast:true, position:'top', title:'โควต้าวันหยุดเต็ม!', text:'X และ TX รวมกันได้สูงสุด 4 วัน/เดือน เท่านั้น', icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
+              Swal.fire({toast:true, position:'top', title:'โควต้าวันหยุดรายเดือนเต็ม!', text:'X และ TX รวมกันได้สูงสุด 4 วัน/เดือน เท่านั้น', icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
               return; 
           }
       }
       
-      // กฎข้อ 2: ตรวจสอบโควต้าของ XX(2), PN(15), X4(1)
+      // กฎข้อ 2: โควต้ารายเดือน -> ตรวจสอบของ XX(2), PN(15), X4(1)
       if (currentStamp === 'XX' || currentStamp === 'PN' || currentStamp === 'X4') {
           let countType = 0;
           rowCells.forEach(c => {
@@ -1995,11 +1999,68 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           let limit = conf.limit; 
           if (countType >= limit) {
               isDraggingStamp = false;
-              Swal.fire({toast:true, position:'top', title:'โควต้าเต็ม!', text:`ใช้ ${conf.label} ได้สูงสุด ${limit} ครั้ง/เดือน`, icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
+              Swal.fire({toast:true, position:'top', title:'โควต้าเดือนนี้เต็ม!', text:`ใช้ ${conf.label} ได้สูงสุด ${limit} ครั้ง/เดือน`, icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
               return; 
           }
       }
 
+      // 🌟 กฎข้อ 3: โควต้ารายวัน -> จำกัดจำนวนคนหยุดพร้อมกันใน 1 วัน (แยกตามกะ) 🌟
+      // 👉 คุณสามารถแก้ตัวเลขจำกัดโควต้าด้านล่างนี้ได้ตามต้องการเลยครับ!
+      const dailyOffLimits = {
+          'OD (A)': 2,     // กะ OD เช้า หยุดพร้อมกันได้สูงสุดกี่คน
+          'OD (B)': 2,     // กะ OD ดึก หยุดพร้อมกันได้สูงสุดกี่คน
+          'ODOL (A)': 2,   // กะ ODOL เช้า หยุดพร้อมกันได้สูงสุดกี่คน
+          'ODOL (B)': 2    // กะ ODOL ดึก หยุดพร้อมกันได้สูงสุดกี่คน
+      };
+      
+      // ตัวย่อที่นับว่าเป็น "วันหยุด" (รวม PN เข้าไปด้วยตามที่คุณต้องการ)
+      const offStampsToCount = ['X', 'TX', 'PN']; 
+
+      if (offStampsToCount.includes(currentStamp)) {
+          // 1. หาว่าคนที่กำลังจะลงวันหยุด อยู่กะไหน
+          const myUserObj = allUsersData.find(u => u[1] === nick);
+          const myShiftSet = myUserObj && myUserObj[9] ? myUserObj[9] : '';
+
+          // 2. ถ้ากะนั้นถูกตั้งโควต้าไว้ ให้เริ่มนับคนในวันนั้น
+          if (myShiftSet && dailyOffLimits[myShiftSet] !== undefined) {
+              let currentDayOffCount = 0;
+              const colIndex = cell.cellIndex; // ดูว่ากำลังกดวันที่เท่าไหร่ในตาราง
+              const allRows = cell.closest('tbody').querySelectorAll('tr'); // ดึงมาทุกแถวในตาราง
+
+              allRows.forEach(row => {
+                  const rowNick = row.getAttribute('data-nick');
+                  const rowUserObj = allUsersData.find(u => u[1] === rowNick);
+                  const rowShiftSet = rowUserObj && rowUserObj[9] ? rowUserObj[9] : '';
+
+                  // ถ้ารายชื่อนี้อยู่ในกะเดียวกันกับคนที่กำลังจะหยุด
+                  if (rowShiftSet === myShiftSet) {
+                      const dayCell = row.cells[colIndex]; // ดูช่องของวันนั้นเป๊ะๆ
+                      
+                      // ไม่นับช่องที่กำลังกด (เพื่อดูว่าโควต้าเดิมเต็มหรือยัง)
+                      if (dayCell && dayCell !== cell && offStampsToCount.includes(dayCell.innerText)) {
+                          currentDayOffCount++;
+                      }
+                  }
+              });
+
+              const limit = dailyOffLimits[myShiftSet];
+              // ถ้านับรวมแล้วเท่ากับหรือเกินโควต้า ให้บล็อกทันที!
+              if (currentDayOffCount >= limit) {
+                  isDraggingStamp = false;
+                  Swal.fire({
+                      toast:true, position:'top', 
+                      title:'⚠️ โควต้าคนหยุดรายวันเต็ม!', 
+                      text:`กะ ${myShiftSet} ในวันนี้ มีคนหยุด (X, TX, PN) เต็มโควต้า ${limit} คนแล้วครับ`, 
+                      icon:'error', background:'#111', color:'#fff', timer:4000, showConfirmButton:false
+                  });
+                  return; // ดีดออก ไม่ให้ประทับตรา!
+              }
+          }
+      }
+
+      // =========================================
+      // ✅ ผ่านเงื่อนไขทั้งหมด ทำการประทับตราลงตาราง
+      // =========================================
       cell.innerText = currentStamp; 
       cell.style.backgroundColor = conf.bg; 
       cell.style.color = conf.text; 
@@ -2009,6 +2070,13 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       
       if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
       unsavedChanges[nick][day] = currentStamp; unsavedChanges[nick]['dept'] = dept; 
+      
+      // โชว์ปุ่มบันทึกให้ถูกโหมด
+      if(currentScheduleMode === 'SANDBOX') {
+          document.getElementById('btnSaveSandbox').style.display = 'flex';
+      } else {
+          document.getElementById('btnSaveSchedule').style.display = 'flex';
+      }
   }
 
   // 🌟 ฟังก์ชันใหม่: ตัวเดียวจัดการได้ 2 โหมด
