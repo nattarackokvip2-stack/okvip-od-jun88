@@ -1822,25 +1822,48 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
         const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate);
         document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table';
         
-        // 🌟 1. สร้างหัวตาราง (ชั้นที่ 1) - ฝังแบบ Sticky
+        // 🌟 1. สร้างหัวตารางวันที่ (ชั้นที่ 1 ฝังติดขอบบน)
         let th1 = '<tr style="height: 45px;"><th class="name-col" style="top: 0px; z-index: 40 !important;">📅 วันที่ / พนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px; top: 0px; z-index: 40 !important;">กะ</th><th class="dept-col" style="top: 0px; z-index: 40 !important;">แผนก</th>'; 
         for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th1 += `<th class="${c}" style="top: 0px; z-index: 20 !important;">${d}</th>`; } 
         th1 += '</tr>'; 
         
-        // 🌟 2. สร้างแถบสรุปยอด (ชั้นที่ 2 และ 3) - ฝังแบบ Sticky กะระยะลงมา 45px และ 90px
-        let th2 = '<tr style="height: 45px;"><th class="name-col text-success" style="background:#0a120a !important; top: 45px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;">🟢 รวมคนทำงาน (D,N)</th><th class="dept-col" style="background:#0a120a !important; top: 45px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;"></th><th class="dept-col" style="background:#0a120a !important; top: 45px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;"></th>';
-        let th3 = '<tr style="height: 45px;"><th class="name-col text-danger" style="background:#1a0505 !important; top: 90px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;">🔴 รวมคนหยุด (X,PN)</th><th class="dept-col" style="background:#1a0505 !important; top: 90px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;"></th><th class="dept-col" style="background:#1a0505 !important; top: 90px; z-index: 40 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;"></th>';
+        // 🌟 2. สร้างแถบสรุปยอดแบบแยกกะ (ชั้นที่ 2 ฝังติดลงมาตามระยะ)
+        let shiftsToRender = currentSchShift === 'ALL' ? ['A', 'B'] : [currentSchShift];
+        let summaryHtml = '';
+        let topOffset = 45; // ระยะห่างจากขอบบน
+
+        shiftsToRender.forEach(sh => {
+            let icon = sh === 'A' ? '☀️' : '🌙';
+            let deptText = currentSchDept === 'ALL' ? 'ทุกแผนก' : currentSchDept.split(' ')[0];
+            let label = `${icon} สรุปยอด ${deptText} (กะ ${sh})`;
+            
+            let tr = `<tr style="height: 45px;">
+                <th class="name-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;">
+                    <div class="d-flex justify-content-between align-items-center w-100 pr-2">
+                        <span style="font-size: 0.85rem; color: #fff;">${label}</span>
+                        <div class="d-flex flex-column text-end" style="font-size: 0.7rem; line-height: 1.2;">
+                            <span style="color: #00ff66;">ทำ</span><span style="color: #ff3366;">หยุด</span>
+                        </div>
+                    </div>
+                </th>
+                <th class="dept-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;"></th>
+                <th class="dept-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;"></th>`;
+                
+            for(let d=1; d<=daysInMonth; d++) {
+                let c = (isCurMonth && d === curD) ? 'today-column' : '';
+                tr += `<th class="${c}" style="background:#111 !important; top: ${topOffset}px; z-index: 20 !important; box-shadow: inset 0 -1px 0 #333; padding: 4px 0 !important; text-align: center;">
+                    <div style="color: #00ff66; font-size: 0.95rem; font-weight: bold; line-height: 1.1;" id="sum-work-${sh}-${d}">0</div>
+                    <div style="color: #ff3366; font-size: 0.95rem; font-weight: bold; line-height: 1.1; margin-top: 2px;" id="sum-off-${sh}-${d}">0</div>
+                </th>`;
+            }
+            tr += '</tr>';
+            summaryHtml += tr;
+            topOffset += 45; // เพิ่มระยะห่างสำหรับแถวถัดไป
+        });
+
+        document.getElementById('schThead').innerHTML = th1 + summaryHtml;
         
-        for(let d=1; d<=daysInMonth; d++) {
-            let c = (isCurMonth && d === curD) ? 'today-column' : '';
-            th2 += `<th class="text-success fw-bold ${c}" id="sum-work-${d}" style="background:#0a120a !important; font-size:1.05rem; top: 45px; z-index: 20 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;">0</th>`;
-            th3 += `<th class="text-danger fw-bold ${c}" id="sum-off-${d}" style="background:#1a0505 !important; font-size:1.05rem; top: 90px; z-index: 20 !important; box-shadow: inset 0 1px 0 #333, inset 0 -1px 0 #333;">0</th>`;
-        }
-        th2 += '</tr>';
-        th3 += '</tr>';
-        
-        document.getElementById('schThead').innerHTML = th1 + th2 + th3;
-        
+        // 🌟 3. สร้างเนื้อหาตารางพนักงาน
         let tb = ''; let hasData = false;
         allUsersData.forEach(u => {
             if(!u || u[7] !== 'Active') return; 
@@ -1851,6 +1874,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             if (currentScheduleMode === 'SANDBOX' && sandboxUserShiftCache[nick]) {
                 shiftSet = sandboxUserShiftCache[nick];
             }
+            let shiftChar = shiftSet.includes('(A)') ? 'A' : (shiftSet.includes('(B)') ? 'B' : '');
             
             if (currentSchDept !== 'ALL') {
                 if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) return;
@@ -1859,8 +1883,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             }
             
             if (currentSchShift !== 'ALL') {
-                if (currentSchShift === 'A' && !shiftSet.includes('(A)')) return;
-                if (currentSchShift === 'B' && !shiftSet.includes('(B)')) return;
+                if (currentSchShift === 'A' && shiftChar !== 'A') return;
+                if (currentSchShift === 'B' && shiftChar !== 'B') return;
             }
             if (scheduleSearchTerm && !nick.toLowerCase().includes(scheduleSearchTerm.toLowerCase())) return; 
             
@@ -1872,10 +1896,11 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             const rowBg = currentScheduleMode === 'SANDBOX' ? 'background-color: rgba(255, 153, 0, 0.05);' : (isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : '');
             
             let shiftBadge = '-';
-            if(shiftSet.includes('(A)')) shiftBadge = '<span class="text-warning fw-bold">☀️ A</span>';
-            else if(shiftSet.includes('(B)')) shiftBadge = '<span class="text-info fw-bold">🌙 B</span>';
+            if(shiftChar === 'A') shiftBadge = '<span class="text-warning fw-bold">☀️ A</span>';
+            else if(shiftChar === 'B') shiftBadge = '<span class="text-info fw-bold">🌙 B</span>';
             
-            tb += `<tr data-nick="${nick}" data-dept="${dept}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-center" style="background: #111;">${shiftBadge}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`;
+            // แทรก data-shift ไว้ใน tr เพื่อให้ระบบนับแยกกะได้ง่ายๆ
+            tb += `<tr data-nick="${nick}" data-dept="${dept}" data-shift="${shiftChar}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-center" style="background: #111;">${shiftBadge}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`;
             
             const userDays = displayMap[nick] || {};
             for(let d=1; d<=daysInMonth; d++) { 
@@ -1896,10 +1921,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             document.getElementById('btnSyncSandbox').style.display = hasSandbox ? 'inline-block' : 'none';
         }
         
-        // 🌟 เรียกคำนวณยอดสรุปแบบเปิดถาวร
-        if (typeof recalcScheduleSummary === 'function') {
-            recalcScheduleSummary();
-        }
+        // เรียกคำนวณทันที
+        if (typeof recalcScheduleSummary === 'function') recalcScheduleSummary();
 
     } catch (err) {
         console.error("Load Schedule Error:", err); 
@@ -1907,7 +1930,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     }
   }
 
-  // 🌟 ฟังก์ชันคำนวณยอดคนทำงาน/หยุด เรียลไทม์ (เปิดถาวร ไม่ต้องพึ่งสวิตช์)
+  // 🌟 ฟังก์ชันคำนวณยอดคนทำงาน/หยุด เรียลไทม์ (นับแยกตามกะแบบเป๊ะๆ)
   function recalcScheduleSummary() {
       const ym = document.getElementById('monthPicker').value;
       if(!ym) return;
@@ -1915,24 +1938,27 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       const daysInMonth = new Date(year, month, 0).getDate();
 
       for(let d=1; d<=daysInMonth; d++) {
-          let workCount = 0;
-          let offCount = 0;
+          // รีเซ็ตค่านับของทั้ง 2 กะ
+          let counts = { 'A': { work: 0, off: 0 }, 'B': { work: 0, off: 0 } };
           
           document.querySelectorAll('#schTbody tr').forEach(tr => {
               let cell = tr.querySelector(`td[data-day="${d}"]`);
-              if(cell) {
+              let shiftType = tr.getAttribute('data-shift'); // ดึงค่ากะที่ฝังไว้ในแถว
+              
+              if(cell && shiftType && counts[shiftType]) {
                   let val = cell.innerText.trim();
-                  // นับคนทำงาน
-                  if(val === 'D' || val === 'N' || val === 'M') workCount++;
-                  // นับคนหยุด (X, PN, TX, XX)
-                  if(['X', 'PN', 'TX', 'XX'].includes(val)) offCount++; 
+                  if(val === 'D' || val === 'N' || val === 'M') counts[shiftType].work++;
+                  if(['X', 'PN', 'TX', 'XX'].includes(val)) counts[shiftType].off++; 
               }
           });
 
-          const wEl = document.getElementById(`sum-work-${d}`);
-          const oEl = document.getElementById(`sum-off-${d}`);
-          if(wEl) wEl.innerText = workCount;
-          if(oEl) oEl.innerText = offCount;
+          // อัปเดตตัวเลขลงบนตาราง (เฉพาะบรรทัดที่แสดงผลอยู่)
+          ['A', 'B'].forEach(sh => {
+              const wEl = document.getElementById(`sum-work-${sh}-${d}`);
+              const oEl = document.getElementById(`sum-off-${sh}-${d}`);
+              if(wEl) wEl.innerText = counts[sh].work;
+              if(oEl) oEl.innerText = counts[sh].off;
+          });
       }
   }
 
