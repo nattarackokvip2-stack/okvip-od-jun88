@@ -112,12 +112,19 @@
   .stamp-palette { display: flex; gap: 10px; flex-wrap: wrap;}
   .stamp-btn { padding: 6px 15px; border-radius: 8px; border: 1px solid #444; background: #111; color: #ccc; cursor: pointer; font-weight: 500; text-shadow: none; transition: 0.2s;}
   .stamp-btn.active { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.05); color: #fff; font-weight: bold;}
-  .table-container { overflow-x: auto; background: #0a0a0c; border-radius: 12px; border: 1px solid var(--border-color); position: relative;}
+  /* 🌟 ปรับตารางให้ล็อคหัวบนและซ้าย */
+  .table-container { overflow-x: auto; overflow-y: auto; max-height: 70vh; background: #0a0a0c; border-radius: 12px; border: 1px solid var(--border-color); position: relative;}
   .schedule-table { width: max-content; border-collapse: collapse; table-layout: fixed; font-size: 0.9rem; text-shadow: none;}
   .schedule-table th, .schedule-table td { border: 1px solid #2a2a2a; text-align: center; vertical-align: middle; transition: background-color 0.1s; user-select: none;}
-  .schedule-table th { background: #151518; color: #aaa; font-weight: 500;}
+  
+  /* ล็อคแถบวันที่ให้อยู่ด้านบนเสมอ */
+  .schedule-table th { background: #151518; color: #aaa; font-weight: 500; position: sticky; top: 0; z-index: 4; box-shadow: 0 1px 0 #2a2a2a;}
+  
+  /* ล็อคชื่อและแผนกให้อยู่ซ้ายสุดเสมอ และปรับ z-index ให้ไม่จมเวลาเลื่อนลง */
   .name-col { width: 140px; min-width: 140px; text-align: left !important; padding-left: 15px !important; font-weight: bold; background: #0f0f12 !important; position: sticky; left: 0; z-index: 5; color: #fff;}
   .dept-col { width: 80px; min-width: 80px; background: #0a0a0c; }
+  .schedule-table thead .name-col, .schedule-table thead .dept-col { z-index: 6 !important; }
+  
   .date-col, .cell-day { width: 45px !important; min-width: 45px !important; max-width: 45px !important; height: 45px !important; padding: 0 !important; }
   .cell-day { cursor: default; font-weight: bold; overflow: hidden; position: relative;}
   .admin-mode .cell-day { cursor: cell; } 
@@ -1013,10 +1020,10 @@
     'KP': { bg: 'rgba(255, 153, 51, 0.2)', text: '#ff9933', label: 'KP (ขาดงาน)', limit: 99 }, 
     'L':  { bg: 'rgba(255, 204, 0, 0.8)', text: '#ff0000', label: 'L (สาย)', limit: 99 }, 
     'X4': { bg: 'rgba(204, 102, 255, 0.2)', text: '#cc66ff', label: 'X4 (ปจด.)', limit: 1 }, 
-    'D':  { bg: 'rgba(0, 255, 102, 0.2)', text: '#00ff66', label: 'D (เช้า)', limit: 99 }, 
-    'N':  { bg: 'rgba(0, 240, 255, 0.2)', text: '#00f0ff', label: 'N (ดึก)', limit: 99 }, 
+    'D':  { bg: 'rgba(0, 240, 255, 0.2)', text: '#00f0ff', label: 'D (เช้า)', limit: 99 }, 
+    'N':  { bg: 'rgba(0, 255, 102, 0.2)', text: '#00ff66', label: 'N (ดึก)', limit: 99 }, 
     'M':  { bg: 'rgba(255, 253, 208, 0.2)', text: '#ffffe0', label: 'M (อื่นๆ)', limit: 99 }, 
-    'KL': { bg: 'rgba(255, 204, 0, 0.5)', text: '#000000', label: 'KL (ลา)', limit: 99 },
+    'KL': { bg: 'rgba(0, 100, 0, 0.4)', text: '#00cc00', label: 'KL (ลา)', limit: 99 },
     '':   { bg: 'transparent', text: '#aaaaaa', label: 'ลบ (ยางลบ)', limit: 99 }
   };
   const offDutyStamps = ['X', 'XX', 'TX', 'PN', 'KP', 'KL', 'X4'];
