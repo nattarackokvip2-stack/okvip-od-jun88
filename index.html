@@ -118,19 +118,19 @@
   .schedule-table th, .schedule-table td { border: 1px solid #2a2a2a; text-align: center; vertical-align: middle; transition: background-color 0.1s; user-select: none;}
   
   /* ล็อคแถบวันที่ให้อยู่ด้านบนเสมอ */
-  .schedule-table th { background: #151518; color: #aaa; font-weight: 500; position: sticky; top: 0; z-index: 4; box-shadow: 0 1px 0 #2a2a2a;}
+  .schedule-table th { background: #151518; color: #aaa; font-weight: 500; position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 0 #2a2a2a;}
   
   /* ล็อคชื่อและแผนกให้อยู่ซ้ายสุดเสมอ และปรับ z-index ให้ไม่จมเวลาเลื่อนลง */
-  .name-col { width: 140px; min-width: 140px; text-align: left !important; padding-left: 15px !important; font-weight: bold; background: #0f0f12 !important; position: sticky; left: 0; z-index: 5; color: #fff;}
+  .name-col { width: 140px; min-width: 140px; text-align: left !important; padding-left: 15px !important; font-weight: bold; background: #0f0f12 !important; position: sticky; left: 0; z-index: 15; color: #fff;}
   .dept-col { width: 80px; min-width: 80px; background: #0a0a0c; }
-  .schedule-table thead .name-col, .schedule-table thead .dept-col { z-index: 6 !important; }
+  .schedule-table thead .name-col, .schedule-table thead .dept-col { z-index: 25 !important; }
   
   .date-col, .cell-day { width: 45px !important; min-width: 45px !important; max-width: 45px !important; height: 45px !important; padding: 0 !important; }
   .cell-day { cursor: default; font-weight: bold; overflow: hidden; position: relative;}
   .admin-mode .cell-day { cursor: cell; } 
   .admin-mode .cell-day:hover { border: 1px solid #fff; z-index: 10;}
   .unsaved-mark::after { content: ''; position: absolute; top: 4px; right: 4px; width: 6px; height: 6px; background-color: #ffaa00; border-radius: 50%; box-shadow: 0 0 5px #ffaa00;}
-  .today-header { background-color: rgba(0, 240, 255, 0.2) !important; color: var(--neon-blue) !important; border: 1px solid var(--neon-blue) !important; font-weight: 800 !important; box-shadow: inset 0 0 10px rgba(0,240,255,0.3); }
+  .today-header { background-color: #0b2025 !important; color: var(--neon-blue) !important; border: 1px solid var(--neon-blue) !important; font-weight: 800 !important; box-shadow: inset 0 0 10px rgba(0,240,255,0.3); z-index: 20 !important; }
   .today-column { border-left: 1px solid var(--neon-blue) !important; border-right: 1px solid var(--neon-blue) !important; background-color: rgba(0, 240, 255, 0.05) !important; }
   
   .site-badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; margin: 2px; text-shadow: none; border: 1px solid;}
