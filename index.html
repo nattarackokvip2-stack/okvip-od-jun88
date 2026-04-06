@@ -1808,8 +1808,27 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
         const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate);
         document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table';
         
-        let th = '<tr><th class="name-col">ชื่อพนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px;">กะ</th><th class="dept-col">แผนก</th>'; 
-        for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th += `<th class="${c}">${d}</th>`; } th += '</tr>'; document.getElementById('schThead').innerHTML = th;
+        // 🌟 สร้างส่วนหัวตารางและแถบสรุปยอด
+        let isSummaryOn = document.getElementById('toggleScheduleSummary')?.checked;
+        
+        let th1 = '<tr><th class="name-col">📅 วันที่ / พนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px;">กะ</th><th class="dept-col">แผนก</th>'; 
+        for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th1 += `<th class="${c}">${d}</th>`; } 
+        th1 += '</tr>'; 
+        
+        let th2 = ''; let th3 = '';
+        if (isSummaryOn) {
+            th2 = '<tr><th class="name-col text-success" style="background:#0a120a !important; z-index:25;">🟢 รวมคนทำงาน (D,N)</th><th class="dept-col" style="background:#0a120a !important;"></th><th class="dept-col" style="background:#0a120a !important;"></th>';
+            th3 = '<tr><th class="name-col text-danger" style="background:#1a0505 !important; z-index:25;">🔴 รวมคนหยุด (X)</th><th class="dept-col" style="background:#1a0505 !important;"></th><th class="dept-col" style="background:#1a0505 !important;"></th>';
+            
+            for(let d=1; d<=daysInMonth; d++) {
+                let c = (isCurMonth && d === curD) ? 'today-column' : '';
+                th2 += `<th class="text-success fw-bold ${c}" id="sum-work-${d}" style="background:#0a120a; font-size:1.05rem;">0</th>`;
+                th3 += `<th class="text-danger fw-bold ${c}" id="sum-off-${d}" style="background:#1a0505; font-size:1.05rem;">0</th>`;
+            }
+            th2 += '</tr>';
+            th3 += '</tr>';
+        }
+        document.getElementById('schThead').innerHTML = th1 + th2 + th3;
         
         let tb = ''; let hasData = false;
         allUsersData.forEach(u => {
@@ -1822,7 +1841,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                 shiftSet = sandboxUserShiftCache[nick];
             }
             
-            // 🌟 แก้ไขให้การกรองแผนกแม่นยำ 100% ไม่ดึงแผนกมั่ว
             if (currentSchDept !== 'ALL') {
                 if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) return;
                 if (currentSchDept === 'ออดิทออนไลน์ (ODOL)' && !dept.includes('ODOL')) return;
