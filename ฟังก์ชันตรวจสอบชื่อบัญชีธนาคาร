@@ -65,30 +65,10 @@
   .btn-neon-red:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px rgba(255,51,102,0.7); text-shadow: none; }
   .btn-neon-green { background: transparent; color: var(--neon-green); border: 1px solid var(--neon-green); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(0,255,102,0.5); }
   .btn-neon-green:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 15px rgba(0,255,102,0.7); text-shadow: none; }
-  /* 🌟 ล็อคความสูงของกล่องตรายาง เพื่อไม่ให้ตารางกระโดดเวลาปุ่มโผล่มา */
-  #stampToolbox {
-      position: relative;
-      min-height: 40px; 
-      width: 100%;
-  }
   
-  /* 🌟 ปุ่มบันทึกตารางแบบฝังตัว (อยู่มุมขวาบนถาวร ไม่ลอยตามจอ) */
-  .neon-save-button { 
-      background-color: #004d26; 
-      border: 1px solid rgba(0, 255, 95, 0.5); 
-      color: #00ff5f; 
-      padding: 6px 15px; 
-      font-size: 0.95rem; 
-      border-radius: 8px; 
-      cursor: pointer; 
-      display: flex !important; /* บังคับให้โชว์ตลอดเวลา ไม่ให้ JS ซ่อน */
-      align-items: center; 
-      gap: 8px; 
-      font-weight: bold; 
-      text-shadow: 0 0 5px #00ff5f; 
-      box-shadow: 0 0 8px rgba(0, 255, 95, 0.4); 
-      transition: all 0.2s ease; 
-  }
+  #stampToolbox { position: relative; min-height: 40px; width: 100%; }
+  
+  .neon-save-button { background-color: #004d26; border: 1px solid rgba(0, 255, 95, 0.5); color: #00ff5f; padding: 6px 15px; font-size: 0.95rem; border-radius: 8px; cursor: pointer; display: flex !important; align-items: center; gap: 8px; font-weight: bold; text-shadow: 0 0 5px #00ff5f; box-shadow: 0 0 8px rgba(0, 255, 95, 0.4); transition: all 0.2s ease; }
   .neon-save-button:hover { background-color: #006633; transform: scale(1.05); }
   
   .table { color: var(--text-white-neon); border-color: var(--border-color); }
@@ -135,15 +115,11 @@
   .stamp-palette { display: flex; gap: 10px; flex-wrap: wrap;}
   .stamp-btn { padding: 6px 15px; border-radius: 8px; border: 1px solid #444; background: #111; color: #ccc; cursor: pointer; font-weight: 500; text-shadow: none; transition: 0.2s;}
   .stamp-btn.active { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.05); color: #fff; font-weight: bold;}
-  /* 🌟 ปรับตารางให้ล็อคหัวบนและซ้าย */
+  
   .table-container { overflow-x: auto; overflow-y: auto; max-height: 70vh; background: #0a0a0c; border-radius: 12px; border: 1px solid var(--border-color); position: relative;}
   .schedule-table { width: max-content; border-collapse: collapse; table-layout: fixed; font-size: 0.9rem; text-shadow: none;}
   .schedule-table th, .schedule-table td { border: 1px solid #2a2a2a; text-align: center; vertical-align: middle; transition: background-color 0.1s; user-select: none;}
-  
-  /* ล็อคแถบวันที่ให้อยู่ด้านบนเสมอ */
   .schedule-table th { background: #151518; color: #aaa; font-weight: 500; position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 0 #2a2a2a;}
-  
-  /* ล็อคชื่อและแผนกให้อยู่ซ้ายสุดเสมอ และปรับ z-index ให้ไม่จมเวลาเลื่อนลง */
   .name-col { width: 140px; min-width: 140px; text-align: left !important; padding-left: 15px !important; font-weight: bold; background: #0f0f12 !important; position: sticky; left: 0; z-index: 15; color: #fff;}
   .dept-col { width: 80px; min-width: 80px; background: #0a0a0c; }
   .schedule-table thead .name-col, .schedule-table thead .dept-col { z-index: 25 !important; }
@@ -280,6 +256,7 @@
         <div class="hub-card hub-manual" onclick="switchMainTab('manualSection')"><div class="hub-icon">📖</div><div class="hub-title">คู่มือการทำงาน</div></div>
         <div class="hub-card hub-penalty" onclick="switchMainTab('penaltySection')"><div class="hub-icon">⚠️</div><div class="hub-title">ตารางลงโทษพนักงาน</div></div>
         <div class="hub-card hub-portal" onclick="switchMainTab('portalSection')"><div class="hub-icon">🌐</div><div class="hub-title">จัดการเว็บไซต์</div></div>
+        
         <div class="hub-card" style="border: 1px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(88, 101, 242, 0.4)'; this.style.background='rgba(88, 101, 242, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(88, 101, 242, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('discordSection')">
            <div class="hub-icon" style="text-shadow: none;">🎧</div>
            <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
@@ -291,8 +268,7 @@
         </div>
       </div>
     </div>
-
-    <div id="announceSection" class="content-section">
+<div id="announceSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
         <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
@@ -480,8 +456,7 @@
           </div>
       </div>
     </div>
-
-    <div id="mealSection" class="content-section">
+<div id="mealSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
            <h4 class="fw-bold mb-0" style="color: #ff66cc;">🍽️ จัดการตารางทานข้าว</h4>
@@ -620,8 +595,7 @@
         </table>
       </div>
     </div>
-      
-    <div id="portalSection" class="content-section">
+<div id="portalSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">🌐 จัดการเว็บไซต์ (Websites)</h4>
         <div>
@@ -636,7 +610,8 @@
       <div id="portalGridArea" class="manual-grid"></div>
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
     </div>
-      <div id="bankCheckSection" class="content-section">
+    
+    <div id="bankCheckSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5);">🏦 ระบบตรวจสอบชื่อบัญชีธนาคาร (Name Enquiry)</h4>
       </div>
@@ -686,9 +661,11 @@
         </div>
       </div>
     </div>
-  </div> </div> 
 
-  <div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
+  </div> 
+</div>
+
+<div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center text-warning" id="announceModalTitle">📢 สร้างประกาศใหม่</h4>
     <form id="announceForm" onsubmit="handleAnnounceSubmit(event)">
@@ -1067,7 +1044,6 @@
     </div>
   </div>
 </div>
-
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 <script>
@@ -1724,317 +1700,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
 
   function renderStampPalette() { let html = ''; for (const [code, style] of Object.entries(stampConfig)) { let isDisabled = ""; let opacityStyle = ""; if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; } html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; } document.getElementById('stampPalette').innerHTML = html; }
   
-  function selectStamp(code, btn) { 
-      if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
-          Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
-          return; 
-      } 
-      
-      // 🌟 บังคับเปิดโหมดเช็คยอดก่อนลง X หรือ PN
-      const restrictedStamps = ['X', 'PN', 'TX', 'XX'];
-      if (restrictedStamps.includes(code)) {
-          const toggleSum = document.getElementById('toggleScheduleSummary');
-          if (toggleSum && !toggleSum.checked) {
-              Swal.fire({title: 'โหมดป้องกัน', text: 'กรุณาติ๊กเปิดสวิตช์ [📊 เปิดโหมดเช็คยอด] ด้านบนก่อน เพื่อตรวจสอบจำนวนคนหยุดก่อนลงตรายางครับ', icon: 'warning', background:'#111', color:'#fff'});
-              return;
-          }
-      }
-
-      currentStamp = code; 
-      document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); 
-      btn.classList.add('active'); 
-      if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); 
-  }
-  
-  function changeMonth(offset) { 
-      if(Object.keys(unsavedChanges).length > 0){ Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณาบันทึกตารางปัจจุบันก่อนเปลี่ยนเดือน', icon:'warning', background:'#111', color:'#fff'}); return; } 
-      const p = document.getElementById('monthPicker'); if(!p.value) return; 
-      let [y, m] = p.value.split('-').map(Number); m += offset; 
-      if (m > 12) { m = 1; y++; } else if (m < 1) { m = 12; y--; } 
-      p.value = `${y}-${String(m).padStart(2, '0')}`; loadScheduleTable(); checkLeaveAlerts(); 
-  }
-  
-  document.addEventListener('mouseup', function() { isDraggingStamp = false; });
-
-  async function confirmClearSchedule() { 
-      const ym = document.getElementById('monthPicker').value; 
-      Swal.fire({ 
-          title: `ไม่บันทึก ${ym}?`, 
-          text: "ข้อมูลของเดือนนี้จะถูกลบทั้งหมด!", 
-          icon: 'warning', 
-          showCancelButton: true, 
-          confirmButtonColor: '#ff3366', 
-          confirmButtonText: 'ล้างทั้งหมด', 
-          background: '#111', 
-          color: '#fff' 
-      }).then(async r => { 
-          if(r.isConfirmed) { 
-              Swal.fire({title:'กำลังล้าง...', didOpen:()=>Swal.showLoading()}); 
-              await supabaseClient.from('schedules').delete().eq('yearMonth', ym); 
-              unsavedChanges = {}; 
-              document.getElementById('btnSaveSchedule').style.display = 'none'; 
-              await loadScheduleTable(); 
-              Swal.fire({toast:true, position:'top-end', title:'ล้างข้อมูลเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
-          } 
-      }); 
-  }
-
-  function switchScheduleTab(mode) {
-      if(Object.keys(unsavedChanges).length > 0){ 
-          Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนสลับโหมด', icon:'warning', background:'#111', color:'#fff'}); 
-          return; 
-      }
-      currentScheduleMode = mode;
-      document.getElementById('tabBtnRealSchedule').classList.toggle('active', mode === 'REAL');
-      document.getElementById('tabBtnSwapSandbox').classList.toggle('active', mode === 'SANDBOX');
-      
-      if(mode === 'REAL') {
-          document.getElementById('tabBtnRealSchedule').style.borderColor = "#fff"; document.getElementById('tabBtnRealSchedule').style.color = "#fff";
-          document.getElementById('tabBtnSwapSandbox').style.borderColor = "#ff9900"; document.getElementById('tabBtnSwapSandbox').style.color = "#ff9900";
-          document.getElementById('realScheduleActions').style.display = 'flex';
-          document.getElementById('sandboxScheduleActions').style.display = 'none';
-          document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
-      } else {
-          document.getElementById('tabBtnSwapSandbox').style.borderColor = "#fff"; document.getElementById('tabBtnSwapSandbox').style.color = "#fff";
-          document.getElementById('tabBtnRealSchedule').style.borderColor = "#444"; document.getElementById('tabBtnRealSchedule').style.color = "#ccc";
-          document.getElementById('realScheduleActions').style.display = 'none';
-          document.getElementById('sandboxScheduleActions').style.display = (myRole === 'SuperAdmin') ? 'flex' : 'none';
-          document.getElementById('stampToolbox').style.setProperty('display', 'none', 'important'); 
-      }
-      loadScheduleTable();
-  }
-
-  function filterScheduleDept(dept, btn) { 
-      if(Object.keys(unsavedChanges).length > 0){ 
-          Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); 
-          return; 
-      } 
-      currentSchDept = dept; 
-      
-      document.querySelectorAll('#schDeptFilterBar .dept-badge').forEach(b => { 
-          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; 
-      }); 
-      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)"; 
-      
-      const shiftBar = document.getElementById('schShiftFilterBar');
-      if (dept === 'ออดิท (OD)' || dept === 'ออดิทออนไลน์ (ODOL)') {
-          shiftBar.style.display = 'flex';
-      } else {
-          shiftBar.style.display = 'none';
-          currentSchShift = 'ALL'; 
-          document.querySelectorAll('#schShiftFilterBar .dept-badge').forEach(b => { 
-              b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; 
-          });
-          document.querySelector('#schShiftFilterBar .dept-badge').classList.add('active');
-          document.querySelector('#schShiftFilterBar .dept-badge').style.borderColor = "#fff";
-          document.querySelector('#schShiftFilterBar .dept-badge').style.color = "#fff";
-      }
-      
-      loadScheduleTable(); 
-  }
-
-  function filterScheduleShift(shift, btn) {
-      if(Object.keys(unsavedChanges).length > 0){ 
-          Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); 
-          return; 
-      }
-      currentSchShift = shift;
-      
-      document.querySelectorAll('#schShiftFilterBar .dept-badge').forEach(b => { 
-          b.classList.remove('active'); b.style.borderColor = "#444"; 
-          b.style.color = b.innerText.includes('A') ? '#00f0ff' : (b.innerText.includes('B') ? '#ffcc00' : '#ccc'); 
-          b.style.boxShadow = "none";
-      }); 
-      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)";
-      
-      loadScheduleTable();
-  }
-
-  function handleScheduleSearch(term) { scheduleSearchTerm = term.toLowerCase().trim(); loadScheduleTable(); }
-
-  async function loadScheduleTable() {
-    try {
-        unsavedChanges = {}; 
-        if(document.getElementById('btnSaveSchedule')) document.getElementById('btnSaveSchedule').style.display = 'none'; 
-        if(document.getElementById('btnSaveSandbox')) document.getElementById('btnSaveSandbox').style.display = 'none'; 
-        
-        const ym = document.getElementById('monthPicker').value; 
-        if(!ym || allUsersData.length === 0) { 
-            if(document.getElementById('scheduleLoading')) document.getElementById('scheduleLoading').style.display = 'none'; 
-            return; 
-        } 
-        
-        document.getElementById('scheduleTable').style.display = 'none'; 
-        document.getElementById('scheduleLoading').style.display = 'block'; 
-        document.getElementById('scheduleLoading').innerText = currentScheduleMode === 'REAL' ? 'กำลังโหลดข้อมูลตารางจริง...' : 'กำลังโหลดโหมดจำลอง...';
-
-        const { data: schData, error: schErr } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
-        if (schErr) throw schErr;
-
-        let realDataMap = {};
-        if (schData) schData.forEach(r => realDataMap[r.nickname] = r.daysData ? JSON.parse(r.daysData) : {});
-
-        let displayMap = {};
-
-        if (currentScheduleMode === 'REAL') {
-            displayMap = realDataMap;
-        } else {
-            let storedSandbox = localStorage.getItem('okvip_sandbox_' + ym);
-            if (storedSandbox) {
-                let parsed = JSON.parse(storedSandbox);
-                sandboxDataCache = parsed.schedules || {};
-                sandboxUserShiftCache = parsed.shifts || {};
-                displayMap = sandboxDataCache;
-            } else {
-                sandboxDataCache = JSON.parse(JSON.stringify(realDataMap));
-                sandboxUserShiftCache = {};
-                displayMap = sandboxDataCache;
-            }
-        }
-
-        const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate);
-        document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table';
-        
-        // 🌟 1. สร้างหัวตารางวันที่ (ชั้นที่ 1 ฝังติดขอบบน)
-        let th1 = '<tr style="height: 45px;"><th class="name-col" style="top: 0px; z-index: 40 !important;">📅 วันที่ / พนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px; top: 0px; z-index: 40 !important;">กะ</th><th class="dept-col" style="top: 0px; z-index: 40 !important;">แผนก</th>'; 
-        for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th1 += `<th class="${c}" style="top: 0px; z-index: 20 !important;">${d}</th>`; } 
-        th1 += '</tr>'; 
-        
-        // 🌟 2. สร้างแถบสรุปยอดแบบแยกกะ (ชั้นที่ 2 ฝังติดลงมาตามระยะ)
-        let shiftsToRender = currentSchShift === 'ALL' ? ['A', 'B'] : [currentSchShift];
-        let summaryHtml = '';
-        let topOffset = 45; // ระยะห่างจากขอบบน
-
-        shiftsToRender.forEach(sh => {
-            let icon = sh === 'A' ? '☀️' : '🌙';
-            let deptText = currentSchDept === 'ALL' ? 'ทุกแผนก' : currentSchDept.split(' ')[0];
-            let label = `${icon} สรุปยอด ${deptText} (กะ ${sh})`;
-            
-            let tr = `<tr style="height: 45px;">
-                <th class="name-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;">
-                    <div class="d-flex justify-content-between align-items-center w-100 pr-2">
-                        <span style="font-size: 0.85rem; color: #fff;">${label}</span>
-                        <div class="d-flex flex-column text-end" style="font-size: 0.7rem; line-height: 1.2;">
-                            <span style="color: #00ff66;">ทำ</span><span style="color: #ff3366;">หยุด</span>
-                        </div>
-                    </div>
-                </th>
-                <th class="dept-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;"></th>
-                <th class="dept-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;"></th>`;
-                
-            for(let d=1; d<=daysInMonth; d++) {
-                let c = (isCurMonth && d === curD) ? 'today-column' : '';
-                tr += `<th class="${c}" style="background:#111 !important; top: ${topOffset}px; z-index: 20 !important; box-shadow: inset 0 -1px 0 #333; padding: 4px 0 !important; text-align: center;">
-                    <div style="color: #00ff66; font-size: 0.95rem; font-weight: bold; line-height: 1.1;" id="sum-work-${sh}-${d}">0</div>
-                    <div style="color: #ff3366; font-size: 0.95rem; font-weight: bold; line-height: 1.1; margin-top: 2px;" id="sum-off-${sh}-${d}">0</div>
-                </th>`;
-            }
-            tr += '</tr>';
-            summaryHtml += tr;
-            topOffset += 45; // เพิ่มระยะห่างสำหรับแถวถัดไป
-        });
-
-        document.getElementById('schThead').innerHTML = th1 + summaryHtml;
-        
-        // 🌟 3. สร้างเนื้อหาตารางพนักงาน
-        let tb = ''; let hasData = false;
-        allUsersData.forEach(u => {
-            if(!u || u[7] !== 'Active') return; 
-            const nick = u[1] ? u[1].toString() : ''; 
-            const dept = u[3] ? u[3].toString() : 'ไม่ระบุ';
-            
-            let shiftSet = u[9] ? u[9].toString() : '-'; 
-            if (currentScheduleMode === 'SANDBOX' && sandboxUserShiftCache[nick]) {
-                shiftSet = sandboxUserShiftCache[nick];
-            }
-            let shiftChar = shiftSet.includes('(A)') ? 'A' : (shiftSet.includes('(B)') ? 'B' : '');
-            
-            if (currentSchDept !== 'ALL') {
-                if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) return;
-                if (currentSchDept === 'ออดิทออนไลน์ (ODOL)' && !dept.includes('ODOL')) return;
-                if (currentSchDept === 'อื่นๆ (OTHER)' && (dept.includes('OD') || dept.includes('ODOL'))) return;
-            }
-            
-            if (currentSchShift !== 'ALL') {
-                if (currentSchShift === 'A' && shiftChar !== 'A') return;
-                if (currentSchShift === 'B' && shiftChar !== 'B') return;
-            }
-            if (scheduleSearchTerm && !nick.toLowerCase().includes(scheduleSearchTerm.toLowerCase())) return; 
-            
-            hasData = true;
-            
-            const isMyRow = (nick === localStorage.getItem('okvip_nick')); 
-            const canEdit = (myRole === 'SuperAdmin' && currentScheduleMode === 'REAL') || (isMyRow && isNextMonthOrFuture && currentScheduleMode === 'REAL');
-            const nameClass = isMyRow ? 'name-col highlight-me' : 'name-col'; 
-            const rowBg = currentScheduleMode === 'SANDBOX' ? 'background-color: rgba(255, 153, 0, 0.05);' : (isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : '');
-            
-            let shiftBadge = '-';
-            if(shiftChar === 'A') shiftBadge = '<span class="text-warning fw-bold">☀️ A</span>';
-            else if(shiftChar === 'B') shiftBadge = '<span class="text-info fw-bold">🌙 B</span>';
-            
-            // แทรก data-shift ไว้ใน tr เพื่อให้ระบบนับแยกกะได้ง่ายๆ
-            tb += `<tr data-nick="${nick}" data-dept="${dept}" data-shift="${shiftChar}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-center" style="background: #111;">${shiftBadge}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`;
-            
-            const userDays = displayMap[nick] || {};
-            for(let d=1; d<=daysInMonth; d++) { 
-                const val = userDays[d] || ''; 
-                const style = stampConfig[val] || { bg:'transparent', text:'#eee' }; 
-                const mouse = canEdit ? `onmousedown="startStampDrag(this,'${nick}','${dept}',${d})" onmouseenter="enterStampDrag(event, this,'${nick}','${dept}',${d})"` : ''; 
-                const c = (isCurMonth && d === curD) ? 'today-column' : ''; 
-                const curClass = canEdit ? 'admin-mode cell-day' : 'cell-day'; 
-                tb += `<td class="${curClass} ${c}" data-day="${d}" data-original="${val}" style="background-color:${style.bg}; color:${style.text};" ${mouse}>${val}</td>`; 
-            } 
-            tb += '</tr>';
-        }); 
-        if (!hasData) tb = `<tr><td colspan="${daysInMonth + 3}" class="text-center py-5 text-muted">ไม่พบข้อมูลพนักงานในกลุ่มนี้</td></tr>`;
-        document.getElementById('schTbody').innerHTML = tb;
-
-        if (currentScheduleMode === 'REAL' && myRole === 'SuperAdmin') {
-            let hasSandbox = localStorage.getItem('okvip_sandbox_' + ym) !== null;
-            document.getElementById('btnSyncSandbox').style.display = hasSandbox ? 'inline-block' : 'none';
-        }
-        
-        // เรียกคำนวณทันที
-        if (typeof recalcScheduleSummary === 'function') recalcScheduleSummary();
-
-    } catch (err) {
-        console.error("Load Schedule Error:", err); 
-        document.getElementById('scheduleLoading').style.display = 'none';
-    }
-  }
-
-  // 🌟 ฟังก์ชันคำนวณยอดคนทำงาน/หยุด เรียลไทม์ (นับแยกตามกะแบบเป๊ะๆ)
-  function recalcScheduleSummary() {
-      const ym = document.getElementById('monthPicker').value;
-      if(!ym) return;
-      const [year, month] = ym.split('-'); 
-      const daysInMonth = new Date(year, month, 0).getDate();
-
-      for(let d=1; d<=daysInMonth; d++) {
-          // รีเซ็ตค่านับของทั้ง 2 กะ
-          let counts = { 'A': { work: 0, off: 0 }, 'B': { work: 0, off: 0 } };
-          
-          document.querySelectorAll('#schTbody tr').forEach(tr => {
-              let cell = tr.querySelector(`td[data-day="${d}"]`);
-              let shiftType = tr.getAttribute('data-shift'); // ดึงค่ากะที่ฝังไว้ในแถว
-              
-              if(cell && shiftType && counts[shiftType]) {
-                  let val = cell.innerText.trim();
-                  if(val === 'D' || val === 'N' || val === 'M') counts[shiftType].work++;
-                  if(['X', 'PN', 'TX', 'XX'].includes(val)) counts[shiftType].off++; 
-              }
-          });
-
-          // อัปเดตตัวเลขลงบนตาราง (เฉพาะบรรทัดที่แสดงผลอยู่)
-          ['A', 'B'].forEach(sh => {
-              const wEl = document.getElementById(`sum-work-${sh}-${d}`);
-              const oEl = document.getElementById(`sum-off-${sh}-${d}`);
-              if(wEl) wEl.innerText = counts[sh].work;
-              if(oEl) oEl.innerText = counts[sh].off;
-          });
-      }
-  }
-
   function selectStamp(code, btn) { 
       if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
           Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
@@ -3170,7 +2835,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   
   async function confirmDeleteBackend(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('backends').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
-  // ==========================================
+// ==========================================
   // 🚀 10. ระบบ Discord (แยกแท็บสมบูรณ์แบบ + โหมดคนนอก)
   // ==========================================
   let allDiscordData = [];
@@ -3496,6 +3161,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           loadDiscordAttendance(); 
       })
       .subscribe();
+      
   // ==========================================
   // 🎯 ฟังก์ชันสะกิดเรียกพนักงาน (เวอร์ชันใหม่ ยิง API ตรงเข้าบอท)
   // ==========================================
@@ -3522,6 +3188,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           Swal.fire('Error', 'ไม่สามารถเชื่อมต่อกับบอทได้ (บอทอาจจะปิดอยู่)', 'error');
       }
   }
+  
   async function openShiftLog() {
       // ดึงข้อความย้อนหลังมา 15 อันเลยครับ จะได้ดูได้เยอะๆ
       const { data } = await supabaseClient.from('shift_logs').select('*').order('created_at', {ascending: false}).limit(15);
@@ -3581,7 +3248,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           setTimeout(openShiftLog, 1000);
       }
   }
-  /// 🌟 ฟังก์ชันจัดการการลบข้อความ
+  
+  // 🌟 ฟังก์ชันจัดการการลบข้อความ
   async function deleteShiftLog(logId) {
       // เด้งถามเพื่อความชัวร์ก่อนลบ
       const confirmDelete = await Swal.fire({
