@@ -3442,15 +3442,30 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           loadDiscordAttendance(); 
       })
       .subscribe();
+  // ==========================================
+  // 🎯 ฟังก์ชันสะกิดเรียกพนักงาน (เวอร์ชันใหม่ ยิง API ตรงเข้าบอท)
+  // ==========================================
   async function pokeUserDiscord(targetNick) {
       Swal.fire({title: 'กำลังส่งสัญญาณเรียก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-      const { error } = await supabaseClient.from('discord_commands').insert([
-          { nickname: targetNick, command_type: 'POKE' }
-      ]);
-      if (!error) {
-          Swal.fire({ toast: true, position: 'top-end', title: `สะกิดเรียก ${targetNick} แล้ว!`, icon: 'success', timer: 2000, showConfirmButton: false, background:'#111', color:'#fff' });
-      } else {
-          Swal.fire('Error', 'ส่งสัญญาณไม่สำเร็จ', 'error');
+
+      try {
+          // 🌟 ใช้ fetch() ยิงข้อมูลตรงไปที่เซิร์ฟเวอร์ของบอท (พอร์ต 3000)
+          const response = await fetch('http://localhost:3000/api/poke', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ nickname: targetNick })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+              Swal.fire({ toast: true, position: 'top-end', title: `สะกิดเรียก ${targetNick} แล้ว!`, icon: 'success', timer: 2000, showConfirmButton: false, background:'#111', color:'#fff' });
+          } else {
+              Swal.fire('Error', 'บอทไม่ตอบสนอง', 'error');
+          }
+      } catch (error) {
+          console.error("API Error:", error);
+          Swal.fire('Error', 'ไม่สามารถเชื่อมต่อกับบอทได้ (บอทอาจจะปิดอยู่)', 'error');
       }
   }
   async function openShiftLog() {
