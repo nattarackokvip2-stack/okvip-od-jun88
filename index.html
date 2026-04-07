@@ -3450,7 +3450,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
 
       try {
           // 🌟 ใช้ fetch() ยิงข้อมูลตรงไปที่เซิร์ฟเวอร์ของบอท (พอร์ต 3000)
-          const response = await fetch('http://localhost:3000/api/poke', {
+          const response = await fetch('https://okvip-bot.onrender.com/api/poke', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ nickname: targetNick })
