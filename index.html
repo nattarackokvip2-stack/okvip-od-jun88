@@ -2975,6 +2975,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   async function confirmDeleteBackend(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('backends').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
 
   // ==========================================
+  // ==========================================
   // 🚀 10. ระบบ Discord (แยกแท็บสมบูรณ์แบบ + โหมดคนนอก)
   // ==========================================
   let allDiscordData = [];
@@ -3095,4 +3096,416 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               let targetShiftTime = "-";
               let targetH = 0; let targetM = 0;
               let shiftStart = new Date(now);
-              let shiftEnd = new Date(now
+              let shiftEnd = new Date(now); // 🌟 เพิ่มตัวแปรเวลาเลิกงาน
+
+              // 🌟 ตั้งค่าจุดตัดเวลา เริ่มกะ - จบกะ ให้ชัดเจน
+              if (shiftSet.includes('(A)')) { 
+                  targetShiftTime = "08:00"; targetH = 8; 
+                  shiftStart.setHours(8, 0, 0, 0);
+                  shiftEnd.setHours(20, 0, 0, 0); // กะเช้าจบ 20:00 ของวันเดียวกัน
+              } else if (shiftSet.includes('(B)')) { 
+                  targetShiftTime = "20:00"; targetH = 20; 
+                  if (now.getHours() < 8) {
+                      // ถ้าเปิดดูตอนตี 1 - 7 โมงเช้า แปลว่าเป็นกะดึกของเมื่อวาน
+                      shiftStart.setDate(shiftStart.getDate() - 1); 
+                      shiftStart.setHours(20, 0, 0, 0);
+                      shiftEnd.setHours(8, 0, 0, 0); // จบ 8 โมงเช้าวันนี้
+                  } else {
+                      // ถ้าเปิดดูตอน 2 ทุ่มถึงเที่ยงคืน แปลว่าเป็นกะดึกของวันนี้
+                      shiftStart.setHours(20, 0, 0, 0);
+                      shiftEnd.setDate(shiftEnd.getDate() + 1); 
+                      shiftEnd.setHours(8, 0, 0, 0); // จบ 8 โมงเช้าพรุ่งนี้
+                  }
+              } else {
+                  shiftStart.setHours(0, 0, 0, 0);
+                  shiftEnd.setHours(23, 59, 59, 999);
+              }
+
+              const displayNick = nick; 
+              let pokeBtn = (currentDiscordTab === 'monitor' && myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-warning ms-2 px-2 py-0" onclick="pokeUserDiscord('${displayNick}')" title="สะกิดเรียกผ่านแชทส่วนตัว">🔔 สะกิด</button>` : '';
+              const dcHint = dcRecord ? `<br><small class="text-muted" style="font-size: 0.75rem;">(ดิสคอร์ด: ${dcRecord.nickname})</small> ${pokeBtn}` : '';
+
+              // แท็บ 1: เช็คชื่อ
+              if (currentDiscordTab === 'attendance') {
+                  let timeIn = '-';
+                  let statusBadge = '';
+                  let calculatedStatus = 'MISSING';
+
+                  if (isLeave) {
+                      calculatedStatus = 'LEAVE';
+                      statusBadge = `<span class="badge" style="background:#ffcc00; color:#000;">🛏️ หยุด/ลา (${stamp})</span>`;
+                  } else if (dcRecord) {
+                      const checkInDate = new Date(dcRecord.check_in_time);
+                      timeIn = checkInDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
+                      
+                      if (targetShiftTime !== "-") {
+                          const shiftDate = new Date(checkInDate);
+                          shiftDate.setHours(targetH, targetM, 0, 0);
+                          const diffMins = Math.floor((checkInDate.getTime() - shiftDate.getTime()) / 60000);
+                          
+                          if (diffMins > 0) {
+                              calculatedStatus = 'LATE';
+                              statusBadge = `<span class="badge bg-danger fs-6 border border-danger">🔴 สาย ${diffMins} นาที</span>`;
+                          } else {
+                              calculatedStatus = 'ON_TIME';
+                              statusBadge = `<span class="badge bg-success fs-6 border border-success">🟢 ตรงเวลา</span>`;
+                          }
+                      } else {
+                          calculatedStatus = 'ON_TIME';
+                          statusBadge = `<span class="badge bg-success fs-6">🟢 เข้างานแล้ว</span>`;
+                      }
+                  } else {
+                      statusBadge = `<span class="badge bg-secondary fs-6">⚪ ยังไม่เข้างาน</span>`;
+                  }
+
+                  if (currentDiscordFilter === calculatedStatus) {
+                      hasData = true;
+                      html += `<tr>
+                          <td class="fw-bold text-white" style="font-size: 1.05rem;">${displayNick} ${dcHint}</td>
+                          <td class="text-muted small">${dept} <span class="text-info">[${shiftSet}]</span></td>
+                          <td class="text-warning fw-bold fs-6">${timeIn}</td>
+                          <td class="text-info">${targetShiftTime !== "-" ? targetShiftTime + " น." : "ไม่ได้ตั้งกะ"}</td>
+                          <td>${statusBadge}</td>
+                      </tr>`;
+                  }
+              } 
+              // แท็บ 2: กล้องวงจรปิด
+              else {
+                  if (!dcRecord || isLeave) return; 
+                  if (currentMonitorShiftFilter !== 'ALL' && !shiftSet.includes(`(${currentMonitorShiftFilter})`)) return;
+
+                  hasData = true;
+                  let presence = dcRecord.presence_status || "🟢 ออนไลน์";
+                  let channel = dcRecord.channel_name || 'ไม่ระบุห้อง';
+                  let lastMove = dcRecord.last_moved_at || "-";
+                  
+                  let presenceClass = "text-success";
+                  let channelClass = "text-info fw-bold";
+                  
+                  if (channel.includes('❌') || channel.includes('ออก')) channelClass = "text-danger fw-bold";
+
+                  let isCurrentlyIdle = presence.includes("🌙");
+                  if (isCurrentlyIdle) presenceClass = "text-warning fw-bold";
+
+                  let idleAlertHtml = `<span class="text-muted small">-</span>`;
+                  let totalIdleMins = 0;
+                  let validIdleCount = 0; // 🌟 เพิ่มตัวแปรนับจำนวนครั้งที่หายไป
+                  let histHtml = "";
+
+                  let idleHistories = dcRecord.idle_history ? JSON.parse(dcRecord.idle_history) : [];
+                  if (idleHistories.length > 0) {
+                      idleHistories.forEach((h) => {
+                          let [sh, sm] = h.start.split(':').map(Number);
+                          let [eh, em] = h.end.split(':').map(Number);
+                          let sDate = new Date(now); sDate.setHours(sh, sm, 0, 0);
+                          let eDate = new Date(now); eDate.setHours(eh, em, 0, 0);
+                          
+                          if (eh < sh) { if (now.getHours() < 12) sDate.setDate(sDate.getDate() - 1); else eDate.setDate(eDate.getDate() + 1); } 
+                          else if (now.getHours() < 12 && eh > 12) { sDate.setDate(sDate.getDate() - 1); eDate.setDate(eDate.getDate() - 1); }
+
+                          // 🌟 เช็คว่าเวลาที่หายไป อยู่ในกรอบเวลาของกะนี้เท่านั้น
+                          if (eDate > shiftStart && sDate < shiftEnd) {
+                              // 🌟 ถ้าอู้คร่อมกะ ให้ตัดเวลาให้นับเฉพาะที่อยู่ในกะ
+                              let calcStart = sDate < shiftStart ? shiftStart : sDate;
+                              let calcEnd = eDate > shiftEnd ? shiftEnd : eDate;
+                              
+                              let realDur = Math.floor((calcEnd.getTime() - calcStart.getTime()) / 60000);
+                              if (realDur > 0) {
+                                  totalIdleMins += realDur;
+                                  validIdleCount++; // นับจำนวนครั้ง
+                                  histHtml += `<div class="small text-white-50">ครั้งที่ ${validIdleCount}: ${calcStart.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}-${calcEnd.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} <b class="text-danger">(${realDur} น.)</b></div>`;
+                              }
+                          }
+                      });
+                  }
+
+                  if (isCurrentlyIdle && dcRecord.idle_start_time) {
+                      let startObj = new Date(dcRecord.idle_start_time);
+                      if (startObj < shiftStart) startObj = shiftStart; 
+                      
+                      if (now > startObj && startObj < shiftEnd) {
+                          let calcEnd = now > shiftEnd ? shiftEnd : now;
+                          let currentIdleMins = Math.floor((calcEnd.getTime() - startObj.getTime()) / 60000);
+                          if (currentIdleMins > 0) {
+                              totalIdleMins += currentIdleMins;
+                              validIdleCount++; // นับสถานะที่กำลังหายไปด้วย
+                              histHtml += `<div class="small text-warning fw-bold mt-1">⚠️ กำลังหายไป (ครั้งที่ ${validIdleCount}): ${currentIdleMins} นาที <br>(เริ่ม ${startObj.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</div>`;
+                          }
+                      }
+                  }
+
+                  // 🌟 เปลี่ยนข้อความเป็น "จำนวนครั้งที่หาย"
+                  if (validIdleCount > 0 || totalIdleMins > 0) {
+                      idleAlertHtml = `<div style="background: rgba(255, 51, 102, 0.1); border: 1px solid rgba(255,51,102,0.3); padding: 8px; border-radius: 8px;"><div class="text-danger fw-bold mb-1 border-bottom border-danger pb-1">🛑 จำนวนครั้งที่หาย: ${validIdleCount} ครั้ง <small class="text-white-50">(รวม ${totalIdleMins} น.)</small></div>${histHtml}</div>`;
+                  }
+
+                  html += `<tr>
+                      <td class="fw-bold text-white" style="font-size: 1.05rem;">${displayNick} ${dcHint}</td>
+                      <td class="text-info small">[${shiftSet}]</td>
+                      <td class="${presenceClass}">${presence}</td>
+                      <td class="${channelClass}">${channel}</td>
+                      <td class="text-white-50">${lastMove}</td>
+                      <td style="min-width: 250px;">${idleAlertHtml}</td>
+                  </tr>`;
+              }
+          });
+      }
+
+      // -----------------------------------------------------
+      // โซนคนนอก (ทำงานเมื่อกดโหมด "คนนอก" ในหน้ากล้องวงจรปิด)
+      // -----------------------------------------------------
+      if (currentDiscordTab === 'monitor' && currentMonitorShiftFilter === 'UNKNOWN') {
+          let unknownHtml = '';
+          allDiscordData.forEach(dc => {
+              const dcNameCleaned = extractCoreName(dc.nickname);
+              const foundInSys = allUsersData.find(u => extractCoreName(u[1]) === dcNameCleaned);
+              
+              if (!foundInSys) {
+                  hasData = true;
+                  let channel = dc.channel_name || 'ไม่ระบุห้อง';
+                  let presence = dc.presence_status || "🟢 ออนไลน์";
+                  let lastMove = dc.last_moved_at || "-";
+                  
+                  let channelClass = "text-info fw-bold";
+                  if (channel.includes('❌') || channel.includes('ออก')) channelClass = "text-danger fw-bold";
+                  let presenceClass = presence.includes("🌙") ? "text-warning fw-bold" : "text-success";
+
+                  unknownHtml += `<tr>
+                      <td class="fw-bold text-warning" style="font-size: 1.05rem;">${dc.nickname}</td>
+                      <td class="${presenceClass}">${presence}</td>
+                      <td class="${channelClass}">${channel}</td>
+                      <td class="text-white-50">${lastMove}</td>
+                      <td><span class="badge bg-secondary fs-6">ไม่มีรายชื่อในระบบ / พิมพ์ชื่อผิด</span></td>
+                  </tr>`;
+              }
+          });
+          html = unknownHtml;
+      }
+
+      if (!hasData || html === '') {
+          tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">ไม่มีข้อมูลตามเงื่อนไขที่เลือก</td></tr>`;
+      } else {
+          tbody.innerHTML = html;
+      }
+  }
+
+  supabaseClient
+      .channel('discord-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'discord_attendance' }, payload => {
+          const indicator = document.getElementById('discordLiveIndicator');
+          if(indicator) {
+              indicator.classList.remove('text-primary');
+              indicator.classList.add('text-success');
+              setTimeout(() => { indicator.classList.remove('text-success'); indicator.classList.add('text-primary'); }, 2000);
+          }
+          loadDiscordAttendance(); 
+      })
+      .subscribe();
+      
+  // ==========================================
+  // 🎯 ฟังก์ชันสะกิดเรียกพนักงาน (เวอร์ชันใหม่ ยิง API ตรงเข้าบอท)
+  // ==========================================
+  async function pokeUserDiscord(targetNick) {
+      Swal.fire({title: 'กำลังส่งสัญญาณเรียก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+
+      try {
+          // 🌟 ใช้ fetch() ยิงข้อมูลตรงไปที่เซิร์ฟเวอร์ของบอท (พอร์ต 3000)
+          const response = await fetch('https://okvip-bot.onrender.com/api/poke', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ nickname: targetNick })
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+              Swal.fire({ toast: true, position: 'top-end', title: `สะกิดเรียก ${targetNick} แล้ว!`, icon: 'success', timer: 2000, showConfirmButton: false, background:'#111', color:'#fff' });
+          } else {
+              Swal.fire('Error', 'บอทไม่ตอบสนอง', 'error');
+          }
+      } catch (error) {
+          console.error("API Error:", error);
+          Swal.fire('Error', 'ไม่สามารถเชื่อมต่อกับบอทได้ (บอทอาจจะปิดอยู่)', 'error');
+      }
+  }
+  
+  async function openShiftLog() {
+      // ดึงข้อความย้อนหลังมา 15 อันเลยครับ จะได้ดูได้เยอะๆ
+      const { data } = await supabaseClient.from('shift_logs').select('*').order('created_at', {ascending: false}).limit(15);
+
+      // 🌟 ขยายความสูงของกล่องข้อความให้ใหญ่สะใจ (ปรับ height เป็น 500px)
+      let historyHtml = '<div class="text-start mb-3 p-4 rounded" style="max-height: 60vh; height: 500px; overflow-y: auto; background: #222; border: 1px solid #444;">';
+
+      if(data && data.length > 0) {
+          data.forEach(log => {
+              // 🌟 จัด Layout ใหม่ แบ่งซ้าย(ข้อความ) ขวา(ปุ่มลบ) เป็นสัดส่วนชัดเจน
+              historyHtml += `
+                  <div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom border-secondary">
+                      <div class="pe-4" style="word-break: break-word; width: 100%;">
+                          <b class="text-info" style="font-size: 1.25rem;">${log.nickname} <span class="text-muted small">(${log.shift})</span></b>
+                          <span class="text-muted small ms-2">${new Date(log.created_at).toLocaleString('th-TH')}</span>
+                          <span class="text-white mt-2 d-block" style="font-size: 1.15rem; line-height: 1.6;">${log.message}</span>
+                      </div>
+                      
+                      <button class="btn btn-outline-danger flex-shrink-0 px-3 py-1" 
+                              style="font-size: 0.95rem; border-radius: 6px;" 
+                              onclick="deleteShiftLog('${log.id}')" title="ลบข้อความนี้">❌ ลบ</button>
+                  </div>`;
+          });
+      } else { 
+          historyHtml += '<div class="text-muted text-center py-5" style="font-size: 1.2rem;">ยังไม่มีบันทึกส่งกะ...</div>'; 
+      }
+      historyHtml += '</div>';
+
+      const { value: text } = await Swal.fire({
+          title: '<h2 style="color: #00f0ff; font-weight: bold;">📓 สมุดบันทึกส่งกะ</h2>',
+          html: historyHtml,
+          input: 'textarea',
+          inputPlaceholder: 'พิมพ์ข้อความฝากถึงกะต่อไป...',
+          inputAttributes: {
+              style: 'height: 150px; font-size: 1.1rem; line-height: 1.5;' // 🌟 ทำให้ช่องสำหรับพิมพ์กว้างและสูงขึ้น
+          },
+          background: '#111', 
+          color: '#fff',
+          width: '1080px', // 🌟 ขยายความกว้างแบบจัดเต็ม 1080px ตามคำขอ!
+          showCancelButton: true,
+          confirmButtonText: 'บันทึกส่งกะ',
+          cancelButtonText: 'ปิดหน้าต่าง',
+          confirmButtonColor: '#00f0ff',
+          customClass: {
+              popup: 'p-4' // เพิ่มขอบหน้าต่างให้ดูหรูหราขึ้น
+          }
+      });
+
+      if (text) {
+          const myNick = localStorage.getItem('okvip_nick') || 'ไม่ระบุชื่อ';
+          const me = allUsersData.find(u => u[1] === myNick);
+          const myShift = me ? (me[9] || 'ไม่ระบุ') : 'ไม่ระบุ';
+          await supabaseClient.from('shift_logs').insert([{ nickname: myNick, shift: myShift, message: text }]);
+          
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกสมุดส่งกะแล้ว', icon:'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
+          
+          setTimeout(openShiftLog, 1000);
+      }
+  }
+  
+  // 🌟 ฟังก์ชันจัดการการลบข้อความ
+  async function deleteShiftLog(logId) {
+      // เด้งถามเพื่อความชัวร์ก่อนลบ
+      const confirmDelete = await Swal.fire({
+          title: 'ต้องการลบข้อความนี้?',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#d33',
+          cancelButtonColor: '#555',
+          confirmButtonText: 'ใช่, ลบเลย!',
+          cancelButtonText: 'ยกเลิก',
+          background: '#111', color: '#fff'
+      });
+
+      if (confirmDelete.isConfirmed) {
+          // สั่งลบข้อมูลออกจาก Supabase ตาม ID
+          await supabaseClient.from('shift_logs').delete().eq('id', logId);
+          
+          Swal.fire({toast:true, position:'top-end', title:'ลบข้อความเรียบร้อย', icon:'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
+          
+          // โหลดหน้าต่างขึ้นมาใหม่เพื่ออัปเดตข้อมูล
+          openShiftLog();
+      }
+  }
+
+  // ==========================================
+  // 🏦 11. ฟังก์ชันตรวจสอบชื่อบัญชีธนาคาร (Name Enquiry)
+  // ==========================================
+  let currentBankLimit = 10; // ลิมิตเริ่มต้นที่ 10 หลัก
+
+  // 🌟 ฟังก์ชันจัดการเมื่อเลือกธนาคาร (สลับ 10 หลัก / 12 หลัก)
+  function handleBankSelection() {
+      const val = document.getElementById('bankInput').value;
+      const accInput = document.getElementById('bankAccNumber');
+      const accLabel = document.getElementById('accLabel');
+      
+      // เช็คว่าเป็นธนาคาร ออมสิน (GSB), ธ.ก.ส. (BAAC) หรือ ธอส. (GHB) หรือไม่
+      if (val.includes('GSB') || val.includes('BAAC') || val.includes('GHB')) {
+          currentBankLimit = 12;
+          accInput.setAttribute('maxlength', '12');
+          accLabel.innerHTML = '2. กรอกเลขที่บัญชี <span class="text-warning fw-bold">(เฉพาะตัวเลข 12 หลัก)</span>';
+      } else if (val) {
+          currentBankLimit = 10;
+          accInput.setAttribute('maxlength', '10');
+          accLabel.innerHTML = '2. กรอกเลขที่บัญชี <span class="text-info fw-bold">(เฉพาะตัวเลข 10 หลัก)</span>';
+      }
+      
+      // ตัดข้อความที่เกินลิมิตออกทันที ถ้าย้ายไปเลือกธนาคารที่หลักน้อยกว่า
+      if (accInput.value.length > currentBankLimit) {
+          accInput.value = accInput.value.substring(0, currentBankLimit);
+      }
+  }
+
+  // 🌟 ฟังก์ชันบล็อกไม่ให้พิมพ์ตัวอักษร
+  function handleAccInput(input) {
+      input.value = input.value.replace(/[^0-9]/g, ''); // บังคับให้เป็นตัวเลขเท่านั้น
+  }
+
+  // 🌟 ฟังก์ชันกดส่งข้อมูลเช็คบัญชี
+  async function verifyBankAccount(e) {
+      e.preventDefault();
+      
+      const bankVal = document.getElementById('bankInput').value;
+      const acc = document.getElementById('bankAccNumber').value;
+      const btn = document.getElementById('btnVerifyBank');
+      const resultArea = document.getElementById('bankResultArea');
+      const resultName = document.getElementById('bankResultName');
+      const resultDetails = document.getElementById('bankResultDetails');
+
+      if (!bankVal || !acc) return;
+
+      // สกัดเอาเฉพาะตัวย่อภาษาอังกฤษมาใช้ เช่น (KBANK) -> KBANK
+      const bankMatch = bankVal.match(/\(([^)]+)\)/);
+      const bankCode = bankMatch ? bankMatch[1] : bankVal;
+
+      // ตรวจสอบความยาวเลขบัญชีให้เป๊ะก่อนส่งข้อมูล
+      if (acc.length !== currentBankLimit) {
+          Swal.fire({
+              toast: true, position: 'top', 
+              title: `เลขบัญชีธนาคารนี้ต้องมี ${currentBankLimit} หลักครับ`, 
+              icon: 'warning', showConfirmButton: false, timer: 3000, background: '#111', color: '#fff'
+          });
+          return;
+      }
+
+      // ซ่อนผลลัพธ์เก่า และเปลี่ยนสถานะปุ่ม
+      resultArea.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '⏳ กำลังเชื่อมต่อระบบธนาคาร...';
+
+      // 🚀 จำลองการส่งข้อมูล (รอเชื่อม API จริงในอนาคต)
+      setTimeout(() => {
+          const mockResponse = {
+              success: true,
+              accountName: "นาย สมมติว่า ได้ชื่อมาจริงๆ",
+              bankName: bankCode,
+              accNumber: acc
+          };
+
+          // แสดงผลลัพธ์
+          resultName.innerText = mockResponse.accountName;
+          resultDetails.innerText = `${mockResponse.bankName} - ${mockResponse.accNumber}`;
+          resultArea.style.display = 'block';
+
+          // คืนค่าปุ่มกลับมาเหมือนเดิม
+          btn.disabled = false;
+          btn.innerHTML = '🔍 ตรวจสอบชื่อเจ้าของบัญชี';
+          
+          Swal.fire({
+              toast: true, position: 'top-end', 
+              title: 'ดึงข้อมูลสำเร็จ', icon: 'success', 
+              timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'
+          });
+
+      }, 1500);
+  }
+</script>
+
+</body>
+</html>
