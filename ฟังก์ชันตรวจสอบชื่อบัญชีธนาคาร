@@ -3581,7 +3581,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           setTimeout(openShiftLog, 1000);
       }
   }
-  // 🌟 ฟังก์ชันจัดการการลบข้อความ
+  /// 🌟 ฟังก์ชันจัดการการลบข้อความ
   async function deleteShiftLog(logId) {
       // เด้งถามเพื่อความชัวร์ก่อนลบ
       const confirmDelete = await Swal.fire({
