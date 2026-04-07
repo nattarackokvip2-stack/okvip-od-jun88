@@ -284,6 +284,11 @@
            <div class="hub-icon" style="text-shadow: none;">🎧</div>
            <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
         </div>
+        
+        <div class="hub-card" style="border: 1px solid #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(0, 255, 204, 0.4)'; this.style.background='rgba(0, 255, 204, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(0, 255, 204, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('bankCheckSection')">
+           <div class="hub-icon" style="text-shadow: none;">🏦</div>
+           <div class="hub-title" style="color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);">ตรวจสอบบัญชี</div>
+        </div>
       </div>
     </div>
 
@@ -615,7 +620,58 @@
         </table>
       </div>
     </div>
+
+    <div id="bankCheckSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0" style="color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5);">🏦 ระบบตรวจสอบชื่อบัญชีธนาคาร (Name Enquiry)</h4>
+      </div>
       
+      <div class="row justify-content-center mt-4">
+        <div class="col-md-6">
+          <div class="card-custom" style="background: #0a0a0c; border: 1px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.1);">
+            <form id="bankCheckForm" onsubmit="verifyBankAccount(event)">
+              <label class="text-white small mb-2">1. เลือกธนาคาร (คลิกแล้วพิมพ์ค้นหาได้)</label>
+              <input list="bankList" id="bankInput" class="form-control mb-4 bg-dark text-white border-secondary" placeholder="🔍 พิมพ์ชื่อธนาคาร..." onchange="handleBankSelection()" autocomplete="off" required>
+              <datalist id="bankList">
+                <option value="ธนาคารกสิกรไทย (KBANK)">
+                <option value="ธนาคารไทยพาณิชย์ (SCB)">
+                <option value="ธนาคารกรุงเทพ (BBL)">
+                <option value="ธนาคารกรุงไทย (KTB)">
+                <option value="ธนาคารกรุงศรีอยุธยา (BAY)">
+                <option value="ธนาคารทหารไทยธนชาต (TTB)">
+                <option value="ธนาคารออมสิน (GSB)">
+                <option value="ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (BAAC)">
+                <option value="ธนาคารอาคารสงเคราะห์ (GHB)">
+                <option value="ธนาคารยูโอบี (UOBT)">
+                <option value="ธนาคารทิสโก้ (TISCO)">
+                <option value="ธนาคารซีไอเอ็มบี ไทย (CIMBT)">
+                <option value="ธนาคารเกียรตินาคินภัทร (KKP)">
+                <option value="ธนาคารแลนด์ แอนด์ เฮ้าส์ (LHFG)">
+                <option value="ธนาคารไอซีบีซี ไทย (ICBC)">
+                <option value="ธนาคารไทยเครดิต (TCD)">
+                <option value="ธนาคารอิสลามแห่งประเทศไทย (IBANK)">
+              </datalist>
+
+              <label class="text-white small mb-2" id="accLabel">2. กรอกเลขที่บัญชี (เฉพาะตัวเลข 10 หลัก)</label>
+              <input type="text" id="bankAccNumber" class="form-control mb-4 bg-dark text-white border-secondary fw-bold text-center" placeholder="เช่น 0123456789" style="font-size: 1.2rem; letter-spacing: 2px;" oninput="handleAccInput(this)" maxlength="10" required>
+
+              <button type="submit" id="btnVerifyBank" class="btn w-100 py-3 fw-bold fs-5" style="background-color: #004d40; color: #00ffcc; border: 1px solid #00ffcc; transition: 0.3s;" onmouseover="this.style.backgroundColor='#006655'" onmouseout="this.style.backgroundColor='#004d40'">
+                🔍 ตรวจสอบชื่อเจ้าของบัญชี
+              </button>
+            </form>
+
+            <div id="bankResultArea" class="mt-4 p-4 text-center" style="display: none; border-radius: 10px; background: rgba(0, 255, 204, 0.05); border: 1px dashed #00ffcc;">
+              <div class="small text-muted mb-2">ผลการค้นหา:</div>
+              <div id="bankResultName" class="fw-bold" style="font-size: 1.5rem; color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.6);">
+                นาย ทดสอบ ระบบดี
+              </div>
+              <div class="small text-muted mt-2" id="bankResultDetails">KBANK - 0123456789</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <div id="portalSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">🌐 จัดการเว็บไซต์ (Websites)</h4>
@@ -3550,6 +3606,98 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           // โหลดหน้าต่างขึ้นมาใหม่เพื่ออัปเดตข้อมูล
           openShiftLog();
       }
+  }
+
+  // ==========================================
+  // 🏦 11. ฟังก์ชันตรวจสอบชื่อบัญชีธนาคาร (Name Enquiry)
+  // ==========================================
+  let currentBankLimit = 10; // ลิมิตเริ่มต้นที่ 10 หลัก
+
+  // 🌟 ฟังก์ชันจัดการเมื่อเลือกธนาคาร (สลับ 10 หลัก / 12 หลัก)
+  function handleBankSelection() {
+      const val = document.getElementById('bankInput').value;
+      const accInput = document.getElementById('bankAccNumber');
+      const accLabel = document.getElementById('accLabel');
+      
+      // เช็คว่าเป็นธนาคาร ออมสิน (GSB), ธ.ก.ส. (BAAC) หรือ ธอส. (GHB) หรือไม่
+      if (val.includes('GSB') || val.includes('BAAC') || val.includes('GHB')) {
+          currentBankLimit = 12;
+          accInput.setAttribute('maxlength', '12');
+          accLabel.innerHTML = '2. กรอกเลขที่บัญชี <span class="text-warning fw-bold">(เฉพาะตัวเลข 12 หลัก)</span>';
+      } else if (val) {
+          currentBankLimit = 10;
+          accInput.setAttribute('maxlength', '10');
+          accLabel.innerHTML = '2. กรอกเลขที่บัญชี <span class="text-info fw-bold">(เฉพาะตัวเลข 10 หลัก)</span>';
+      }
+      
+      // ตัดข้อความที่เกินลิมิตออกทันที ถ้าย้ายไปเลือกธนาคารที่หลักน้อยกว่า
+      if (accInput.value.length > currentBankLimit) {
+          accInput.value = accInput.value.substring(0, currentBankLimit);
+      }
+  }
+
+  // 🌟 ฟังก์ชันบล็อกไม่ให้พิมพ์ตัวอักษร
+  function handleAccInput(input) {
+      input.value = input.value.replace(/[^0-9]/g, ''); // บังคับให้เป็นตัวเลขเท่านั้น
+  }
+
+  // 🌟 ฟังก์ชันกดส่งข้อมูลเช็คบัญชี
+  async function verifyBankAccount(e) {
+      e.preventDefault();
+      
+      const bankVal = document.getElementById('bankInput').value;
+      const acc = document.getElementById('bankAccNumber').value;
+      const btn = document.getElementById('btnVerifyBank');
+      const resultArea = document.getElementById('bankResultArea');
+      const resultName = document.getElementById('bankResultName');
+      const resultDetails = document.getElementById('bankResultDetails');
+
+      if (!bankVal || !acc) return;
+
+      // สกัดเอาเฉพาะตัวย่อภาษาอังกฤษมาใช้ เช่น (KBANK) -> KBANK
+      const bankMatch = bankVal.match(/\(([^)]+)\)/);
+      const bankCode = bankMatch ? bankMatch[1] : bankVal;
+
+      // ตรวจสอบความยาวเลขบัญชีให้เป๊ะก่อนส่งข้อมูล
+      if (acc.length !== currentBankLimit) {
+          Swal.fire({
+              toast: true, position: 'top', 
+              title: `เลขบัญชีธนาคารนี้ต้องมี ${currentBankLimit} หลักครับ`, 
+              icon: 'warning', showConfirmButton: false, timer: 3000, background: '#111', color: '#fff'
+          });
+          return;
+      }
+
+      // ซ่อนผลลัพธ์เก่า และเปลี่ยนสถานะปุ่ม
+      resultArea.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '⏳ กำลังเชื่อมต่อระบบธนาคาร...';
+
+      // 🚀 จำลองการส่งข้อมูล (รอเชื่อม API จริงในอนาคต)
+      setTimeout(() => {
+          const mockResponse = {
+              success: true,
+              accountName: "นาย สมมติว่า ได้ชื่อมาจริงๆ",
+              bankName: bankCode,
+              accNumber: acc
+          };
+
+          // แสดงผลลัพธ์
+          resultName.innerText = mockResponse.accountName;
+          resultDetails.innerText = `${mockResponse.bankName} - ${mockResponse.accNumber}`;
+          resultArea.style.display = 'block';
+
+          // คืนค่าปุ่มกลับมาเหมือนเดิม
+          btn.disabled = false;
+          btn.innerHTML = '🔍 ตรวจสอบชื่อเจ้าของบัญชี';
+          
+          Swal.fire({
+              toast: true, position: 'top-end', 
+              title: 'ดึงข้อมูลสำเร็จ', icon: 'success', 
+              timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'
+          });
+
+      }, 1500);
   }
 </script>
 
