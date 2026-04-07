@@ -65,30 +65,10 @@
   .btn-neon-red:hover { background: var(--neon-red); color: #fff; box-shadow: 0 0 15px rgba(255,51,102,0.7); text-shadow: none; }
   .btn-neon-green { background: transparent; color: var(--neon-green); border: 1px solid var(--neon-green); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(0,255,102,0.5); }
   .btn-neon-green:hover { background: var(--neon-green); color: #000; box-shadow: 0 0 15px rgba(0,255,102,0.7); text-shadow: none; }
-  /* 🌟 ล็อคความสูงของกล่องตรายาง เพื่อไม่ให้ตารางกระโดดเวลาปุ่มโผล่มา */
-  #stampToolbox {
-      position: relative;
-      min-height: 40px; 
-      width: 100%;
-  }
   
-  /* 🌟 ปุ่มบันทึกตารางแบบฝังตัว (อยู่มุมขวาบนถาวร ไม่ลอยตามจอ) */
-  .neon-save-button { 
-      background-color: #004d26; 
-      border: 1px solid rgba(0, 255, 95, 0.5); 
-      color: #00ff5f; 
-      padding: 6px 15px; 
-      font-size: 0.95rem; 
-      border-radius: 8px; 
-      cursor: pointer; 
-      display: flex !important; /* บังคับให้โชว์ตลอดเวลา ไม่ให้ JS ซ่อน */
-      align-items: center; 
-      gap: 8px; 
-      font-weight: bold; 
-      text-shadow: 0 0 5px #00ff5f; 
-      box-shadow: 0 0 8px rgba(0, 255, 95, 0.4); 
-      transition: all 0.2s ease; 
-  }
+  #stampToolbox { position: relative; min-height: 40px; width: 100%; }
+  
+  .neon-save-button { background-color: #004d26; border: 1px solid rgba(0, 255, 95, 0.5); color: #00ff5f; padding: 6px 15px; font-size: 0.95rem; border-radius: 8px; cursor: pointer; display: flex !important; align-items: center; gap: 8px; font-weight: bold; text-shadow: 0 0 5px #00ff5f; box-shadow: 0 0 8px rgba(0, 255, 95, 0.4); transition: all 0.2s ease; }
   .neon-save-button:hover { background-color: #006633; transform: scale(1.05); }
   
   .table { color: var(--text-white-neon); border-color: var(--border-color); }
@@ -135,15 +115,11 @@
   .stamp-palette { display: flex; gap: 10px; flex-wrap: wrap;}
   .stamp-btn { padding: 6px 15px; border-radius: 8px; border: 1px solid #444; background: #111; color: #ccc; cursor: pointer; font-weight: 500; text-shadow: none; transition: 0.2s;}
   .stamp-btn.active { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.5); transform: scale(1.05); color: #fff; font-weight: bold;}
-  /* 🌟 ปรับตารางให้ล็อคหัวบนและซ้าย */
+  
   .table-container { overflow-x: auto; overflow-y: auto; max-height: 70vh; background: #0a0a0c; border-radius: 12px; border: 1px solid var(--border-color); position: relative;}
   .schedule-table { width: max-content; border-collapse: collapse; table-layout: fixed; font-size: 0.9rem; text-shadow: none;}
   .schedule-table th, .schedule-table td { border: 1px solid #2a2a2a; text-align: center; vertical-align: middle; transition: background-color 0.1s; user-select: none;}
-  
-  /* ล็อคแถบวันที่ให้อยู่ด้านบนเสมอ */
   .schedule-table th { background: #151518; color: #aaa; font-weight: 500; position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 0 #2a2a2a;}
-  
-  /* ล็อคชื่อและแผนกให้อยู่ซ้ายสุดเสมอ และปรับ z-index ให้ไม่จมเวลาเลื่อนลง */
   .name-col { width: 140px; min-width: 140px; text-align: left !important; padding-left: 15px !important; font-weight: bold; background: #0f0f12 !important; position: sticky; left: 0; z-index: 15; color: #fff;}
   .dept-col { width: 80px; min-width: 80px; background: #0a0a0c; }
   .schedule-table thead .name-col, .schedule-table thead .dept-col { z-index: 25 !important; }
@@ -280,14 +256,20 @@
         <div class="hub-card hub-manual" onclick="switchMainTab('manualSection')"><div class="hub-icon">📖</div><div class="hub-title">คู่มือการทำงาน</div></div>
         <div class="hub-card hub-penalty" onclick="switchMainTab('penaltySection')"><div class="hub-icon">⚠️</div><div class="hub-title">ตารางลงโทษพนักงาน</div></div>
         <div class="hub-card hub-portal" onclick="switchMainTab('portalSection')"><div class="hub-icon">🌐</div><div class="hub-title">จัดการเว็บไซต์</div></div>
+        
         <div class="hub-card" style="border: 1px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(88, 101, 242, 0.4)'; this.style.background='rgba(88, 101, 242, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(88, 101, 242, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('discordSection')">
            <div class="hub-icon" style="text-shadow: none;">🎧</div>
            <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
         </div>
+
+        <div class="hub-card" style="border: 1px solid #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(0, 255, 204, 0.4)'; this.style.background='rgba(0, 255, 204, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(0, 255, 204, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('bankCheckSection')">
+           <div class="hub-icon" style="text-shadow: none;">🏦</div>
+           <div class="hub-title" style="color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);">ตรวจสอบบัญชี</div>
+        </div>
       </div>
     </div>
-
-    <div id="announceSection" class="content-section">
+    
+<div id="announceSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
         <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
@@ -476,7 +458,7 @@
       </div>
     </div>
 
-    <div id="mealSection" class="content-section">
+<div id="mealSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
            <h4 class="fw-bold mb-0" style="color: #ff66cc;">🍽️ จัดการตารางทานข้าว</h4>
@@ -615,8 +597,148 @@
         </table>
       </div>
     </div>
+
+<div id="mealSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+        <div>
+           <h4 class="fw-bold mb-0" style="color: #ff66cc;">🍽️ จัดการตารางทานข้าว</h4>
+           <p class="small text-muted mb-0 mt-1">ระบบจะดึงเฉพาะพนักงานที่มาทำงานวันนี้ และกระจายรอบทานข้าวเพื่อป้องกันเว็บขาดคน</p>
+        </div>
+        <div class="d-flex align-items-center" style="background: #111; border: 1px solid #ff66cc; border-radius: 8px;">
+            <span class="px-3 text-white small">📅 เลือกวันที่:</span>
+            <input type="date" id="mealDatePicker" class="form-control w-auto border-0" style="background: transparent; color: #ff66cc;" onchange="syncMealDate()">
+        </div>
+      </div>
       
-    <div id="portalSection" class="content-section">
+      <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+         <div class="d-flex align-items-center gap-2 flex-wrap">
+             <input type="text" id="searchMeal" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleMealSearch(this.value)" style="width: 150px;">
+             <select id="filterMealShift" class="form-select bg-dark text-white" style="width: auto; border-color: #ff66cc; box-shadow: 0 0 5px rgba(255,102,204,0.3);" onchange="renderMealTable()">
+                 <option value="ALL">-- รวมทุกกะ --</option>
+                 <option value="D">กะเช้า (D)</option>
+                 <option value="N">กะดึก (N)</option>
+             </select>
+             <select id="filterMealDept" class="form-select bg-dark text-white" style="width: auto; border-color: #ff66cc; box-shadow: 0 0 5px rgba(255,102,204,0.3);" onchange="renderMealTable()">
+                 <option value="ALL">-- รวมทุกแผนก --</option>
+                 <option value="OD">ออดิท (OD)</option>
+                 <option value="ODOL">ออดิทออนไลน์ (ODOL)</option>
+             </select>
+         </div>
+         <div id="mealActionBtns" style="display: flex; gap: 10px;">
+           <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
+           <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
+         </div>
+      </div>
+      
+      <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th>ชื่อพนักงาน</th>
+              <th>แผนก</th>
+              <th>กะงานวันนี้</th>
+              <th>เว็บที่รับผิดชอบวันนี้</th>
+              <th>เพื่อนร่วมงานเว็บเดียวกัน</th>
+              <th>จัดรอบทานข้าว</th>
+            </tr>
+          </thead>
+          <tbody id="mealTableBody">
+             <tr><td colspan="6" class="text-center text-muted py-5">กรุณาตั้งค่า 'หน้าที่หน้างาน' ให้เสร็จก่อนจัดตารางทานข้าวนะครับ</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    
+    <div id="manualSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">📖 คู่มือการทำงาน และ กติกา</h4>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchManual" class="form-control neon-input-search" placeholder="🔍 ค้นหาหัวข้อ..." oninput="handleManualSearch(this.value)">
+            <button id="addManualBtn" class="btn btn-neon-blue px-4" style="display:none;" onclick="openNewManualModal()">➕ สร้างเนื้อหาใหม่</button>
+        </div>
+      </div>
+      
+      <div class="filter-bar mb-3 pb-2" style="border-bottom: 1px solid #333;">
+        <div id="tabManual" class="dept-badge active" onclick="switchManualTab('MANUAL', this)">📖 คู่มือการทำงาน</div>
+        <div id="tabRule" class="dept-badge" onclick="switchManualTab('RULE', this)">⚖️ กติกาและเงื่อนไข</div>
+      </div>
+
+      <div class="filter-bar mb-4">
+        <div class="dept-badge active" onclick="filterManualView('ALL', this)">🔍 ดูทั้งหมด</div>
+        <div class="dept-badge" onclick="filterManualView('ทั่วไป (ALL)', this)">🌐 ทั่วไป</div>
+        <div class="dept-badge" onclick="filterManualView('ออดิท (OD)', this)">🔎 OD</div>
+        <div class="dept-badge" onclick="filterManualView('ออดิทออนไลน์ (ODOL)', this)">💻 ODOL</div>
+      </div>
+      
+      <div id="manualGridArea" class="manual-grid"></div>
+    </div>
+
+    <div id="penaltySection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h4 class="fw-bold mb-0" style="color: #ff3366;">⚠️ ตารางบันทึกการลงโทษพนักงาน</h4>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <span class="text-white small">📅 เลือกเดือน:</span>
+            <input type="month" id="penaltyMonthFilter" class="form-control" style="width: auto; background: #111; color: #ff3366; border-color: #ff3366;" onchange="loadPenaltiesTable()">
+            <input type="text" id="penaltySearchInput" class="form-control neon-input-search" style="width: 200px; border-color: #ff3366;" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="loadPenaltiesTable()">
+            <button class="btn btn-outline-success px-3 ms-2" onclick="exportTableToExcel('penaltyTable', 'Penalty_Report')">📥 โหลด Excel</button>
+            <button id="addPenaltyBtn" class="btn btn-neon-red px-4 ms-2" style="display:none;" onclick="openPenaltyModal()">➕ บันทึกความผิด</button>
+        </div>
+      </div>
+      <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle" id="penaltyTable">
+          <thead><tr><th>เดือน/ปี</th><th>พนักงาน</th><th>แผนก</th><th>รายละเอียดความผิด</th><th>บทลงโทษ</th><th>ยอดหักสุทธิ</th><th>สถานะ</th><th class="text-center">จัดการ</th></tr></thead>
+          <tbody id="penaltyTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="discordSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2">
+           <div class="spinner-grow spinner-grow-sm text-primary" role="status" id="discordLiveIndicator"></div>
+           <h4 class="fw-bold mb-0" style="color: #5865F2;">🎧 ศูนย์บัญชาการ Discord</h4>
+        </div>
+        <div class="d-flex align-items-center gap-2" style="background: #111; border: 1px solid #5865F2; border-radius: 8px;">
+            <button class="btn btn-outline-success btn-sm px-3 me-2" onclick="exportTableToExcel('discordTable', 'Discord_Attendance_Report')">📥 โหลด Excel</button>
+            <span class="px-3 text-white small">📅 วันที่:</span>
+            <input type="date" id="discordDatePicker" class="form-control w-auto border-0" style="background: transparent; color: #5865F2;" onchange="loadDiscordAttendance()">
+        </div>
+      </div>
+      
+      <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
+        <div id="tabBtnDcAttendance" class="dept-badge active" onclick="switchDiscordTab('attendance')" style="font-size: 1.05rem; padding: 8px 25px;">⏰ 1. ตรวจสอบเวลาเข้างาน</div>
+        <div id="tabBtnDcMonitor" class="dept-badge" onclick="switchDiscordTab('monitor')" style="font-size: 1.05rem; padding: 8px 25px;">📡 2. ติดตามสถานะ (กล้องวงจรปิด)</div>
+      </div>
+
+      <div id="dcAttendanceFilterContainer" class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="filter-bar" id="dcFilterBar">
+          <div class="dept-badge active" onclick="filterDiscord('ON_TIME', this)">🟢 เข้าตรงเวลา</div>
+          <div class="dept-badge" onclick="filterDiscord('LATE', this)">🔴 มาสาย</div>
+          <div class="dept-badge" onclick="filterDiscord('MISSING', this)">⚪ ยังไม่เข้างาน</div>
+          <div class="dept-badge" onclick="filterDiscord('LEAVE', this)" style="border-color:#ffcc00; color:#ffcc00;">🛏️ วันหยุด / ลา (X, TX, KL)</div>
+        </div>
+      </div>
+
+      <div id="dcMonitorFilterContainer" class="d-none justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div class="filter-bar" id="dcMonitorBar">
+          <div class="dept-badge active" onclick="filterMonitorShift('ALL', this)">👥 แสดงคนในระบบทั้งหมด</div>
+          <div class="dept-badge" onclick="filterMonitorShift('A', this)">☀️ เฉพาะ กะ A (08:00 - 20:00)</div>
+          <div class="dept-badge" onclick="filterMonitorShift('B', this)">🌙 เฉพาะ กะ B (20:00 - 08:00)</div>
+          <div class="dept-badge" onclick="filterMonitorShift('UNKNOWN', this)" style="border-color:#ff9900; color:#ff9900;">👽 ดูรายชื่อคนนอก (ไม่มีในระบบ)</div>
+        </div>
+      </div>
+
+      <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle" id="discordTable">
+          <thead id="discordThead"></thead>
+          <tbody id="discordTableBody">
+             <tr><td colspan="7" class="text-center text-muted py-5">กำลังเชื่อมต่อกับระบบ...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+<div id="portalSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">🌐 จัดการเว็บไซต์ (Websites)</h4>
         <div>
@@ -631,10 +753,62 @@
       <div id="portalGridArea" class="manual-grid"></div>
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
     </div>
+    
+    <div id="bankCheckSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0" style="color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5);">🏦 ระบบตรวจสอบชื่อบัญชีธนาคาร (Name Enquiry)</h4>
+      </div>
+      
+      <div class="row justify-content-center mt-4">
+        <div class="col-md-6">
+          <div class="card-custom" style="background: #0a0a0c; border: 1px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.1);">
+            <form id="bankCheckForm" onsubmit="verifyBankAccount(event)">
+              <label class="text-white small mb-2">1. เลือกธนาคาร (คลิกแล้วพิมพ์ค้นหาได้)</label>
+              <input list="bankList" id="bankInput" class="form-control mb-4 bg-dark text-white border-secondary" placeholder="🔍 พิมพ์ชื่อธนาคาร..." onchange="handleBankSelection()" autocomplete="off" required>
+              <datalist id="bankList">
+                <option value="ธนาคารกสิกรไทย (KBANK)">
+                <option value="ธนาคารไทยพาณิชย์ (SCB)">
+                <option value="ธนาคารกรุงเทพ (BBL)">
+                <option value="ธนาคารกรุงไทย (KTB)">
+                <option value="ธนาคารกรุงศรีอยุธยา (BAY)">
+                <option value="ธนาคารทหารไทยธนชาต (TTB)">
+                <option value="ธนาคารออมสิน (GSB)">
+                <option value="ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (BAAC)">
+                <option value="ธนาคารอาคารสงเคราะห์ (GHB)">
+                <option value="ธนาคารยูโอบี (UOBT)">
+                <option value="ธนาคารทิสโก้ (TISCO)">
+                <option value="ธนาคารซีไอเอ็มบี ไทย (CIMBT)">
+                <option value="ธนาคารเกียรตินาคินภัทร (KKP)">
+                <option value="ธนาคารแลนด์ แอนด์ เฮ้าส์ (LHFG)">
+                <option value="ธนาคารไอซีบีซี ไทย (ICBC)">
+                <option value="ธนาคารไทยเครดิต (TCD)">
+                <option value="ธนาคารอิสลามแห่งประเทศไทย (IBANK)">
+              </datalist>
 
-  </div> </div> 
+              <label class="text-white small mb-2" id="accLabel">2. กรอกเลขที่บัญชี (เฉพาะตัวเลข 10 หลัก)</label>
+              <input type="text" id="bankAccNumber" class="form-control mb-4 bg-dark text-white border-secondary fw-bold text-center" placeholder="เช่น 0123456789" style="font-size: 1.2rem; letter-spacing: 2px;" oninput="handleAccInput(this)" maxlength="10" required>
 
-  <div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
+              <button type="submit" id="btnVerifyBank" class="btn w-100 py-3 fw-bold fs-5" style="background-color: #004d40; color: #00ffcc; border: 1px solid #00ffcc; transition: 0.3s;" onmouseover="this.style.backgroundColor='#006655'" onmouseout="this.style.backgroundColor='#004d40'">
+                🔍 ตรวจสอบชื่อเจ้าของบัญชี
+              </button>
+            </form>
+
+            <div id="bankResultArea" class="mt-4 p-4 text-center" style="display: none; border-radius: 10px; background: rgba(0, 255, 204, 0.05); border: 1px dashed #00ffcc;">
+              <div class="small text-muted mb-2">ผลการค้นหา:</div>
+              <div id="bankResultName" class="fw-bold" style="font-size: 1.5rem; color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.6);">
+                นาย ทดสอบ ระบบดี
+              </div>
+              <div class="small text-muted mt-2" id="bankResultDetails">KBANK - 0123456789</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div> 
+</div>
+
+<div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
     <h4 class="fw-bold mb-4 text-center text-warning" id="announceModalTitle">📢 สร้างประกาศใหม่</h4>
     <form id="announceForm" onsubmit="handleAnnounceSubmit(event)">
@@ -1670,317 +1844,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
 
   function renderStampPalette() { let html = ''; for (const [code, style] of Object.entries(stampConfig)) { let isDisabled = ""; let opacityStyle = ""; if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; } html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; } document.getElementById('stampPalette').innerHTML = html; }
   
-  function selectStamp(code, btn) { 
-      if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
-          Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
-          return; 
-      } 
-      
-      // 🌟 บังคับเปิดโหมดเช็คยอดก่อนลง X หรือ PN
-      const restrictedStamps = ['X', 'PN', 'TX', 'XX'];
-      if (restrictedStamps.includes(code)) {
-          const toggleSum = document.getElementById('toggleScheduleSummary');
-          if (toggleSum && !toggleSum.checked) {
-              Swal.fire({title: 'โหมดป้องกัน', text: 'กรุณาติ๊กเปิดสวิตช์ [📊 เปิดโหมดเช็คยอด] ด้านบนก่อน เพื่อตรวจสอบจำนวนคนหยุดก่อนลงตรายางครับ', icon: 'warning', background:'#111', color:'#fff'});
-              return;
-          }
-      }
-
-      currentStamp = code; 
-      document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); 
-      btn.classList.add('active'); 
-      if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); 
-  }
-  
-  function changeMonth(offset) { 
-      if(Object.keys(unsavedChanges).length > 0){ Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณาบันทึกตารางปัจจุบันก่อนเปลี่ยนเดือน', icon:'warning', background:'#111', color:'#fff'}); return; } 
-      const p = document.getElementById('monthPicker'); if(!p.value) return; 
-      let [y, m] = p.value.split('-').map(Number); m += offset; 
-      if (m > 12) { m = 1; y++; } else if (m < 1) { m = 12; y--; } 
-      p.value = `${y}-${String(m).padStart(2, '0')}`; loadScheduleTable(); checkLeaveAlerts(); 
-  }
-  
-  document.addEventListener('mouseup', function() { isDraggingStamp = false; });
-
-  async function confirmClearSchedule() { 
-      const ym = document.getElementById('monthPicker').value; 
-      Swal.fire({ 
-          title: `ไม่บันทึก ${ym}?`, 
-          text: "ข้อมูลของเดือนนี้จะถูกลบทั้งหมด!", 
-          icon: 'warning', 
-          showCancelButton: true, 
-          confirmButtonColor: '#ff3366', 
-          confirmButtonText: 'ล้างทั้งหมด', 
-          background: '#111', 
-          color: '#fff' 
-      }).then(async r => { 
-          if(r.isConfirmed) { 
-              Swal.fire({title:'กำลังล้าง...', didOpen:()=>Swal.showLoading()}); 
-              await supabaseClient.from('schedules').delete().eq('yearMonth', ym); 
-              unsavedChanges = {}; 
-              document.getElementById('btnSaveSchedule').style.display = 'none'; 
-              await loadScheduleTable(); 
-              Swal.fire({toast:true, position:'top-end', title:'ล้างข้อมูลเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
-          } 
-      }); 
-  }
-
-  function switchScheduleTab(mode) {
-      if(Object.keys(unsavedChanges).length > 0){ 
-          Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนสลับโหมด', icon:'warning', background:'#111', color:'#fff'}); 
-          return; 
-      }
-      currentScheduleMode = mode;
-      document.getElementById('tabBtnRealSchedule').classList.toggle('active', mode === 'REAL');
-      document.getElementById('tabBtnSwapSandbox').classList.toggle('active', mode === 'SANDBOX');
-      
-      if(mode === 'REAL') {
-          document.getElementById('tabBtnRealSchedule').style.borderColor = "#fff"; document.getElementById('tabBtnRealSchedule').style.color = "#fff";
-          document.getElementById('tabBtnSwapSandbox').style.borderColor = "#ff9900"; document.getElementById('tabBtnSwapSandbox').style.color = "#ff9900";
-          document.getElementById('realScheduleActions').style.display = 'flex';
-          document.getElementById('sandboxScheduleActions').style.display = 'none';
-          document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
-      } else {
-          document.getElementById('tabBtnSwapSandbox').style.borderColor = "#fff"; document.getElementById('tabBtnSwapSandbox').style.color = "#fff";
-          document.getElementById('tabBtnRealSchedule').style.borderColor = "#444"; document.getElementById('tabBtnRealSchedule').style.color = "#ccc";
-          document.getElementById('realScheduleActions').style.display = 'none';
-          document.getElementById('sandboxScheduleActions').style.display = (myRole === 'SuperAdmin') ? 'flex' : 'none';
-          document.getElementById('stampToolbox').style.setProperty('display', 'none', 'important'); 
-      }
-      loadScheduleTable();
-  }
-
-  function filterScheduleDept(dept, btn) { 
-      if(Object.keys(unsavedChanges).length > 0){ 
-          Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); 
-          return; 
-      } 
-      currentSchDept = dept; 
-      
-      document.querySelectorAll('#schDeptFilterBar .dept-badge').forEach(b => { 
-          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; 
-      }); 
-      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)"; 
-      
-      const shiftBar = document.getElementById('schShiftFilterBar');
-      if (dept === 'ออดิท (OD)' || dept === 'ออดิทออนไลน์ (ODOL)') {
-          shiftBar.style.display = 'flex';
-      } else {
-          shiftBar.style.display = 'none';
-          currentSchShift = 'ALL'; 
-          document.querySelectorAll('#schShiftFilterBar .dept-badge').forEach(b => { 
-              b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; 
-          });
-          document.querySelector('#schShiftFilterBar .dept-badge').classList.add('active');
-          document.querySelector('#schShiftFilterBar .dept-badge').style.borderColor = "#fff";
-          document.querySelector('#schShiftFilterBar .dept-badge').style.color = "#fff";
-      }
-      
-      loadScheduleTable(); 
-  }
-
-  function filterScheduleShift(shift, btn) {
-      if(Object.keys(unsavedChanges).length > 0){ 
-          Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); 
-          return; 
-      }
-      currentSchShift = shift;
-      
-      document.querySelectorAll('#schShiftFilterBar .dept-badge').forEach(b => { 
-          b.classList.remove('active'); b.style.borderColor = "#444"; 
-          b.style.color = b.innerText.includes('A') ? '#00f0ff' : (b.innerText.includes('B') ? '#ffcc00' : '#ccc'); 
-          b.style.boxShadow = "none";
-      }); 
-      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)";
-      
-      loadScheduleTable();
-  }
-
-  function handleScheduleSearch(term) { scheduleSearchTerm = term.toLowerCase().trim(); loadScheduleTable(); }
-
-  async function loadScheduleTable() {
-    try {
-        unsavedChanges = {}; 
-        if(document.getElementById('btnSaveSchedule')) document.getElementById('btnSaveSchedule').style.display = 'none'; 
-        if(document.getElementById('btnSaveSandbox')) document.getElementById('btnSaveSandbox').style.display = 'none'; 
-        
-        const ym = document.getElementById('monthPicker').value; 
-        if(!ym || allUsersData.length === 0) { 
-            if(document.getElementById('scheduleLoading')) document.getElementById('scheduleLoading').style.display = 'none'; 
-            return; 
-        } 
-        
-        document.getElementById('scheduleTable').style.display = 'none'; 
-        document.getElementById('scheduleLoading').style.display = 'block'; 
-        document.getElementById('scheduleLoading').innerText = currentScheduleMode === 'REAL' ? 'กำลังโหลดข้อมูลตารางจริง...' : 'กำลังโหลดโหมดจำลอง...';
-
-        const { data: schData, error: schErr } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
-        if (schErr) throw schErr;
-
-        let realDataMap = {};
-        if (schData) schData.forEach(r => realDataMap[r.nickname] = r.daysData ? JSON.parse(r.daysData) : {});
-
-        let displayMap = {};
-
-        if (currentScheduleMode === 'REAL') {
-            displayMap = realDataMap;
-        } else {
-            let storedSandbox = localStorage.getItem('okvip_sandbox_' + ym);
-            if (storedSandbox) {
-                let parsed = JSON.parse(storedSandbox);
-                sandboxDataCache = parsed.schedules || {};
-                sandboxUserShiftCache = parsed.shifts || {};
-                displayMap = sandboxDataCache;
-            } else {
-                sandboxDataCache = JSON.parse(JSON.stringify(realDataMap));
-                sandboxUserShiftCache = {};
-                displayMap = sandboxDataCache;
-            }
-        }
-
-        const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate(); const today = new Date(); const currentMonthStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`; const isCurMonth = (ym === currentMonthStr); const curD = today.getDate(); const selectedDate = new Date(parseInt(year), parseInt(month) - 1, 1); const currentDate = new Date(today.getFullYear(), today.getMonth(), 1); const isNextMonthOrFuture = (selectedDate > currentDate);
-        document.getElementById('scheduleLoading').style.display = 'none'; document.getElementById('scheduleTable').style.display = 'table';
-        
-        // 🌟 1. สร้างหัวตารางวันที่ (ชั้นที่ 1 ฝังติดขอบบน)
-        let th1 = '<tr style="height: 45px;"><th class="name-col" style="top: 0px; z-index: 40 !important;">📅 วันที่ / พนักงาน</th><th class="dept-col text-center" style="width: 70px; min-width: 70px; top: 0px; z-index: 40 !important;">กะ</th><th class="dept-col" style="top: 0px; z-index: 40 !important;">แผนก</th>'; 
-        for(let d=1; d<=daysInMonth; d++) { let c = (isCurMonth && d === curD) ? 'today-header date-col' : 'date-col'; th1 += `<th class="${c}" style="top: 0px; z-index: 20 !important;">${d}</th>`; } 
-        th1 += '</tr>'; 
-        
-        // 🌟 2. สร้างแถบสรุปยอดแบบแยกกะ (ชั้นที่ 2 ฝังติดลงมาตามระยะ)
-        let shiftsToRender = currentSchShift === 'ALL' ? ['A', 'B'] : [currentSchShift];
-        let summaryHtml = '';
-        let topOffset = 45; // ระยะห่างจากขอบบน
-
-        shiftsToRender.forEach(sh => {
-            let icon = sh === 'A' ? '☀️' : '🌙';
-            let deptText = currentSchDept === 'ALL' ? 'ทุกแผนก' : currentSchDept.split(' ')[0];
-            let label = `${icon} สรุปยอด ${deptText} (กะ ${sh})`;
-            
-            let tr = `<tr style="height: 45px;">
-                <th class="name-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;">
-                    <div class="d-flex justify-content-between align-items-center w-100 pr-2">
-                        <span style="font-size: 0.85rem; color: #fff;">${label}</span>
-                        <div class="d-flex flex-column text-end" style="font-size: 0.7rem; line-height: 1.2;">
-                            <span style="color: #00ff66;">ทำ</span><span style="color: #ff3366;">หยุด</span>
-                        </div>
-                    </div>
-                </th>
-                <th class="dept-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;"></th>
-                <th class="dept-col" style="background:#0a0a0c !important; top: ${topOffset}px; z-index: 40 !important; box-shadow: inset 0 -1px 0 #333;"></th>`;
-                
-            for(let d=1; d<=daysInMonth; d++) {
-                let c = (isCurMonth && d === curD) ? 'today-column' : '';
-                tr += `<th class="${c}" style="background:#111 !important; top: ${topOffset}px; z-index: 20 !important; box-shadow: inset 0 -1px 0 #333; padding: 4px 0 !important; text-align: center;">
-                    <div style="color: #00ff66; font-size: 0.95rem; font-weight: bold; line-height: 1.1;" id="sum-work-${sh}-${d}">0</div>
-                    <div style="color: #ff3366; font-size: 0.95rem; font-weight: bold; line-height: 1.1; margin-top: 2px;" id="sum-off-${sh}-${d}">0</div>
-                </th>`;
-            }
-            tr += '</tr>';
-            summaryHtml += tr;
-            topOffset += 45; // เพิ่มระยะห่างสำหรับแถวถัดไป
-        });
-
-        document.getElementById('schThead').innerHTML = th1 + summaryHtml;
-        
-        // 🌟 3. สร้างเนื้อหาตารางพนักงาน
-        let tb = ''; let hasData = false;
-        allUsersData.forEach(u => {
-            if(!u || u[7] !== 'Active') return; 
-            const nick = u[1] ? u[1].toString() : ''; 
-            const dept = u[3] ? u[3].toString() : 'ไม่ระบุ';
-            
-            let shiftSet = u[9] ? u[9].toString() : '-'; 
-            if (currentScheduleMode === 'SANDBOX' && sandboxUserShiftCache[nick]) {
-                shiftSet = sandboxUserShiftCache[nick];
-            }
-            let shiftChar = shiftSet.includes('(A)') ? 'A' : (shiftSet.includes('(B)') ? 'B' : '');
-            
-            if (currentSchDept !== 'ALL') {
-                if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) return;
-                if (currentSchDept === 'ออดิทออนไลน์ (ODOL)' && !dept.includes('ODOL')) return;
-                if (currentSchDept === 'อื่นๆ (OTHER)' && (dept.includes('OD') || dept.includes('ODOL'))) return;
-            }
-            
-            if (currentSchShift !== 'ALL') {
-                if (currentSchShift === 'A' && shiftChar !== 'A') return;
-                if (currentSchShift === 'B' && shiftChar !== 'B') return;
-            }
-            if (scheduleSearchTerm && !nick.toLowerCase().includes(scheduleSearchTerm.toLowerCase())) return; 
-            
-            hasData = true;
-            
-            const isMyRow = (nick === localStorage.getItem('okvip_nick')); 
-            const canEdit = (myRole === 'SuperAdmin' && currentScheduleMode === 'REAL') || (isMyRow && isNextMonthOrFuture && currentScheduleMode === 'REAL');
-            const nameClass = isMyRow ? 'name-col highlight-me' : 'name-col'; 
-            const rowBg = currentScheduleMode === 'SANDBOX' ? 'background-color: rgba(255, 153, 0, 0.05);' : (isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : '');
-            
-            let shiftBadge = '-';
-            if(shiftChar === 'A') shiftBadge = '<span class="text-warning fw-bold">☀️ A</span>';
-            else if(shiftChar === 'B') shiftBadge = '<span class="text-info fw-bold">🌙 B</span>';
-            
-            // แทรก data-shift ไว้ใน tr เพื่อให้ระบบนับแยกกะได้ง่ายๆ
-            tb += `<tr data-nick="${nick}" data-dept="${dept}" data-shift="${shiftChar}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-center" style="background: #111;">${shiftBadge}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`;
-            
-            const userDays = displayMap[nick] || {};
-            for(let d=1; d<=daysInMonth; d++) { 
-                const val = userDays[d] || ''; 
-                const style = stampConfig[val] || { bg:'transparent', text:'#eee' }; 
-                const mouse = canEdit ? `onmousedown="startStampDrag(this,'${nick}','${dept}',${d})" onmouseenter="enterStampDrag(event, this,'${nick}','${dept}',${d})"` : ''; 
-                const c = (isCurMonth && d === curD) ? 'today-column' : ''; 
-                const curClass = canEdit ? 'admin-mode cell-day' : 'cell-day'; 
-                tb += `<td class="${curClass} ${c}" data-day="${d}" data-original="${val}" style="background-color:${style.bg}; color:${style.text};" ${mouse}>${val}</td>`; 
-            } 
-            tb += '</tr>';
-        }); 
-        if (!hasData) tb = `<tr><td colspan="${daysInMonth + 3}" class="text-center py-5 text-muted">ไม่พบข้อมูลพนักงานในกลุ่มนี้</td></tr>`;
-        document.getElementById('schTbody').innerHTML = tb;
-
-        if (currentScheduleMode === 'REAL' && myRole === 'SuperAdmin') {
-            let hasSandbox = localStorage.getItem('okvip_sandbox_' + ym) !== null;
-            document.getElementById('btnSyncSandbox').style.display = hasSandbox ? 'inline-block' : 'none';
-        }
-        
-        // เรียกคำนวณทันที
-        if (typeof recalcScheduleSummary === 'function') recalcScheduleSummary();
-
-    } catch (err) {
-        console.error("Load Schedule Error:", err); 
-        document.getElementById('scheduleLoading').style.display = 'none';
-    }
-  }
-
-  // 🌟 ฟังก์ชันคำนวณยอดคนทำงาน/หยุด เรียลไทม์ (นับแยกตามกะแบบเป๊ะๆ)
-  function recalcScheduleSummary() {
-      const ym = document.getElementById('monthPicker').value;
-      if(!ym) return;
-      const [year, month] = ym.split('-'); 
-      const daysInMonth = new Date(year, month, 0).getDate();
-
-      for(let d=1; d<=daysInMonth; d++) {
-          // รีเซ็ตค่านับของทั้ง 2 กะ
-          let counts = { 'A': { work: 0, off: 0 }, 'B': { work: 0, off: 0 } };
-          
-          document.querySelectorAll('#schTbody tr').forEach(tr => {
-              let cell = tr.querySelector(`td[data-day="${d}"]`);
-              let shiftType = tr.getAttribute('data-shift'); // ดึงค่ากะที่ฝังไว้ในแถว
-              
-              if(cell && shiftType && counts[shiftType]) {
-                  let val = cell.innerText.trim();
-                  if(val === 'D' || val === 'N' || val === 'M') counts[shiftType].work++;
-                  if(['X', 'PN', 'TX', 'XX'].includes(val)) counts[shiftType].off++; 
-              }
-          });
-
-          // อัปเดตตัวเลขลงบนตาราง (เฉพาะบรรทัดที่แสดงผลอยู่)
-          ['A', 'B'].forEach(sh => {
-              const wEl = document.getElementById(`sum-work-${sh}-${d}`);
-              const oEl = document.getElementById(`sum-off-${sh}-${d}`);
-              if(wEl) wEl.innerText = counts[sh].work;
-              if(oEl) oEl.innerText = counts[sh].off;
-          });
-      }
-  }
-
   function selectStamp(code, btn) { 
       if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
           Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
@@ -3237,321 +3100,4 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               let targetShiftTime = "-";
               let targetH = 0; let targetM = 0;
               let shiftStart = new Date(now);
-              let shiftEnd = new Date(now); // 🌟 เพิ่มตัวแปรเวลาเลิกงาน
-
-              // 🌟 ตั้งค่าจุดตัดเวลา เริ่มกะ - จบกะ ให้ชัดเจน
-              if (shiftSet.includes('(A)')) { 
-                  targetShiftTime = "08:00"; targetH = 8; 
-                  shiftStart.setHours(8, 0, 0, 0);
-                  shiftEnd.setHours(20, 0, 0, 0); // กะเช้าจบ 20:00 ของวันเดียวกัน
-              } else if (shiftSet.includes('(B)')) { 
-                  targetShiftTime = "20:00"; targetH = 20; 
-                  if (now.getHours() < 8) {
-                      // ถ้าเปิดดูตอนตี 1 - 7 โมงเช้า แปลว่าเป็นกะดึกของเมื่อวาน
-                      shiftStart.setDate(shiftStart.getDate() - 1); 
-                      shiftStart.setHours(20, 0, 0, 0);
-                      shiftEnd.setHours(8, 0, 0, 0); // จบ 8 โมงเช้าวันนี้
-                  } else {
-                      // ถ้าเปิดดูตอน 2 ทุ่มถึงเที่ยงคืน แปลว่าเป็นกะดึกของวันนี้
-                      shiftStart.setHours(20, 0, 0, 0);
-                      shiftEnd.setDate(shiftEnd.getDate() + 1); 
-                      shiftEnd.setHours(8, 0, 0, 0); // จบ 8 โมงเช้าพรุ่งนี้
-                  }
-              } else {
-                  shiftStart.setHours(0, 0, 0, 0);
-                  shiftEnd.setHours(23, 59, 59, 999);
-              }
-
-              const displayNick = nick; 
-              let pokeBtn = (currentDiscordTab === 'monitor' && myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-warning ms-2 px-2 py-0" onclick="pokeUserDiscord('${displayNick}')" title="สะกิดเรียกผ่านแชทส่วนตัว">🔔 สะกิด</button>` : '';
-              const dcHint = dcRecord ? `<br><small class="text-muted" style="font-size: 0.75rem;">(ดิสคอร์ด: ${dcRecord.nickname})</small> ${pokeBtn}` : '';
-
-              // แท็บ 1: เช็คชื่อ
-              if (currentDiscordTab === 'attendance') {
-                  let timeIn = '-';
-                  let statusBadge = '';
-                  let calculatedStatus = 'MISSING';
-
-                  if (isLeave) {
-                      calculatedStatus = 'LEAVE';
-                      statusBadge = `<span class="badge" style="background:#ffcc00; color:#000;">🛏️ หยุด/ลา (${stamp})</span>`;
-                  } else if (dcRecord) {
-                      const checkInDate = new Date(dcRecord.check_in_time);
-                      timeIn = checkInDate.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-                      
-                      if (targetShiftTime !== "-") {
-                          const shiftDate = new Date(checkInDate);
-                          shiftDate.setHours(targetH, targetM, 0, 0);
-                          const diffMins = Math.floor((checkInDate.getTime() - shiftDate.getTime()) / 60000);
-                          
-                          if (diffMins > 0) {
-                              calculatedStatus = 'LATE';
-                              statusBadge = `<span class="badge bg-danger fs-6 border border-danger">🔴 สาย ${diffMins} นาที</span>`;
-                          } else {
-                              calculatedStatus = 'ON_TIME';
-                              statusBadge = `<span class="badge bg-success fs-6 border border-success">🟢 ตรงเวลา</span>`;
-                          }
-                      } else {
-                          calculatedStatus = 'ON_TIME';
-                          statusBadge = `<span class="badge bg-success fs-6">🟢 เข้างานแล้ว</span>`;
-                      }
-                  } else {
-                      statusBadge = `<span class="badge bg-secondary fs-6">⚪ ยังไม่เข้างาน</span>`;
-                  }
-
-                  if (currentDiscordFilter === calculatedStatus) {
-                      hasData = true;
-                      html += `<tr>
-                          <td class="fw-bold text-white" style="font-size: 1.05rem;">${displayNick} ${dcHint}</td>
-                          <td class="text-muted small">${dept} <span class="text-info">[${shiftSet}]</span></td>
-                          <td class="text-warning fw-bold fs-6">${timeIn}</td>
-                          <td class="text-info">${targetShiftTime !== "-" ? targetShiftTime + " น." : "ไม่ได้ตั้งกะ"}</td>
-                          <td>${statusBadge}</td>
-                      </tr>`;
-                  }
-              } 
-              // แท็บ 2: กล้องวงจรปิด
-              else {
-                  if (!dcRecord || isLeave) return; 
-                  if (currentMonitorShiftFilter !== 'ALL' && !shiftSet.includes(`(${currentMonitorShiftFilter})`)) return;
-
-                  hasData = true;
-                  let presence = dcRecord.presence_status || "🟢 ออนไลน์";
-                  let channel = dcRecord.channel_name || 'ไม่ระบุห้อง';
-                  let lastMove = dcRecord.last_moved_at || "-";
-                  
-                  let presenceClass = "text-success";
-                  let channelClass = "text-info fw-bold";
-                  
-                  if (channel.includes('❌') || channel.includes('ออก')) channelClass = "text-danger fw-bold";
-
-                  let isCurrentlyIdle = presence.includes("🌙");
-                  if (isCurrentlyIdle) presenceClass = "text-warning fw-bold";
-
-                  let idleAlertHtml = `<span class="text-muted small">-</span>`;
-                  let totalIdleMins = 0;
-                  let validIdleCount = 0; // 🌟 เพิ่มตัวแปรนับจำนวนครั้งที่หายไป
-                  let histHtml = "";
-
-                  let idleHistories = dcRecord.idle_history ? JSON.parse(dcRecord.idle_history) : [];
-                  if (idleHistories.length > 0) {
-                      idleHistories.forEach((h) => {
-                          let [sh, sm] = h.start.split(':').map(Number);
-                          let [eh, em] = h.end.split(':').map(Number);
-                          let sDate = new Date(now); sDate.setHours(sh, sm, 0, 0);
-                          let eDate = new Date(now); eDate.setHours(eh, em, 0, 0);
-                          
-                          if (eh < sh) { if (now.getHours() < 12) sDate.setDate(sDate.getDate() - 1); else eDate.setDate(eDate.getDate() + 1); } 
-                          else if (now.getHours() < 12 && eh > 12) { sDate.setDate(sDate.getDate() - 1); eDate.setDate(eDate.getDate() - 1); }
-
-                          // 🌟 เช็คว่าเวลาที่หายไป อยู่ในกรอบเวลาของกะนี้เท่านั้น
-                          if (eDate > shiftStart && sDate < shiftEnd) {
-                              // 🌟 ถ้าอู้คร่อมกะ ให้ตัดเวลาให้นับเฉพาะที่อยู่ในกะ
-                              let calcStart = sDate < shiftStart ? shiftStart : sDate;
-                              let calcEnd = eDate > shiftEnd ? shiftEnd : eDate;
-                              
-                              let realDur = Math.floor((calcEnd.getTime() - calcStart.getTime()) / 60000);
-                              if (realDur > 0) {
-                                  totalIdleMins += realDur;
-                                  validIdleCount++; // นับจำนวนครั้ง
-                                  histHtml += `<div class="small text-white-50">ครั้งที่ ${validIdleCount}: ${calcStart.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}-${calcEnd.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} <b class="text-danger">(${realDur} น.)</b></div>`;
-                              }
-                          }
-                      });
-                  }
-
-                  if (isCurrentlyIdle && dcRecord.idle_start_time) {
-                      let startObj = new Date(dcRecord.idle_start_time);
-                      if (startObj < shiftStart) startObj = shiftStart; 
-                      
-                      if (now > startObj && startObj < shiftEnd) {
-                          let calcEnd = now > shiftEnd ? shiftEnd : now;
-                          let currentIdleMins = Math.floor((calcEnd.getTime() - startObj.getTime()) / 60000);
-                          if (currentIdleMins > 0) {
-                              totalIdleMins += currentIdleMins;
-                              validIdleCount++; // นับสถานะที่กำลังหายไปด้วย
-                              histHtml += `<div class="small text-warning fw-bold mt-1">⚠️ กำลังหายไป (ครั้งที่ ${validIdleCount}): ${currentIdleMins} นาที <br>(เริ่ม ${startObj.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})})</div>`;
-                          }
-                      }
-                  }
-
-                  // 🌟 เปลี่ยนข้อความเป็น "จำนวนครั้งที่หาย"
-                  if (validIdleCount > 0 || totalIdleMins > 0) {
-                      idleAlertHtml = `<div style="background: rgba(255, 51, 102, 0.1); border: 1px solid rgba(255,51,102,0.3); padding: 8px; border-radius: 8px;"><div class="text-danger fw-bold mb-1 border-bottom border-danger pb-1">🛑 จำนวนครั้งที่หาย: ${validIdleCount} ครั้ง <small class="text-white-50">(รวม ${totalIdleMins} น.)</small></div>${histHtml}</div>`;
-                  }
-
-                  html += `<tr>
-                      <td class="fw-bold text-white" style="font-size: 1.05rem;">${displayNick} ${dcHint}</td>
-                      <td class="text-info small">[${shiftSet}]</td>
-                      <td class="${presenceClass}">${presence}</td>
-                      <td class="${channelClass}">${channel}</td>
-                      <td class="text-white-50">${lastMove}</td>
-                      <td style="min-width: 250px;">${idleAlertHtml}</td>
-                  </tr>`;
-              }
-          });
-      }
-
-      // -----------------------------------------------------
-      // โซนคนนอก (ทำงานเมื่อกดโหมด "คนนอก" ในหน้ากล้องวงจรปิด)
-      // -----------------------------------------------------
-      if (currentDiscordTab === 'monitor' && currentMonitorShiftFilter === 'UNKNOWN') {
-          let unknownHtml = '';
-          allDiscordData.forEach(dc => {
-              const dcNameCleaned = extractCoreName(dc.nickname);
-              const foundInSys = allUsersData.find(u => extractCoreName(u[1]) === dcNameCleaned);
-              
-              if (!foundInSys) {
-                  hasData = true;
-                  let channel = dc.channel_name || 'ไม่ระบุห้อง';
-                  let presence = dc.presence_status || "🟢 ออนไลน์";
-                  let lastMove = dc.last_moved_at || "-";
-                  
-                  let channelClass = "text-info fw-bold";
-                  if (channel.includes('❌') || channel.includes('ออก')) channelClass = "text-danger fw-bold";
-                  let presenceClass = presence.includes("🌙") ? "text-warning fw-bold" : "text-success";
-
-                  unknownHtml += `<tr>
-                      <td class="fw-bold text-warning" style="font-size: 1.05rem;">${dc.nickname}</td>
-                      <td class="${presenceClass}">${presence}</td>
-                      <td class="${channelClass}">${channel}</td>
-                      <td class="text-white-50">${lastMove}</td>
-                      <td><span class="badge bg-secondary fs-6">ไม่มีรายชื่อในระบบ / พิมพ์ชื่อผิด</span></td>
-                  </tr>`;
-              }
-          });
-          html = unknownHtml;
-      }
-
-      if (!hasData || html === '') {
-          tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-5">ไม่มีข้อมูลตามเงื่อนไขที่เลือก</td></tr>`;
-      } else {
-          tbody.innerHTML = html;
-      }
-  }
-
-  supabaseClient
-      .channel('discord-live')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'discord_attendance' }, payload => {
-          const indicator = document.getElementById('discordLiveIndicator');
-          if(indicator) {
-              indicator.classList.remove('text-primary');
-              indicator.classList.add('text-success');
-              setTimeout(() => { indicator.classList.remove('text-success'); indicator.classList.add('text-primary'); }, 2000);
-          }
-          loadDiscordAttendance(); 
-      })
-      .subscribe();
-  // ==========================================
-  // 🎯 ฟังก์ชันสะกิดเรียกพนักงาน (เวอร์ชันใหม่ ยิง API ตรงเข้าบอท)
-  // ==========================================
-  async function pokeUserDiscord(targetNick) {
-      Swal.fire({title: 'กำลังส่งสัญญาณเรียก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-
-      try {
-          // 🌟 ใช้ fetch() ยิงข้อมูลตรงไปที่เซิร์ฟเวอร์ของบอท (พอร์ต 3000)
-          const response = await fetch('https://okvip-bot.onrender.com/api/poke', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ nickname: targetNick })
-          });
-
-          const result = await response.json();
-
-          if (result.success) {
-              Swal.fire({ toast: true, position: 'top-end', title: `สะกิดเรียก ${targetNick} แล้ว!`, icon: 'success', timer: 2000, showConfirmButton: false, background:'#111', color:'#fff' });
-          } else {
-              Swal.fire('Error', 'บอทไม่ตอบสนอง', 'error');
-          }
-      } catch (error) {
-          console.error("API Error:", error);
-          Swal.fire('Error', 'ไม่สามารถเชื่อมต่อกับบอทได้ (บอทอาจจะปิดอยู่)', 'error');
-      }
-  }
-  async function openShiftLog() {
-      // ดึงข้อความย้อนหลังมา 15 อันเลยครับ จะได้ดูได้เยอะๆ
-      const { data } = await supabaseClient.from('shift_logs').select('*').order('created_at', {ascending: false}).limit(15);
-
-      // 🌟 ขยายความสูงของกล่องข้อความให้ใหญ่สะใจ (ปรับ height เป็น 500px)
-      let historyHtml = '<div class="text-start mb-3 p-4 rounded" style="max-height: 60vh; height: 500px; overflow-y: auto; background: #222; border: 1px solid #444;">';
-
-      if(data && data.length > 0) {
-          data.forEach(log => {
-              // 🌟 จัด Layout ใหม่ แบ่งซ้าย(ข้อความ) ขวา(ปุ่มลบ) เป็นสัดส่วนชัดเจน
-              historyHtml += `
-                  <div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom border-secondary">
-                      <div class="pe-4" style="word-break: break-word; width: 100%;">
-                          <b class="text-info" style="font-size: 1.25rem;">${log.nickname} <span class="text-muted small">(${log.shift})</span></b>
-                          <span class="text-muted small ms-2">${new Date(log.created_at).toLocaleString('th-TH')}</span>
-                          <span class="text-white mt-2 d-block" style="font-size: 1.15rem; line-height: 1.6;">${log.message}</span>
-                      </div>
-                      
-                      <button class="btn btn-outline-danger flex-shrink-0 px-3 py-1" 
-                              style="font-size: 0.95rem; border-radius: 6px;" 
-                              onclick="deleteShiftLog('${log.id}')" title="ลบข้อความนี้">❌ ลบ</button>
-                  </div>`;
-          });
-      } else { 
-          historyHtml += '<div class="text-muted text-center py-5" style="font-size: 1.2rem;">ยังไม่มีบันทึกส่งกะ...</div>'; 
-      }
-      historyHtml += '</div>';
-
-      const { value: text } = await Swal.fire({
-          title: '<h2 style="color: #00f0ff; font-weight: bold;">📓 สมุดบันทึกส่งกะ</h2>',
-          html: historyHtml,
-          input: 'textarea',
-          inputPlaceholder: 'พิมพ์ข้อความฝากถึงกะต่อไป...',
-          inputAttributes: {
-              style: 'height: 150px; font-size: 1.1rem; line-height: 1.5;' // 🌟 ทำให้ช่องสำหรับพิมพ์กว้างและสูงขึ้น
-          },
-          background: '#111', 
-          color: '#fff',
-          width: '1080px', // 🌟 ขยายความกว้างแบบจัดเต็ม 1080px ตามคำขอ!
-          showCancelButton: true,
-          confirmButtonText: 'บันทึกส่งกะ',
-          cancelButtonText: 'ปิดหน้าต่าง',
-          confirmButtonColor: '#00f0ff',
-          customClass: {
-              popup: 'p-4' // เพิ่มขอบหน้าต่างให้ดูหรูหราขึ้น
-          }
-      });
-
-      if (text) {
-          const myNick = localStorage.getItem('okvip_nick') || 'ไม่ระบุชื่อ';
-          const me = allUsersData.find(u => u[1] === myNick);
-          const myShift = me ? (me[9] || 'ไม่ระบุ') : 'ไม่ระบุ';
-          await supabaseClient.from('shift_logs').insert([{ nickname: myNick, shift: myShift, message: text }]);
-          
-          Swal.fire({toast:true, position:'top-end', title:'บันทึกสมุดส่งกะแล้ว', icon:'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
-          
-          setTimeout(openShiftLog, 1000);
-      }
-  }
-  // 🌟 ฟังก์ชันจัดการการลบข้อความ
-  async function deleteShiftLog(logId) {
-      // เด้งถามเพื่อความชัวร์ก่อนลบ
-      const confirmDelete = await Swal.fire({
-          title: 'ต้องการลบข้อความนี้?',
-          icon: 'warning',
-          showCancelButton: true,
-          confirmButtonColor: '#d33',
-          cancelButtonColor: '#555',
-          confirmButtonText: 'ใช่, ลบเลย!',
-          cancelButtonText: 'ยกเลิก',
-          background: '#111', color: '#fff'
-      });
-
-      if (confirmDelete.isConfirmed) {
-          // สั่งลบข้อมูลออกจาก Supabase ตาม ID
-          await supabaseClient.from('shift_logs').delete().eq('id', logId);
-          
-          Swal.fire({toast:true, position:'top-end', title:'ลบข้อความเรียบร้อย', icon:'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
-          
-          // โหลดหน้าต่างขึ้นมาใหม่เพื่ออัปเดตข้อมูล
-          openShiftLog();
-      }
-  }
-</script>
-
-</body>
-</html>
+              let shiftEnd = new Date(now
