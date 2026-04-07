@@ -283,6 +283,9 @@
         <div class="hub-card" style="border: 1px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(88, 101, 242, 0.4)'; this.style.background='rgba(88, 101, 242, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(88, 101, 242, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('discordSection')">
            <div class="hub-icon" style="text-shadow: none;">🎧</div>
            <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
+        <div class="hub-card" style="border: 1px solid #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(0, 255, 204, 0.4)'; this.style.background='rgba(0, 255, 204, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(0, 255, 204, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('bankCheckSection')">
+           <div class="hub-icon" style="text-shadow: none;">🏦</div>
+           <div class="hub-title" style="color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);">ตรวจสอบบัญชี</div>
         </div>
       </div>
     </div>
@@ -631,7 +634,47 @@
       <div id="portalGridArea" class="manual-grid"></div>
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
     </div>
+      <div id="bankCheckSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0" style="color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5);">🏦 ระบบตรวจสอบชื่อบัญชีธนาคาร (Name Enquiry)</h4>
+      </div>
+      
+      <div class="row justify-content-center mt-4">
+        <div class="col-md-6">
+          <div class="card-custom" style="background: #0a0a0c; border: 1px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.1);">
+            <form id="bankCheckForm" onsubmit="verifyBankAccount(event)">
+              <label class="text-white small mb-2">1. เลือกธนาคาร</label>
+              <select id="bankCode" class="form-select mb-4 bg-dark text-white border-secondary" required>
+                <option value="" disabled selected>-- เลือกธนาคาร --</option>
+                <option value="KBANK">ธนาคารกสิกรไทย (KBANK)</option>
+                <option value="SCB">ธนาคารไทยพาณิชย์ (SCB)</option>
+                <option value="BBL">ธนาคารกรุงเทพ (BBL)</option>
+                <option value="KTB">ธนาคารกรุงไทย (KTB)</option>
+                <option value="BAY">ธนาคารกรุงศรีอยุธยา (BAY)</option>
+                <option value="TTB">ธนาคารทหารไทยธนชาต (TTB)</option>
+                <option value="GSB">ธนาคารออมสิน (GSB)</option>
+                <option value="BAAC">ธนาคาร ธ.ก.ส. (BAAC)</option>
+              </select>
 
+              <label class="text-white small mb-2">2. กรอกเลขที่บัญชี (เฉพาะตัวเลข 10-12 หลัก)</label>
+              <input type="text" id="bankAccNumber" class="form-control mb-4 bg-dark text-white border-secondary fw-bold text-center" placeholder="เช่น 0123456789" style="font-size: 1.2rem; letter-spacing: 2px;" oninput="this.value = this.value.replace(/[^0-9]/g, '')" maxlength="12" required>
+
+              <button type="submit" id="btnVerifyBank" class="btn w-100 py-3 fw-bold fs-5" style="background-color: #004d40; color: #00ffcc; border: 1px solid #00ffcc; transition: 0.3s;" onmouseover="this.style.backgroundColor='#006655'" onmouseout="this.style.backgroundColor='#004d40'">
+                🔍 ตรวจสอบชื่อเจ้าของบัญชี
+              </button>
+            </form>
+
+            <div id="bankResultArea" class="mt-4 p-4 text-center" style="display: none; border-radius: 10px; background: rgba(0, 255, 204, 0.05); border: 1px dashed #00ffcc;">
+              <div class="small text-muted mb-2">ผลการค้นหา:</div>
+              <div id="bankResultName" class="fw-bold" style="font-size: 1.5rem; color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.6);">
+                นาย ทดสอบ ระบบดี
+              </div>
+              <div class="small text-muted mt-2" id="bankResultDetails">KBANK - 0123456789</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div> </div> 
 
   <div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
@@ -3550,6 +3593,52 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           // โหลดหน้าต่างขึ้นมาใหม่เพื่ออัปเดตข้อมูล
           openShiftLog();
       }
+  }
+  async function verifyBankAccount(e) {
+      e.preventDefault();
+      
+      const bank = document.getElementById('bankCode').value;
+      const acc = document.getElementById('bankAccNumber').value;
+      const btn = document.getElementById('btnVerifyBank');
+      const resultArea = document.getElementById('bankResultArea');
+      const resultName = document.getElementById('bankResultName');
+      const resultDetails = document.getElementById('bankResultDetails');
+
+      if (!bank || !acc) return;
+
+      // ซ่อนผลลัพธ์เก่า และเปลี่ยนสถานะปุ่มเป็นกำลังโหลด
+      resultArea.style.display = 'none';
+      btn.disabled = true;
+      btn.innerHTML = '⏳ กำลังเชื่อมต่อระบบธนาคาร...';
+
+      // 🚀 จำลองการส่งข้อมูลไปให้บอท (หน่วงเวลา 1.5 วินาทีเพื่อให้ดูสมจริง)
+      setTimeout(() => {
+          // จำลองว่าบอทส่งชื่อกลับมาให้เราแล้ว
+          const mockResponse = {
+              success: true,
+              accountName: "นาย สมมติว่า ได้ชื่อมาจริงๆ",
+              bankName: bank,
+              accNumber: acc
+          };
+
+          // แสดงผลลัพธ์
+          resultName.innerText = mockResponse.accountName;
+          resultDetails.innerText = `${mockResponse.bankName} - ${mockResponse.accNumber}`;
+          resultArea.style.display = 'block';
+
+          // คืนค่าปุ่มกลับมาเหมือนเดิม
+          btn.disabled = false;
+          btn.innerHTML = '🔍 ตรวจสอบชื่อเจ้าของบัญชี';
+          
+          // เด้งแจ้งเตือนมุมขวาบน
+          Swal.fire({
+              toast: true, position: 'top-end', 
+              title: 'ดึงข้อมูลสำเร็จ', icon: 'success', 
+              timer: 2000, showConfirmButton: false, 
+              background: '#111', color: '#fff'
+          });
+
+      }, 1500); // หน่วงเวลา 1.5 วินาที
   }
 </script>
 
