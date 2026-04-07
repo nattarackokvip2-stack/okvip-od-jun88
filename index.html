@@ -3454,43 +3454,51 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       }
   }
   async function openShiftLog() {
-      // ดึงข้อความล่าสุดมา 10 อัน (จากเดิม 3 อัน จะได้ดูย้อนหลังได้เยอะขึ้น)
-      const { data } = await supabaseClient.from('shift_logs').select('*').order('created_at', {ascending: false}).limit(10);
-      
-      // ขยายความสูงของกล่องข้อความเป็น 350px (จากเดิม 150px)
-      let historyHtml = '<div class="text-start mb-3 p-3 rounded" style="max-height: 350px; overflow-y: auto; font-size: 0.95rem; background: #222; border: 1px solid #444;">';
-      
+      // ดึงข้อความย้อนหลังมา 15 อันเลยครับ จะได้ดูได้เยอะๆ
+      const { data } = await supabaseClient.from('shift_logs').select('*').order('created_at', {ascending: false}).limit(15);
+
+      // 🌟 ขยายความสูงของกล่องข้อความให้ใหญ่สะใจ (ปรับ height เป็น 500px)
+      let historyHtml = '<div class="text-start mb-3 p-4 rounded" style="max-height: 60vh; height: 500px; overflow-y: auto; background: #222; border: 1px solid #444;">';
+
       if(data && data.length > 0) {
           data.forEach(log => {
+              // 🌟 จัด Layout ใหม่ แบ่งซ้าย(ข้อความ) ขวา(ปุ่มลบ) เป็นสัดส่วนชัดเจน
               historyHtml += `
-                  <div class="mb-3 pb-2 border-bottom border-secondary position-relative">
-                      <b class="text-info" style="font-size: 1.1rem;">${log.nickname} <span class="text-muted small">(${log.shift})</span></b>
-                      <span class="text-muted small ms-2">${new Date(log.created_at).toLocaleString('th-TH')}</span>
+                  <div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom border-secondary">
+                      <div class="pe-4" style="word-break: break-word; width: 100%;">
+                          <b class="text-info" style="font-size: 1.25rem;">${log.nickname} <span class="text-muted small">(${log.shift})</span></b>
+                          <span class="text-muted small ms-2">${new Date(log.created_at).toLocaleString('th-TH')}</span>
+                          <span class="text-white mt-2 d-block" style="font-size: 1.15rem; line-height: 1.6;">${log.message}</span>
+                      </div>
                       
-                      <button class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 py-0 px-2" 
-                              style="font-size: 0.75rem; border-radius: 4px;" 
+                      <button class="btn btn-outline-danger flex-shrink-0 px-3 py-1" 
+                              style="font-size: 0.95rem; border-radius: 6px;" 
                               onclick="deleteShiftLog('${log.id}')" title="ลบข้อความนี้">❌ ลบ</button>
-                      <br>
-                      <span class="text-white mt-2 d-block" style="font-size: 1.05rem;">${log.message}</span>
                   </div>`;
           });
       } else { 
-          historyHtml += '<div class="text-muted text-center py-4">ยังไม่มีบันทึกส่งกะ...</div>'; 
+          historyHtml += '<div class="text-muted text-center py-5" style="font-size: 1.2rem;">ยังไม่มีบันทึกส่งกะ...</div>'; 
       }
       historyHtml += '</div>';
 
       const { value: text } = await Swal.fire({
-          title: '📓 สมุดบันทึกส่งกะ',
+          title: '<h2 style="color: #00f0ff; font-weight: bold;">📓 สมุดบันทึกส่งกะ</h2>',
           html: historyHtml,
           input: 'textarea',
           inputPlaceholder: 'พิมพ์ข้อความฝากถึงกะต่อไป...',
+          inputAttributes: {
+              style: 'height: 150px; font-size: 1.1rem; line-height: 1.5;' // 🌟 ทำให้ช่องสำหรับพิมพ์กว้างและสูงขึ้น
+          },
           background: '#111', 
           color: '#fff',
-          width: '700px', // 🌟 ขยายความกว้างของหน้าต่างให้ใหญ่ขึ้น (จากเดิมมันเล็ก)
+          width: '1080px', // 🌟 ขยายความกว้างแบบจัดเต็ม 1080px ตามคำขอ!
           showCancelButton: true,
           confirmButtonText: 'บันทึกส่งกะ',
-          cancelButtonText: 'ปิด',
-          confirmButtonColor: '#00f0ff'
+          cancelButtonText: 'ปิดหน้าต่าง',
+          confirmButtonColor: '#00f0ff',
+          customClass: {
+              popup: 'p-4' // เพิ่มขอบหน้าต่างให้ดูหรูหราขึ้น
+          }
       });
 
       if (text) {
@@ -3501,7 +3509,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           
           Swal.fire({toast:true, position:'top-end', title:'บันทึกสมุดส่งกะแล้ว', icon:'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
           
-          // บันทึกเสร็จ ให้โหลดหน้าต่างขึ้นมาใหม่ทันที จะได้เห็นข้อความตัวเอง
           setTimeout(openShiftLog, 1000);
       }
   }
