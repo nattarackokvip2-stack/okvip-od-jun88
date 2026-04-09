@@ -3674,9 +3674,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       btn.innerHTML = '⏳ กำลังเชื่อมต่อระบบธนาคาร...';
 
       try {
-            const response = await fetch('http://217.15.160.69:3005/api/check-name', {
+            const response = await fetch('https://okvip-bank-api.loca.lt/api/check-name', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Bypass-Tunnel-Reminder': 'true' // 🌟 คาถาทะลวงหน้าจอป้องกันของ localtunnel
+                },
                 body: JSON.stringify({ bankCode: bankCode, accountNumber: acc })
             });
             
