@@ -3673,31 +3673,36 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       btn.disabled = true;
       btn.innerHTML = '⏳ กำลังเชื่อมต่อระบบธนาคาร...';
 
-      // 🚀 จำลองการส่งข้อมูล (รอเชื่อม API จริงในอนาคต)
-      setTimeout(() => {
-          const mockResponse = {
-              success: true,
-              accountName: "รอก่อนนะจ๊ะ กำลังทำระบบ",
-              bankName: bankCode,
-              accNumber: acc
-          };
+      try {
+            const response = await fetch('http://217.15.160.69:3005/api/check-name', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bankCode: bankCode, accountNumber: acc })
+            });
+            
+            const data = await response.json();
 
-          // แสดงผลลัพธ์
-          resultName.innerText = mockResponse.accountName;
-          resultDetails.innerText = `${mockResponse.bankName} - ${mockResponse.accNumber}`;
-          resultArea.style.display = 'block';
-
-          // คืนค่าปุ่มกลับมาเหมือนเดิม
-          btn.disabled = false;
-          btn.innerHTML = '🔍 ตรวจสอบชื่อเจ้าของบัญชี';
-          
-          Swal.fire({
-              toast: true, position: 'top-end', 
-              title: 'ดึงข้อมูลสำเร็จ', icon: 'success', 
-              timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'
-          });
-
-      }, 1500);
+            if (data.success) {
+                resultName.innerText = "✅ " + data.accountName;
+                resultName.style.color = "#00ffcc";
+                resultDetails.innerText = `${bankCode} - ${acc}`;
+                resultArea.style.display = 'block';
+                Swal.fire({toast: true, position: 'top-end', title: 'ดึงข้อมูลสำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'});
+            } else {
+                resultName.innerText = "❌ " + data.message;
+                resultName.style.color = "#ff3366";
+                resultDetails.innerText = `${bankCode} - ${acc}`;
+                resultArea.style.display = 'block';
+                Swal.fire({toast: true, position: 'top-end', title: 'ดึงข้อมูลไม่สำเร็จ', icon: 'error', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'});
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            Swal.fire('Error', 'ไม่สามารถเชื่อมต่อบอทสิงคโปร์ได้', 'error');
+        } finally {
+            // คืนค่าปุ่มกลับมาเหมือนเดิม
+            btn.disabled = false;
+            btn.innerHTML = '🔍 ตรวจสอบชื่อเจ้าของบัญชี';
+        }
   }
 </script>
 
