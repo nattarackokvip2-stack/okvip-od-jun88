@@ -634,22 +634,35 @@
               <input list="bankList" id="bankInput" class="form-control mb-4 bg-dark text-white border-secondary" placeholder="🔍 พิมพ์ชื่อธนาคาร..." onchange="handleBankSelection()" autocomplete="off" required>
               <datalist id="bankList">
                 <option value="ธนาคารกสิกรไทย (KBANK)">
-                <option value="ธนาคารไทยพาณิชย์ (SCB)">
                 <option value="ธนาคารกรุงเทพ (BBL)">
                 <option value="ธนาคารกรุงไทย (KTB)">
-                <option value="ธนาคารกรุงศรีอยุธยา (BAY)">
                 <option value="ธนาคารทหารไทยธนชาต (TTB)">
+                <option value="ธนาคารไทยพาณิชย์ (SCB)">
+                <option value="ธนาคารกรุงศรีอยุธยา (BAY)">
                 <option value="ธนาคารออมสิน (GSB)">
-                <option value="ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (BAAC)">
+                <option value="ธนาคารฮ่องกงและเซี่ยงไฮ้ (HSBC)">
+                <option value="ธนาคารดอยซ์แบงก์">
                 <option value="ธนาคารอาคารสงเคราะห์ (GHB)">
-                <option value="ธนาคารยูโอบี (UOBT)">
-                <option value="ธนาคารทิสโก้ (TISCO)">
-                <option value="ธนาคารซีไอเอ็มบี ไทย (CIMBT)">
-                <option value="ธนาคารเกียรตินาคินภัทร (KKP)">
-                <option value="ธนาคารแลนด์ แอนด์ เฮ้าส์ (LHFG)">
-                <option value="ธนาคารไอซีบีซี ไทย (ICBC)">
-                <option value="ธนาคารไทยเครดิต (TCD)">
+                <option value="ธนาคาร ธ.ก.ส. (BAAC)">
+                <option value="ธนาคารมิซูโฮ">
+                <option value="ธนาคารบีเอ็นพี พารีบาส์">
+                <option value="ธนาคารแห่งประเทศจีน (ไทย)">
                 <option value="ธนาคารอิสลามแห่งประเทศไทย (IBANK)">
+                <option value="ธนาคารซิตี้แบงก์ เอ็น.เอ.">
+                <option value="ธนาคารซูมิโตโม มิตซุย แบงกิ้ง">
+                <option value="ธนาคารสแตนดาร์ดชาร์เตอร์ด">
+                <option value="ธนาคารซีไอเอ็มบี ไทย (CIMBT)">
+                <option value="ธนาคารยูโอบี (UOB)">
+                <option value="ธนาคาร ทิสโก้ (TISCO)">
+                <option value="ธนาคารเกียรตินาคินภัทร (KKP)">
+                <option value="ธนาคารไอซีบีซี (ไทย) (ICBC)">
+                <option value="ธนาคารไทยเครดิต (TCD)">
+                <option value="ธนาคารแลนด์ แอนด์ เฮ้าส์ (LHFG)">
+                <option value="ธนาคารเจพีมอร์แกน เชส">
+                <option value="ธนาคารเมกะ สากลพาณิชย์">
+                <option value="ธนาคารแห่งอเมริกา">
+                <option value="ธนาคาร อินเดียนโอเวอร์ซีส์">
+                <option value="ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อมแห่งประเทศไทย">
               </datalist>
 
               <label class="text-white small mb-2" id="accLabel">2. กรอกเลขที่บัญชี (เฉพาะตัวเลข 10 หลัก)</label>
@@ -3619,8 +3632,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       const accInput = document.getElementById('bankAccNumber');
       const accLabel = document.getElementById('accLabel');
       
-      // เช็คว่าเป็นธนาคาร ออมสิน (GSB), ธ.ก.ส. (BAAC) หรือ ธอส. (GHB) หรือไม่
-      if (val.includes('GSB') || val.includes('BAAC') || val.includes('GHB')) {
+      if (val.includes('ออมสิน') || val.includes('ธ.ก.ส.') || val.includes('อาคารสงเคราะห์')) {
           currentBankLimit = 12;
           accInput.setAttribute('maxlength', '12');
           accLabel.innerHTML = '2. กรอกเลขที่บัญชี <span class="text-warning fw-bold">(เฉพาะตัวเลข 12 หลัก)</span>';
@@ -3630,7 +3642,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           accLabel.innerHTML = '2. กรอกเลขที่บัญชี <span class="text-info fw-bold">(เฉพาะตัวเลข 10 หลัก)</span>';
       }
       
-      // ตัดข้อความที่เกินลิมิตออกทันที ถ้าย้ายไปเลือกธนาคารที่หลักน้อยกว่า
       if (accInput.value.length > currentBankLimit) {
           accInput.value = accInput.value.substring(0, currentBankLimit);
       }
