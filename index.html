@@ -3697,7 +3697,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             }
         } catch (error) {
             console.error("Error:", error);
-            Swal.fire('Error', 'ไม่สามารถเชื่อมต่อบอทสิงคโปร์ได้', 'error');
+            Swal.fire('Error', 'ไม่สามารถเชื่อมต่อได้', 'error');
         } finally {
             // คืนค่าปุ่มกลับมาเหมือนเดิม
             btn.disabled = false;
