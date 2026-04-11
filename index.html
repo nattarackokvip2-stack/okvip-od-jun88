@@ -712,7 +712,7 @@
     </div>
 
     <div id="vaultSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
            <h4 class="fw-bold mb-0" style="color: #ff00ff; text-shadow: 0 0 10px rgba(255,0,255,0.5);">🔐 ฐานลับส่วนบุคคล (Private Vault)</h4>
            <p class="small text-muted mb-0 mt-1">ข้อมูลในหน้านี้จะถูกเข้ารหัสและมองเห็นได้เฉพาะคุณ (<b id="vaultOwnerName" class="text-white"></b>) เท่านั้น</p>
@@ -722,7 +722,17 @@
             <button class="btn fw-bold text-white px-4" style="background-color: #cc00cc; border-radius: 8px; box-shadow: 0 0 10px rgba(255,0,255,0.4);" onclick="openVaultModal()">➕ สร้างความลับใหม่</button>
         </div>
       </div>
-      <div id="vaultGridArea" class="manual-grid mt-4"></div>
+
+      <div class="filter-bar mb-3 pb-3" style="border-bottom: 1px solid #333;" id="vaultFilterBar">
+        <div class="dept-badge active" onclick="filterVault('ALL', this)" style="border-color: #fff; color: #fff;">🔍 ทั้งหมด</div>
+        <div class="dept-badge" onclick="filterVault('🔑 รหัสผ่าน', this)">🔑 รหัสผ่าน</div>
+        <div class="dept-badge" onclick="filterVault('💬 สคริปต์แชท', this)">💬 สคริปต์แชท</div>
+        <div class="dept-badge" onclick="filterVault('📌 โน้ตทั่วไป', this)">📌 โน้ตทั่วไป</div>
+        <div class="dept-badge" onclick="filterVault('🌐 ลิงก์สำคัญ', this)">🌐 ลิงก์สำคัญ</div>
+      </div>
+
+      <div id="vaultGridArea" class="manual-grid mt-3">
+          </div>
     </div>
     </div> </div> 
 
@@ -1171,11 +1181,32 @@
         <h4 class="fw-bold mb-4 text-center" style="color: #ff00ff;">🔐 บันทึกความลับส่วนตัว</h4>
         <form id="vaultForm" onsubmit="saveVaultData(event)">
           <input type="hidden" id="editVaultId"> 
-          <label class="small mb-1 text-white">หัวข้อ (Title)</label>
-          <input type="text" id="vaultTitle" class="form-control mb-3 bg-dark text-white" style="border-color: #ff00ff;" placeholder="เช่น: รหัสผ่านเข้าเว็บหลังบ้าน..." required>
-          <label class="small mb-1 text-white">รายละเอียดความลับ (Details)</label>
-          <textarea id="vaultContent" class="form-control mb-4 bg-dark text-white" rows="10" style="border-color: #ff00ff;" placeholder="พิมพ์ข้อมูลที่คุณต้องการเก็บไว้ดูคนเดียวที่นี่..." required></textarea>
-          <button type="submit" id="btnSaveVault" class="btn w-100 py-2 fw-bold text-white" style="background-color: #cc00cc;">💾 ล็อคเก็บใส่ตู้เซฟ</button>
+          
+          <div class="row">
+            <div class="col-md-4">
+               <label class="small mb-1 text-white">หมวดหมู่</label>
+               <select id="vaultCategory" class="form-select mb-3 bg-dark text-white" style="border-color: #ff00ff;" required>
+                  <option value="📌 โน้ตทั่วไป">📌 โน้ตทั่วไป</option>
+                  <option value="🔑 รหัสผ่าน">🔑 รหัสผ่าน</option>
+                  <option value="💬 สคริปต์แชท">💬 สคริปต์แชท</option>
+                  <option value="🌐 ลิงก์สำคัญ">🌐 ลิงก์สำคัญ</option>
+               </select>
+            </div>
+            <div class="col-md-8">
+               <label class="small mb-1 text-white">หัวข้อ (Title)</label>
+               <input type="text" id="vaultTitle" class="form-control mb-3 bg-dark text-white" style="border-color: #ff00ff;" placeholder="เช่น: รหัสผ่านเข้าเว็บหลังบ้าน..." required>
+            </div>
+          </div>
+          
+          <div class="d-flex justify-content-between align-items-center mb-1">
+             <label class="small text-white mb-0">รายละเอียดความลับ (Details)</label>
+             <button type="button" class="btn btn-sm btn-outline-secondary py-0" onclick="toggleVaultBlur()" id="btnToggleBlur">👁️ แสดงข้อความ</button>
+          </div>
+          <textarea id="vaultContent" class="form-control mb-4 bg-dark text-white" rows="10" style="border-color: #ff00ff; filter: blur(5px); transition: 0.3s;" placeholder="พิมพ์ข้อมูลที่คุณต้องการเก็บไว้ดูคนเดียวที่นี่..." required onfocus="removeBlur(this)"></textarea>
+          
+          <button type="submit" id="btnSaveVault" class="btn w-100 py-2 fw-bold text-white" style="background-color: #cc00cc;">
+            💾 ล็อคเก็บใส่ตู้เซฟ
+          </button>
         </form>
       </div>
     </div>
@@ -4175,9 +4206,12 @@ function triggerOCR() {
     });
 }
 
-// 👇 ก๊อปปี้โค้ดสมองกลด้านล่างนี้ไปวางแทรกตรงนี้เลยครับ 👇
+// ==========================================
+  // 🔐 ระบบฐานลับส่วนบุคคล (Private Vault) - VIP Edition
+  // ==========================================
   let allVaultData = [];
   let vaultSearchTerm = '';
+  let currentVaultCategory = 'ALL';
 
   async function loadPrivateVault() {
       document.getElementById('vaultOwnerName').innerText = currentUsername;
@@ -4193,35 +4227,115 @@ function triggerOCR() {
       }
   }
 
+  function filterVault(category, btn) {
+      currentVaultCategory = category;
+      document.querySelectorAll('#vaultFilterBar .dept-badge').forEach(b => {
+          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
+      });
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
+      renderVaultGrid();
+  }
+
+  function handleVaultSearch(term) { vaultSearchTerm = term.toLowerCase().trim(); renderVaultGrid(); }
+
   function renderVaultGrid() {
       const area = document.getElementById('vaultGridArea');
       area.innerHTML = '';
-      let filteredData = vaultSearchTerm ? allVaultData.filter(v => v.title.toLowerCase().includes(vaultSearchTerm) || v.content.toLowerCase().includes(vaultSearchTerm)) : allVaultData;
+      
+      let filteredData = allVaultData;
+      if (currentVaultCategory !== 'ALL') {
+          filteredData = filteredData.filter(v => v.category === currentVaultCategory);
+      }
+      if (vaultSearchTerm) {
+          filteredData = filteredData.filter(v => v.title.toLowerCase().includes(vaultSearchTerm) || v.content.toLowerCase().includes(vaultSearchTerm));
+      }
+
       if (filteredData.length === 0) {
-          area.innerHTML = `<div class="text-center py-5 w-100 text-muted" style="border: 1px dashed #ff00ff; border-radius: 15px; background: rgba(255,0,255,0.05);">ตู้เซฟว่างเปล่า... กดยังปุ่ม 'สร้างความลับใหม่' ด้านบนได้เลยครับ</div>`;
+          area.innerHTML = `<div class="text-center py-5 w-100 text-muted" style="border: 1px dashed #ff00ff; border-radius: 15px; background: rgba(255,0,255,0.05);">ตู้เซฟหมวดหมู่นี้ว่างเปล่า...</div>`;
           return;
       }
+
       filteredData.forEach(v => {
           let dateStr = new Date(v.created_at).toLocaleString('th-TH');
+          let cat = v.category || '📌 โน้ตทั่วไป';
+          
           area.innerHTML += `
-              <div class="manual-card" style="border-color: #ff00ff; background: rgba(255,0,255,0.02);" onclick="openEditVault('${v.id}')">
-                  <div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); deleteVaultData('${v.id}')">✖ ลบ</button></div>
-                  <div class="d-flex align-items-start"><span class="icon">🗝️</span><div><h5 class="title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255,0,255,0.3);">${v.title}</h5><div class="small text-muted mt-1">อัปเดต: ${dateStr}</div></div></div>
-                  <div class="read-more" style="color: #ff00ff;">คลิกเพื่อเปิดดูเนื้อหา &rarr;</div>
+              <div class="manual-card" style="border-color: #ff00ff; background: rgba(255,0,255,0.02); position: relative; display: flex; flex-direction: column;" onclick="openEditVault('${v.id}')">
+                  <div class="card-actions" style="top: 12px; right: 12px;">
+                      <button class="btn-action" style="border-color:#00f0ff; color:#00f0ff;" onclick="event.stopPropagation(); copyVaultContent('${v.id}')" title="คัดลอกด่วน">📝 คัดลอก</button>
+                      <button class="btn-action edit" onclick="event.stopPropagation(); openEditVault('${v.id}')">✏️</button>
+                      <button class="btn-action delete" onclick="event.stopPropagation(); deleteVaultData('${v.id}')">✖</button>
+                  </div>
+                  <div class="d-flex align-items-start mt-1">
+                      <span class="icon">🗝️</span>
+                      <div style="padding-right: 90px;">
+                          <h5 class="title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255,0,255,0.3); margin-top: 0;">${v.title}</h5>
+                          <span class="badge bg-dark border border-secondary mt-1 px-2 py-1">${cat}</span>
+                          <div class="small text-muted mt-2">อัปเดต: ${dateStr}</div>
+                      </div>
+                  </div>
               </div>`;
       });
   }
 
-  function handleVaultSearch(term) { vaultSearchTerm = term.toLowerCase().trim(); renderVaultGrid(); }
-  function openVaultModal() { document.getElementById('vaultForm').reset(); document.getElementById('editVaultId').value = ''; bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); }
-  function openEditVault(id) { const v = allVaultData.find(x => x.id.toString() === id.toString()); if (!v) return; document.getElementById('editVaultId').value = v.id; document.getElementById('vaultTitle').value = v.title; document.getElementById('vaultContent').value = v.content; bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); }
+  function copyVaultContent(id) {
+      const vault = allVaultData.find(v => v.id.toString() === id.toString());
+      if (!vault) return;
+      navigator.clipboard.writeText(vault.content).then(() => {
+          Swal.fire({toast:true, position:'top-end', title:'📝 คัดลอกข้อความแล้ว!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+      });
+  }
+
+  // ระบบโชว์/เบลอ ข้อความ
+  let isVaultBlurred = true;
+  function toggleVaultBlur() {
+      isVaultBlurred = !isVaultBlurred;
+      const box = document.getElementById('vaultContent');
+      const btn = document.getElementById('btnToggleBlur');
+      if(isVaultBlurred) {
+          box.style.filter = 'blur(5px)';
+          btn.innerHTML = '👁️ แสดงข้อความ';
+      } else {
+          box.style.filter = 'blur(0px)';
+          btn.innerHTML = '🙈 ซ่อนข้อความ';
+      }
+  }
+  function removeBlur(el) { el.style.filter = 'blur(0px)'; document.getElementById('btnToggleBlur').innerHTML = '🙈 ซ่อนข้อความ'; isVaultBlurred = false; }
+
+  function openVaultModal() { 
+      document.getElementById('vaultForm').reset(); 
+      document.getElementById('editVaultId').value = ''; 
+      document.getElementById('vaultCategory').value = '📌 โน้ตทั่วไป';
+      isVaultBlurred = true; document.getElementById('vaultContent').style.filter = 'blur(5px)'; document.getElementById('btnToggleBlur').innerHTML = '👁️ แสดงข้อความ';
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
+  }
+  
+  function openEditVault(id) { 
+      const v = allVaultData.find(x => x.id.toString() === id.toString()); if (!v) return; 
+      document.getElementById('editVaultId').value = v.id; 
+      document.getElementById('vaultCategory').value = v.category || '📌 โน้ตทั่วไป';
+      document.getElementById('vaultTitle').value = v.title; 
+      document.getElementById('vaultContent').value = v.content; 
+      
+      // ปิดบังข้อความไว้ก่อนตอนเปิดดู
+      isVaultBlurred = true; document.getElementById('vaultContent').style.filter = 'blur(5px)'; document.getElementById('btnToggleBlur').innerHTML = '👁️ แสดงข้อความ';
+      
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
+  }
 
   async function saveVaultData(e) {
-      e.preventDefault(); const title = document.getElementById('vaultTitle').value; const content = document.getElementById('vaultContent').value; const id = document.getElementById('editVaultId').value;
+      e.preventDefault(); 
+      const title = document.getElementById('vaultTitle').value; 
+      const content = document.getElementById('vaultContent').value; 
+      const cat = document.getElementById('vaultCategory').value;
+      const id = document.getElementById('editVaultId').value;
+      
       const btn = document.getElementById('btnSaveVault'); btn.disabled = true; btn.innerText = '⏳ กำลังล็อคตู้เซฟ...';
       try {
-          const payload = { owner_user: currentUsername, title: title, content: content };
-          if (id) await supabaseClient.from('private_vault').update(payload).eq('id', id); else await supabaseClient.from('private_vault').insert([payload]);
+          const payload = { owner_user: currentUsername, title: title, content: content, category: cat };
+          if (id) await supabaseClient.from('private_vault').update(payload).eq('id', id); 
+          else await supabaseClient.from('private_vault').insert([payload]);
+          
           bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).hide();
           Swal.fire({toast:true, position:'top-end', title:'บันทึกความลับสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
           loadPrivateVault();
