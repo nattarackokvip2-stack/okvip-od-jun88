@@ -1198,7 +1198,7 @@
           </div>
           
           <label class="small mb-1 text-white">รายละเอียดความลับ (Details)</label>
-          <textarea id="vaultContent" class="form-control mb-4 bg-dark text-white" rows="10" style="border-color: #ff00ff; transition: 0.3s;" placeholder="พิมพ์ข้อมูลที่คุณต้องการเก็บไว้ดูคนเดียวที่นี่..." required></textarea>
+          <textarea id="vaultContent" class="form-control mb-4 bg-dark text-white" rows="10" style="border-color: #ff00ff;" placeholder="พิมพ์ข้อมูลที่คุณต้องการเก็บไว้ดูคนเดียวที่นี่..." required></textarea>
           
           <button type="submit" id="btnSaveVault" class="btn w-100 py-2 fw-bold text-white" style="background-color: #cc00cc;">
             💾 ล็อคเก็บใส่ตู้เซฟ
@@ -4242,6 +4242,7 @@ function triggerOCR() {
           const catSelect = document.getElementById('vaultCategory');
           if(catSelect) catSelect.value = '📌 โน้ตทั่วไป';
           
+          // 🌟 ลบคำสั่งเบลอทิ้งไปแล้ว เด้ง Pop-up ได้เลย
           bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
       } catch(e) {
           console.error("Error opening modal:", e);
@@ -4258,8 +4259,8 @@ function triggerOCR() {
       document.getElementById('vaultTitle').value = v.title; 
       document.getElementById('vaultContent').value = v.content; 
       
+      // 🌟 ลบคำสั่งเช็คเบลอทิ้ง โชว์ข้อความได้ทันที
       bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
-  }
   }
   
   // 🌟 1. ฟังก์ชันแสดงผลการ์ด (แก้ปัญหาตัวหนังสือทับปุ่ม)
