@@ -4242,18 +4242,24 @@ function triggerOCR() {
           const catSelect = document.getElementById('vaultCategory');
           if(catSelect) catSelect.value = '📌 โน้ตทั่วไป';
           
-          isVaultBlurred = true; 
-          const contentBox = document.getElementById('vaultContent');
-          if(contentBox) contentBox.style.filter = 'blur(5px)'; 
-          
-          const blurBtn = document.getElementById('btnToggleBlur');
-          if(blurBtn) blurBtn.innerHTML = '👁️ แสดงข้อความ';
-          
           bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
       } catch(e) {
           console.error("Error opening modal:", e);
           Swal.fire('Error', 'เกิดข้อผิดพลาดในการเปิดหน้าต่าง', 'error');
       }
+  }
+
+  function openEditVault(id) { 
+      const v = allVaultData.find(x => x.id.toString() === id.toString()); 
+      if (!v) return; 
+      
+      document.getElementById('editVaultId').value = v.id; 
+      document.getElementById('vaultCategory').value = v.category || '📌 โน้ตทั่วไป';
+      document.getElementById('vaultTitle').value = v.title; 
+      document.getElementById('vaultContent').value = v.content; 
+      
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
+  }
   }
   
   // 🌟 1. ฟังก์ชันแสดงผลการ์ด (แก้ปัญหาตัวหนังสือทับปุ่ม)
