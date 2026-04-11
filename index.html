@@ -285,9 +285,14 @@
            <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
         </div>
         
-        <div class="hub-card" style="border: 1px solid #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(0, 255, 204, 0.4)'; this.style.background='rgba(0, 255, 204, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(0, 255, 204, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('bankCheckSection')">
+        <div class="hub-card" style="border: 1px solid #00ffcc; ... onclick="switchMainTab('bankCheckSection')">
            <div class="hub-icon" style="text-shadow: none;">🏦</div>
            <div class="hub-title" style="color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);">ตรวจสอบบัญชี</div>
+        </div>
+
+        <div class="hub-card" style="border: 1px solid #ff00ff; box-shadow: 0 0 10px rgba(255, 0, 255, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(255, 0, 255, 0.4)'; this.style.background='rgba(255, 0, 255, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(255, 0, 255, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('vaultSection'); loadPrivateVault();">
+           <div class="hub-icon" style="text-shadow: none;">🔐</div>
+           <div class="hub-title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255, 0, 255, 0.3);">ฐานลับส่วนบุคคล</div>
         </div>
       </div>
     </div>
@@ -706,7 +711,20 @@
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
     </div>
 
-  </div> </div> 
+    <div id="vaultSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+           <h4 class="fw-bold mb-0" style="color: #ff00ff; text-shadow: 0 0 10px rgba(255,0,255,0.5);">🔐 ฐานลับส่วนบุคคล (Private Vault)</h4>
+           <p class="small text-muted mb-0 mt-1">ข้อมูลในหน้านี้จะถูกเข้ารหัสและมองเห็นได้เฉพาะคุณ (<b id="vaultOwnerName" class="text-white"></b>) เท่านั้น</p>
+        </div>
+        <div class="d-flex gap-2">
+            <input type="text" id="searchVault" class="form-control neon-input-search" style="border-color: #ff00ff;" placeholder="🔍 ค้นหาหัวข้อความลับ..." oninput="handleVaultSearch(this.value)">
+            <button class="btn fw-bold text-white px-4" style="background-color: #cc00cc; border-radius: 8px; box-shadow: 0 0 10px rgba(255,0,255,0.4);" onclick="openVaultModal()">➕ สร้างความลับใหม่</button>
+        </div>
+      </div>
+      <div id="vaultGridArea" class="manual-grid mt-4"></div>
+    </div>
+    </div> </div> 
 
   <div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
@@ -1145,7 +1163,24 @@
     </div>
   </div>
 </div>
-  
+
+<div class="modal fade" id="vaultModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border: 1px solid #ff00ff; box-shadow: 0 0 20px rgba(255,0,255,0.2);">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-4 text-center" style="color: #ff00ff;">🔐 บันทึกความลับส่วนตัว</h4>
+        <form id="vaultForm" onsubmit="saveVaultData(event)">
+          <input type="hidden" id="editVaultId"> 
+          <label class="small mb-1 text-white">หัวข้อ (Title)</label>
+          <input type="text" id="vaultTitle" class="form-control mb-3 bg-dark text-white" style="border-color: #ff00ff;" placeholder="เช่น: รหัสผ่านเข้าเว็บหลังบ้าน..." required>
+          <label class="small mb-1 text-white">รายละเอียดความลับ (Details)</label>
+          <textarea id="vaultContent" class="form-control mb-4 bg-dark text-white" rows="10" style="border-color: #ff00ff;" placeholder="พิมพ์ข้อมูลที่คุณต้องการเก็บไว้ดูคนเดียวที่นี่..." required></textarea>
+          <button type="submit" id="btnSaveVault" class="btn w-100 py-2 fw-bold text-white" style="background-color: #cc00cc;">💾 ล็อคเก็บใส่ตู้เซฟ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 <script>
@@ -4139,6 +4174,71 @@ function triggerOCR() {
         icon: 'info', background: '#111', color: '#fff'
     });
 }
+
+// 👇 ก๊อปปี้โค้ดสมองกลด้านล่างนี้ไปวางแทรกตรงนี้เลยครับ 👇
+  let allVaultData = [];
+  let vaultSearchTerm = '';
+
+  async function loadPrivateVault() {
+      document.getElementById('vaultOwnerName').innerText = currentUsername;
+      const area = document.getElementById('vaultGridArea');
+      area.innerHTML = '<div class="text-center py-5 w-100 text-muted">⏳ กำลังปลดล็อคตู้เซฟ...</div>';
+      try {
+          const { data, error } = await supabaseClient.from('private_vault').select('*').eq('owner_user', currentUsername).order('id', { ascending: false });
+          if (error) throw error;
+          allVaultData = data || [];
+          renderVaultGrid();
+      } catch (err) {
+          area.innerHTML = '<div class="text-center py-5 w-100 text-danger">❌ เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+      }
+  }
+
+  function renderVaultGrid() {
+      const area = document.getElementById('vaultGridArea');
+      area.innerHTML = '';
+      let filteredData = vaultSearchTerm ? allVaultData.filter(v => v.title.toLowerCase().includes(vaultSearchTerm) || v.content.toLowerCase().includes(vaultSearchTerm)) : allVaultData;
+      if (filteredData.length === 0) {
+          area.innerHTML = `<div class="text-center py-5 w-100 text-muted" style="border: 1px dashed #ff00ff; border-radius: 15px; background: rgba(255,0,255,0.05);">ตู้เซฟว่างเปล่า... กดยังปุ่ม 'สร้างความลับใหม่' ด้านบนได้เลยครับ</div>`;
+          return;
+      }
+      filteredData.forEach(v => {
+          let dateStr = new Date(v.created_at).toLocaleString('th-TH');
+          area.innerHTML += `
+              <div class="manual-card" style="border-color: #ff00ff; background: rgba(255,0,255,0.02);" onclick="openEditVault('${v.id}')">
+                  <div class="card-actions"><button class="btn-action delete" onclick="event.stopPropagation(); deleteVaultData('${v.id}')">✖ ลบ</button></div>
+                  <div class="d-flex align-items-start"><span class="icon">🗝️</span><div><h5 class="title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255,0,255,0.3);">${v.title}</h5><div class="small text-muted mt-1">อัปเดต: ${dateStr}</div></div></div>
+                  <div class="read-more" style="color: #ff00ff;">คลิกเพื่อเปิดดูเนื้อหา &rarr;</div>
+              </div>`;
+      });
+  }
+
+  function handleVaultSearch(term) { vaultSearchTerm = term.toLowerCase().trim(); renderVaultGrid(); }
+  function openVaultModal() { document.getElementById('vaultForm').reset(); document.getElementById('editVaultId').value = ''; bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); }
+  function openEditVault(id) { const v = allVaultData.find(x => x.id.toString() === id.toString()); if (!v) return; document.getElementById('editVaultId').value = v.id; document.getElementById('vaultTitle').value = v.title; document.getElementById('vaultContent').value = v.content; bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); }
+
+  async function saveVaultData(e) {
+      e.preventDefault(); const title = document.getElementById('vaultTitle').value; const content = document.getElementById('vaultContent').value; const id = document.getElementById('editVaultId').value;
+      const btn = document.getElementById('btnSaveVault'); btn.disabled = true; btn.innerText = '⏳ กำลังล็อคตู้เซฟ...';
+      try {
+          const payload = { owner_user: currentUsername, title: title, content: content };
+          if (id) await supabaseClient.from('private_vault').update(payload).eq('id', id); else await supabaseClient.from('private_vault').insert([payload]);
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).hide();
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกความลับสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+          loadPrivateVault();
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 ล็อคเก็บใส่ตู้เซฟ'; }
+  }
+
+  function deleteVaultData(id) {
+      Swal.fire({title: 'ทำลายความลับนี้?', text: 'ข้อมูลนี้จะหายไปตลอดกาล', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'}).then(async r => {
+          if (r.isConfirmed) {
+              Swal.fire({title:'กำลังทำลาย...', didOpen:()=>Swal.showLoading()});
+              await supabaseClient.from('private_vault').delete().eq('id', id); loadPrivateVault();
+              Swal.fire({toast:true, position:'top-end', title:'ทำลายสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+      });
+  }
+// 👆 จบโค้ดสมองกล 👆
+
 </script>
 
 </body>
