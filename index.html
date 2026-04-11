@@ -628,61 +628,66 @@
           🤖 จัดการบอทธนาคาร
         </button>
       </div>
-      
-      <div class="row justify-content-center mt-4">
-        <div class="col-md-6">
-          <div class="card-custom" style="background: #0a0a0c; border: 1px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.1);">
-            <form id="bankCheckForm" onsubmit="verifyBankAccount(event)">
-              <label class="text-white small mb-2">1. เลือกธนาคาร (คลิกแล้วพิมพ์ค้นหาได้)</label>
-              <input list="bankList" id="bankInput" class="form-control mb-4 bg-dark text-white border-secondary" placeholder="🔍 พิมพ์ชื่อธนาคาร..." onchange="handleBankSelection()" autocomplete="off" required>
-              <datalist id="bankList">
-                <option value="ธนาคารกสิกรไทย (KBANK)">
-                <option value="ธนาคารกรุงเทพ (BBL)">
-                <option value="ธนาคารกรุงไทย (KTB)">
-                <option value="ธนาคารทหารไทยธนชาต (TTB)">
-                <option value="ธนาคารไทยพาณิชย์ (SCB)">
-                <option value="ธนาคารกรุงศรีอยุธยา (BAY)">
-                <option value="ธนาคารออมสิน (GSB)">
-                <option value="ธนาคารฮ่องกงและเซี่ยงไฮ้ (HSBC)">
-                <option value="ธนาคารดอยซ์แบงก์">
-                <option value="ธนาคารอาคารสงเคราะห์ (GHB)">
-                <option value="ธนาคาร ธ.ก.ส. (BAAC)">
-                <option value="ธนาคารมิซูโฮ">
-                <option value="ธนาคารบีเอ็นพี พารีบาส์">
-                <option value="ธนาคารแห่งประเทศจีน (ไทย)">
-                <option value="ธนาคารอิสลามแห่งประเทศไทย (IBANK)">
-                <option value="ธนาคารซิตี้แบงก์ เอ็น.เอ.">
-                <option value="ธนาคารซูมิโตโม มิตซุย แบงกิ้ง">
-                <option value="ธนาคารสแตนดาร์ดชาร์เตอร์ด">
-                <option value="ธนาคารซีไอเอ็มบี ไทย (CIMBT)">
-                <option value="ธนาคารยูโอบี (UOB)">
-                <option value="ธนาคาร ทิสโก้ (TISCO)">
-                <option value="ธนาคารเกียรตินาคินภัทร (KKP)">
-                <option value="ธนาคารไอซีบีซี (ไทย) (ICBC)">
-                <option value="ธนาคารไทยเครดิต (TCD)">
-                <option value="ธนาคารแลนด์ แอนด์ เฮ้าส์ (LHFG)">
-                <option value="ธนาคารเจพีมอร์แกน เชส">
-                <option value="ธนาคารเมกะ สากลพาณิชย์">
-                <option value="ธนาคารแห่งอเมริกา">
-                <option value="ธนาคาร อินเดียนโอเวอร์ซีส์">
-                <option value="ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อมแห่งประเทศไทย">
-              </datalist>
 
-              <label class="text-white small mb-2" id="accLabel">2. กรอกเลขที่บัญชี (เฉพาะตัวเลข 10 หลัก)</label>
-              <input type="text" id="bankAccNumber" class="form-control mb-4 bg-dark text-white border-secondary fw-bold text-center" placeholder="เช่น 0123456789" style="font-size: 1.2rem; letter-spacing: 2px;" oninput="handleAccInput(this)" maxlength="10" required>
+      <div class="row justify-content-center mt-2">
+        <div class="col-md-6 col-lg-5">
+          <div class="card-custom" style="background: #0a0a0c; border: 1px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.1); padding: 25px;">
+             
+             <button class="btn w-100 mb-4 fw-bold" style="background: #e67e22; color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onclick="triggerOCR()">
+                📷 แคปหน้าจอ (ดึงเลขจากรูป/สลิป)
+             </button>
 
-              <button type="submit" id="btnVerifyBank" class="btn w-100 py-3 fw-bold fs-5" style="background-color: #004d40; color: #00ffcc; border: 1px solid #00ffcc; transition: 0.3s;" onmouseover="this.style.backgroundColor='#006655'" onmouseout="this.style.backgroundColor='#004d40'">
-                🔍 ตรวจสอบชื่อเจ้าของบัญชี
-              </button>
-            </form>
+             <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                   <label class="text-white small fw-bold mb-0">⚙️ เลือกระบบค้นหา (Bot)</label>
+                   <span id="botStatusBadge" class="badge bg-success text-dark">🟢 ว่าง (พร้อมใช้งาน)</span>
+                </div>
+                <select id="systemSelect" class="form-select bg-dark text-white border-secondary" style="cursor: pointer;">
+                   <option value="kbiz1">kbiz1 - 🟢 ออนไลน์</option>
+                   <option value="kbiz2">kbiz2 - 🟢 ออนไลน์</option>
+                </select>
+             </div>
 
-            <div id="bankResultArea" class="mt-4 p-4 text-center" style="display: none; border-radius: 10px; background: rgba(0, 255, 204, 0.05); border: 1px dashed #00ffcc;">
-              <div class="small text-muted mb-2">ผลการค้นหา:</div>
-              <div id="bankResultName" class="fw-bold" style="font-size: 1.5rem; color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.6);">
-                นาย ทดสอบ ระบบดี
-              </div>
-              <div class="small text-muted mt-2" id="bankResultDetails">KBANK - 0123456789</div>
-            </div>
+             <label class="text-white small fw-bold mb-2">🏦 ธนาคารปลายทาง</label>
+             <div style="position: relative; margin-bottom: 20px;">
+                <input type="text" id="customBankInput" class="form-control bg-dark text-white border-secondary" placeholder="พิมพ์เพื่อค้นหาธนาคาร..." autocomplete="off" onfocus="document.getElementById('customBankDropdown').style.display='block'" oninput="filterCustomBanks()">
+                <div id="clearBankBtn" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #ff3366; font-size: 14px; display: none;" onclick="clearBankSelection()">✖</div>
+
+                <ul id="customBankDropdown" style="position: absolute; top: 100%; left: 0; width: 100%; background: #1a1a1a; border: 1px solid #00ffcc; border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; padding: 0; margin-top: 5px; list-style: none; box-shadow: 0 8px 16px rgba(0,0,0,0.8);">
+                    </ul>
+             </div>
+
+             <label class="text-white small fw-bold mb-2" id="accLabel">🔢 เลขที่บัญชี</label>
+             <input type="text" id="bankAccNumber" class="form-control mb-4 bg-dark text-white border-secondary fw-bold text-center" placeholder="เลขบัญชี 10-12 หลัก" style="font-size: 1.2rem; letter-spacing: 2px;" oninput="this.value = this.value.replace(/[^0-9]/g, '');" maxlength="10">
+
+             <button id="btnVerifyBank" class="btn w-100 py-3 fw-bold fs-5" style="background-color: #00a950; color: white; border-radius: 10px; transition: 0.3s;" onclick="mockCheckBank()">
+                🔍 ค้นหาชื่อบัญชี
+             </button>
+
+             <div id="bankResultMsg" class="mt-3 text-center fw-bold px-3 py-2 rounded" style="display: none; font-size: 14px;"></div>
+
+             <div id="resultCard" style="display: none; margin-top: 20px; background: #151515; border-radius: 12px; padding: 15px; border: 1px solid #333; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
+                <div style="width: 50px; height: 50px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; padding: 2px; border: 2px solid #00ffcc;">
+                    <span id="resultLogoIcon" style="font-size: 26px;">🏦</span>
+                </div>
+                <div style="text-align: left; flex-grow: 1; overflow: hidden;">
+                    <div id="cardName" style="font-weight: bold; font-size: 16px; color: #00ffcc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
+                    <div id="cardBank" style="font-size: 13px; color: #aaa; margin-bottom: 2px;">-</div>
+                    <div id="cardAcc" style="font-size: 14px; color: #fff; font-family: monospace; letter-spacing: 1px;">-</div>
+                </div>
+             </div>
+
+             <button id="copyDataBtn" class="btn w-100 mt-3 fw-bold" style="display: none; background: #2980b9; color: white; border-radius: 8px;" onclick="copyBankResult()">
+                📝 คัดลอกข้อมูล
+             </button>
+
+             <div id="historyContainer" style="margin-top: 25px; border-top: 1px solid #333; padding-top: 15px;">
+                <div style="font-size: 12px; color: #888; margin-bottom: 10px;">🕒 ประวัติล่าสุด (10 รายการ)</div>
+                <ul id="historyList" style="list-style: none; padding: 0; margin: 0;">
+                    <li class="text-muted small text-center" id="emptyHistory">ยังไม่มีประวัติการค้นหา</li>
+                </ul>
+             </div>
+
           </div>
         </div>
       </div>
@@ -3793,6 +3798,181 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           btn.innerText = '💾 บันทึกข้อมูลบอท';
       }
   }
+
+  // ==========================================
+// 🏦 ระบบตรวจสอบบัญชีธนาคาร (Frontend Logic)
+// ==========================================
+const bankListData = [
+    { code: "KBANK", name: "กสิกรไทย", icon: "🟢", length: 10 },
+    { code: "BBL", name: "กรุงเทพ", icon: "🟦", length: 10 },
+    { code: "KTB", name: "กรุงไทย", icon: "🔵", length: 10 },
+    { code: "SCB", name: "ไทยพาณิชย์", icon: "🟣", length: 10 },
+    { code: "BAY", name: "กรุงศรีอยุธยา", icon: "🟡", length: 10 },
+    { code: "TTB", name: "ทหารไทยธนชาต", icon: "🟠", length: 10 },
+    { code: "GSB", name: "ออมสิน", icon: "🩷", length: 12 },
+    { code: "BAAC", name: "ธ.ก.ส.", icon: "🌾", length: 12 },
+    { code: "GHB", name: "อาคารสงเคราะห์", icon: "🏠", length: 12 },
+    { code: "KKP", name: "เกียรตินาคินภัทร", icon: "🟪", length: 10 },
+    { code: "CIMB", name: "ซีไอเอ็มบี", icon: "🔴", length: 10 },
+    { code: "UOB", name: "ยูโอบี", icon: "👖", length: 10 }
+];
+
+let selectedBank = null;
+let searchHistory = [];
+
+// 1. วาดรายการธนาคารลงใน Dropdown
+function renderBankDropdown(data = bankListData) {
+    const list = document.getElementById('customBankDropdown');
+    list.innerHTML = '';
+    data.forEach(b => {
+        list.innerHTML += `
+            <li style="padding: 10px 15px; cursor: pointer; color: #ddd; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 12px; font-size: 14px;" 
+                onmouseover="this.style.background='#222'; this.style.color='#00ffcc'" 
+                onmouseout="this.style.background='transparent'; this.style.color='#ddd'"
+                onclick="selectCustomBank('${b.code}')">
+                <span style="font-size: 18px; background: #fff; border-radius: 50%; padding: 2px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">${b.icon}</span> 
+                ธนาคาร${b.name} (${b.code})
+            </li>`;
+    });
+}
+
+// 2. เมื่อคลิกเลือกธนาคาร
+function selectCustomBank(code) {
+    selectedBank = bankListData.find(b => b.code === code);
+    document.getElementById('customBankInput').value = `ธนาคาร${selectedBank.name} (${selectedBank.code})`;
+    document.getElementById('customBankDropdown').style.display = 'none';
+    document.getElementById('clearBankBtn').style.display = 'block';
+    
+    // อัปเดตความยาวเลขบัญชี (10 หรือ 12 หลัก)
+    const accInput = document.getElementById('bankAccNumber');
+    accInput.setAttribute('maxlength', selectedBank.length);
+    document.getElementById('accLabel').innerHTML = `🔢 เลขที่บัญชี <span class="text-warning">(${selectedBank.length} หลัก)</span>`;
+    
+    if (accInput.value.length > selectedBank.length) {
+        accInput.value = accInput.value.substring(0, selectedBank.length);
+    }
+}
+
+// 3. พิมพ์ค้นหาธนาคาร
+function filterCustomBanks() {
+    const term = document.getElementById('customBankInput').value.toLowerCase();
+    const filtered = bankListData.filter(b => b.name.toLowerCase().includes(term) || b.code.toLowerCase().includes(term));
+    renderBankDropdown(filtered);
+}
+
+// 4. ล้างค่าธนาคาร
+function clearBankSelection() {
+    selectedBank = null;
+    document.getElementById('customBankInput').value = "";
+    document.getElementById('clearBankBtn').style.display = 'none';
+    document.getElementById('customBankDropdown').style.display = 'block';
+    document.getElementById('accLabel').innerHTML = `🔢 เลขที่บัญชี`;
+    renderBankDropdown();
+}
+
+// ซ่อน Dropdown เมื่อคลิกที่อื่น
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('#customBankInput') && !e.target.closest('#customBankDropdown')) {
+        const dd = document.getElementById('customBankDropdown');
+        if(dd) dd.style.display = 'none';
+    }
+});
+
+// เรียกตอนเปิดหน้าเว็บ
+renderBankDropdown();
+
+// 5. จำลองการค้นหา (เดี๋ยวเราจะเชื่อมกับ Supabase ในสเต็ปต่อไป)
+function mockCheckBank() {
+    const acc = document.getElementById('bankAccNumber').value;
+    if (!selectedBank || !acc) {
+        Swal.fire({toast:true, position:'top', title:'กรุณาเลือกธนาคารและกรอกเลขบัญชี', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+        return;
+    }
+    if (acc.length !== selectedBank.length) {
+        Swal.fire({toast:true, position:'top', title:`ธนาคารนี้ต้องใช้เลขบัญชี ${selectedBank.length} หลัก`, icon:'error', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+        return;
+    }
+
+    const btn = document.getElementById('btnVerifyBank');
+    const msg = document.getElementById('bankResultMsg');
+    const card = document.getElementById('resultCard');
+    const copyBtn = document.getElementById('copyDataBtn');
+
+    // ซ่อนการ์ดเก่า
+    card.style.display = 'none';
+    copyBtn.style.display = 'none';
+    btn.disabled = true;
+
+    // แสดงสถานะกำลังโหลด
+    msg.style.display = 'block';
+    msg.className = "mt-3 text-center fw-bold px-3 py-2 rounded";
+    msg.style.backgroundColor = "#332b00";
+    msg.style.color = "#ffcc00";
+    msg.style.border = "1px solid #554400";
+    msg.innerHTML = `⚡ กำลังดึงข้อมูล... บอทกำลังค้นหา`;
+
+    // จำลองดีเลย์ 2 วินาที (รอเชื่อมบอทจริงสเต็ปหน้า)
+    setTimeout(() => {
+        msg.style.display = 'none';
+        btn.disabled = false;
+
+        // ใส่ข้อมูลลงในการ์ด
+        document.getElementById('resultLogoIcon').innerText = selectedBank.icon;
+        document.getElementById('cardName').innerText = "นาย ระบบ กำลังทดสอบ";
+        document.getElementById('cardBank').innerText = `ธนาคาร${selectedBank.name}`;
+        document.getElementById('cardBank').style.color = getBankColor(selectedBank.code);
+        document.getElementById('cardAcc').innerText = acc;
+
+        // โชว์การ์ด
+        card.style.display = 'flex';
+        copyBtn.style.display = 'block';
+
+        // เพิ่มลงประวัติ
+        addHistory("นาย ระบบ กำลังทดสอบ", acc, selectedBank.icon);
+
+        Swal.fire({toast:true, position:'top-end', title:'ค้นหาสำเร็จ', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
+    }, 2000);
+}
+
+// 6. สีเฉพาะธนาคาร
+function getBankColor(code) {
+    const colors = { KBANK: "#00a950", SCB: "#4e2a84", KTB: "#00aeeef", BBL: "#1e4598", BAY: "#fec43b", GSB: "#eb198d" };
+    return colors[code] || "#aaa";
+}
+
+// 7. คัดลอกข้อมูล
+function copyBankResult() {
+    const name = document.getElementById('cardName').innerText;
+    const bank = document.getElementById('cardBank').innerText;
+    const acc = document.getElementById('cardAcc').innerText;
+    const textToCopy = `${bank}\n${acc}\n${name}`;
+    
+    navigator.clipboard.writeText(textToCopy).then(() => {
+        Swal.fire({toast:true, position:'top', title:'📝 คัดลอกแล้ว', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
+    });
+}
+
+// 8. เพิ่มประวัติการค้นหา
+function addHistory(name, acc, icon) {
+    document.getElementById('emptyHistory').style.display = 'none';
+    const list = document.getElementById('historyList');
+    
+    const li = document.createElement('li');
+    li.style.cssText = "font-size: 13px; padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid #333;";
+    li.innerHTML = `<span><span style="font-size: 14px;">${icon}</span> ${acc}</span><span style="color:#aaa; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:140px;">${name}</span>`;
+    
+    list.prepend(li);
+    if(list.children.length > 10) list.lastChild.remove();
+}
+
+// 9. ปุ่ม OCR (เตรียมไว้สเต็ปถัดไป)
+function triggerOCR() {
+    Swal.fire({
+        title: '📷 ระบบอ่านสลิป (OCR)',
+        text: 'ฟังก์ชันนี้กำลังจะถูกติดตั้งในสเต็ปถัดไปครับบอส!',
+        icon: 'info', background: '#111', color: '#fff'
+    });
+}
 </script>
 
 </body>
