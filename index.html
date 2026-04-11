@@ -3976,8 +3976,8 @@ document.addEventListener('click', function(e) {
 // เรียกตอนเปิดหน้าเว็บ
 renderBankDropdown();
 
-// 5. จำลองการค้นหา (เดี๋ยวเราจะเชื่อมกับ Supabase ในสเต็ปต่อไป)
-function mockCheckBank() {
+// 5. ส่งข้อมูลเข้าคิว (Queue) และรอผลลัพธ์แบบ Realtime จากบอท
+async function mockCheckBank() {
     const acc = document.getElementById('bankAccNumber').value;
     if (!selectedBank || !acc) {
         Swal.fire({toast:true, position:'top', title:'กรุณาเลือกธนาคารและกรอกเลขบัญชี', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
@@ -3993,40 +3993,111 @@ function mockCheckBank() {
     const card = document.getElementById('resultCard');
     const copyBtn = document.getElementById('copyDataBtn');
 
-    // ซ่อนการ์ดเก่า
+    // ซ่อนการ์ดเก่า ปิดปุ่มกันกดซ้ำ
     card.style.display = 'none';
     copyBtn.style.display = 'none';
     btn.disabled = true;
 
-    // แสดงสถานะกำลังโหลด
+    // แสดงสถานะกำลังรอคิว (สีเหลือง)
     msg.style.display = 'block';
     msg.className = "mt-3 text-center fw-bold px-3 py-2 rounded";
     msg.style.backgroundColor = "#332b00";
     msg.style.color = "#ffcc00";
     msg.style.border = "1px solid #554400";
-    msg.innerHTML = `⚡ กำลังดึงข้อมูล... บอทกำลังค้นหา`;
+    msg.innerHTML = `🟡 โยนงานลงตะกร้า... รอระบบจ่ายคิวให้บอท`;
 
-    // จำลองดีเลย์ 2 วินาที (รอเชื่อมบอทจริงสเต็ปหน้า)
-    setTimeout(() => {
-        msg.style.display = 'none';
+    try {
+        // 🌟 สเต็ปที่ 1: โยนงานลงตู้เซฟ (ตาราง bank_queue)
+        const { data: queueData, error: insertError } = await supabaseClient
+            .from('bank_queue')
+            .insert([{
+                bank_code: selectedBank.code,
+                account_number: acc,
+                status: 'pending' // สถานะรอกำลังทำ
+            }])
+            .select()
+            .single();
+
+        if (insertError) throw insertError;
+
+        const queueId = queueData.id;
+
+        // 🌟 สเต็ปที่ 2: ดักฟังคลื่นวิทยุ (Realtime) รอผลลัพธ์จากบอท
+        const queueChannel = supabaseClient.channel(`queue-${queueId}`)
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'bank_queue',
+                filter: `id=eq.${queueId}` // ดักฟังเฉพาะงานของตัวเอง
+            }, (payload) => {
+                const updatedData = payload.new;
+                
+                // ถ้าบอทรับงานไปแล้ว (เปลี่ยนสถานะเป็นสีฟ้า)
+                if (updatedData.status === 'processing') {
+                    msg.style.backgroundColor = "#002b3d";
+                    msg.style.color = "#00f0ff";
+                    msg.style.border = "1px solid #00a3cc";
+                    msg.innerHTML = `🔵 บอท [${updatedData.assigned_bot}] รับคิวแล้ว! กำลังดึงข้อมูล...`;
+                } 
+                // ถ้าบอททำงานสำเร็จ (แสดงการ์ดผลลัพธ์)
+                else if (updatedData.status === 'completed') {
+                    msg.style.display = 'none'; // ซ่อนข้อความโหลด
+                    btn.disabled = false; // ปลดล็อกปุ่ม
+
+                    // ใส่ข้อมูลลงในการ์ด
+                    document.getElementById('resultLogoIcon').innerText = selectedBank.icon;
+                    document.getElementById('cardName').innerText = updatedData.result_name;
+                    document.getElementById('cardName').style.color = "#00ffcc";
+                    document.getElementById('cardBank').innerText = `ธนาคาร${selectedBank.name}`;
+                    document.getElementById('cardBank').style.color = getBankColor(selectedBank.code);
+                    document.getElementById('cardAcc').innerText = acc;
+
+                    // โชว์การ์ดผลลัพธ์ และปุ่มก๊อปปี้
+                    card.style.display = 'flex';
+                    copyBtn.style.display = 'block';
+
+                    // เพิ่มลงประวัติที่มุมล่าง
+                    addHistory(updatedData.result_name, acc, selectedBank.icon);
+
+                    Swal.fire({toast:true, position:'top-end', title:'ดึงข้อมูลสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
+                    
+                    // ปิดช่องรับสัญญาณ
+                    supabaseClient.removeChannel(queueChannel);
+                } 
+                // ถ้าบอททำงานพลาด (Error)
+                else if (updatedData.status === 'error') {
+                    msg.style.backgroundColor = "#3a1c1c";
+                    msg.style.color = "#ff3366";
+                    msg.style.border = "1px solid #5c2c2c";
+                    msg.innerHTML = `❌ เกิดข้อผิดพลาด: ${updatedData.error_message}`;
+                    btn.disabled = false;
+                    
+                    // ปิดช่องรับสัญญาณ
+                    supabaseClient.removeChannel(queueChannel);
+                }
+            })
+            .subscribe();
+
+        // 🌟 สเต็ปที่ 3: ตั้งเวลา Timeout (60 วินาที) เผื่อบอทค้างหรือไฟดับ
+        setTimeout(() => {
+            if (btn.disabled) {
+                msg.style.backgroundColor = "#3a1c1c";
+                msg.style.color = "#ff3366";
+                msg.style.border = "1px solid #5c2c2c";
+                msg.innerHTML = `❌ คิวรอนานเกิน 60 วินาที (บอทอาจจะคิวเต็ม หรือปิดอยู่)`;
+                btn.disabled = false;
+                supabaseClient.removeChannel(queueChannel); // ปิดการรับสัญญาณ
+            }
+        }, 60000);
+
+    } catch (err) {
+        console.error("Queue Error:", err);
+        msg.style.backgroundColor = "#3a1c1c";
+        msg.style.color = "#ff3366";
+        msg.style.border = "1px solid #5c2c2c";
+        msg.innerHTML = `❌ ระบบคิวขัดข้อง: ${err.message}`;
         btn.disabled = false;
-
-        // ใส่ข้อมูลลงในการ์ด
-        document.getElementById('resultLogoIcon').innerText = selectedBank.icon;
-        document.getElementById('cardName').innerText = "นาย ระบบ กำลังทดสอบ";
-        document.getElementById('cardBank').innerText = `ธนาคาร${selectedBank.name}`;
-        document.getElementById('cardBank').style.color = getBankColor(selectedBank.code);
-        document.getElementById('cardAcc').innerText = acc;
-
-        // โชว์การ์ด
-        card.style.display = 'flex';
-        copyBtn.style.display = 'block';
-
-        // เพิ่มลงประวัติ
-        addHistory("นาย ระบบ กำลังทดสอบ", acc, selectedBank.icon);
-
-        Swal.fire({toast:true, position:'top-end', title:'ค้นหาสำเร็จ', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
-    }, 2000);
+    }
 }
 
 // 6. สีเฉพาะธนาคาร
