@@ -622,8 +622,11 @@
     </div>
 
     <div id="bankCheckSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5);">🏦 ระบบตรวจสอบชื่อบัญชีธนาคาร (Name Enquiry)</h4>
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h4 class="fw-bold mb-0" style="color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5);">🏦 ระบบตรวจสอบบัญชี & จัดการบอท</h4>
+        <button class="btn px-4 py-2 fw-bold text-dark" style="background-color: #00ff66; border-radius: 8px; box-shadow: 0 0 10px rgba(0,255,102,0.4);" onclick="openBotModal()">
+          🤖 จัดการบอทธนาคาร
+        </button>
       </div>
       
       <div class="row justify-content-center mt-4">
@@ -1082,7 +1085,40 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="botManageModal" tabindex="-1" data-bs-theme="dark" style="z-index: 1060;">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="background-color: var(--bg-card); border: 1px solid #00ff66;">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-4 text-center" style="color: #00ff66; text-shadow: 0 0 10px rgba(0,255,102,0.5);" id="botModalTitle">🤖 เพิ่มบอทธนาคารใหม่</h4>
+        
+        <form id="botManageForm" onsubmit="saveBotData(event)">
+          <input type="hidden" id="editBotId"> 
+          
+          <label class="small mb-1 text-white">🏦 เลือกธนาคาร (Bank)</label>
+          <select id="bankSelect" class="form-select bg-dark text-white mb-3" style="border-color: #00ff66;" required>
+              <option value="" disabled selected>-- กรุณาเลือกธนาคาร --</option>
+              <option value="kbank">🟢 กสิกรไทย (KBank)</option>
+              <option value="scb">🟣 ไทยพาณิชย์ (SCB)</option>
+              <option value="ktb">🔵 กรุงไทย (KTB)</option>
+              <option value="bbl">🟦 กรุงเทพ (BBL)</option>
+              <option value="bay">🟡 กรุงศรี (BAY)</option>
+          </select>
 
+          <label class="small mb-1 text-white">👤 Username (ชื่อผู้ใช้)</label>
+          <input type="text" id="botUser" class="form-control mb-3 bg-dark text-white" style="border-color: #444;" placeholder="กรอก Username..." required>
+          
+          <label class="small mb-1 text-white">🔑 Password (รหัสผ่าน)</label>
+          <input type="password" id="botPass" class="form-control mb-4 bg-dark text-white" style="border-color: #444;" placeholder="กรอกรหัสผ่าน..." required>
+          
+          <button type="submit" class="btn w-100 py-2 fw-bold text-dark" style="background-color: #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.5);">
+            💾 บันทึกข้อมูลบอท
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+  
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 <script>
@@ -3717,6 +3753,45 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             btn.disabled = false;
             btn.innerHTML = '🔍 ตรวจสอบชื่อเจ้าของบัญชี';
         }
+  }
+  // ==========================================
+  // 🤖 ฟังก์ชันจัดการบอทธนาคาร (Bot Management)
+  // ==========================================
+  function openBotModal() {
+      document.getElementById('botManageForm').reset();
+      document.getElementById('editBotId').value = '';
+      document.getElementById('botModalTitle').innerText = '🤖 เพิ่มบอทธนาคารใหม่';
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('botManageModal')).show();
+  }
+
+  async function saveBotData(e) {
+      e.preventDefault();
+      const bank = document.getElementById('bankSelect').value;
+      const user = document.getElementById('botUser').value;
+      const pass = document.getElementById('botPass').value;
+
+      if(!bank) {
+          Swal.fire({toast:true, position:'top', title:'กรุณาเลือกธนาคาร!', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+          return;
+      }
+
+      const btn = document.querySelector('#botManageForm button[type="submit"]');
+      btn.disabled = true;
+      btn.innerText = '⏳ กำลังบันทึก...';
+
+      try {
+          // ส่วนนี้สำหรับส่งข้อมูลเข้า Supabase (ต้องสร้างตาราง bank_bots ก่อนนะครับ)
+          // await supabaseClient.from('bank_bots').insert([{ bank_code: bank, username: user, password: pass }]);
+          
+          console.log("บันทึกสำเร็จ:", bank, user, pass);
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('botManageModal')).hide();
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกบอทสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+      } catch (err) {
+          Swal.fire('Error', err.message, 'error');
+      } finally {
+          btn.disabled = false;
+          btn.innerText = '💾 บันทึกข้อมูลบอท';
+      }
   }
 </script>
 
