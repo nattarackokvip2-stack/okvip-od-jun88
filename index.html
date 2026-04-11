@@ -1197,11 +1197,8 @@
             </div>
           </div>
           
-          <div class="d-flex justify-content-between align-items-center mb-1">
-             <label class="small text-white mb-0">รายละเอียดความลับ (Details)</label>
-             <button type="button" class="btn btn-sm btn-outline-secondary py-0" onclick="toggleVaultBlur()" id="btnToggleBlur">👁️ แสดงข้อความ</button>
-          </div>
-          <textarea id="vaultContent" class="form-control mb-4 bg-dark text-white" rows="10" style="border-color: #ff00ff; filter: blur(5px); transition: 0.3s;" placeholder="พิมพ์ข้อมูลที่คุณต้องการเก็บไว้ดูคนเดียวที่นี่..." required onfocus="removeBlur(this)"></textarea>
+          <label class="small mb-1 text-white">รายละเอียดความลับ (Details)</label>
+          <textarea id="vaultContent" class="form-control mb-4 bg-dark text-white" rows="10" style="border-color: #ff00ff; transition: 0.3s;" placeholder="พิมพ์ข้อมูลที่คุณต้องการเก็บไว้ดูคนเดียวที่นี่..." required></textarea>
           
           <button type="submit" id="btnSaveVault" class="btn w-100 py-2 fw-bold text-white" style="background-color: #cc00cc;">
             💾 ล็อคเก็บใส่ตู้เซฟ
