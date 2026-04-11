@@ -710,9 +710,7 @@
       <div id="portalGridArea" class="manual-grid"></div>
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
     </div>
-
-    <div id="vaultSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+    
         <div>
            <h4 class="fw-bold mb-0" style="color: #ff00ff; text-shadow: 0 0 10px rgba(255,0,255,0.5);">🔐 ฐานลับส่วนบุคคล (Private Vault)</h4>
            <p class="small text-muted mb-0 mt-1">ข้อมูลในหน้านี้จะถูกเข้ารหัสและมองเห็นได้เฉพาะคุณ (<b id="vaultOwnerName" class="text-white"></b>) เท่านั้น</p>
@@ -730,11 +728,6 @@
         <div class="dept-badge" onclick="filterVault('📌 โน้ตทั่วไป', this)">📌 โน้ตทั่วไป</div>
         <div class="dept-badge" onclick="filterVault('🌐 ลิงก์สำคัญ', this)">🌐 ลิงก์สำคัญ</div>
       </div>
-
-      <div id="vaultGridArea" class="manual-grid mt-3">
-          </div>
-    </div>
-    </div> </div> 
 
   <div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
@@ -1174,8 +1167,6 @@
   </div>
 </div>
 
-<div class="modal fade" id="vaultModal" tabindex="-1" data-bs-theme="dark">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content" style="border: 1px solid #ff00ff; box-shadow: 0 0 20px rgba(255,0,255,0.2);">
       <div class="modal-body p-4">
         <h4 class="fw-bold mb-4 text-center" style="color: #ff00ff;">🔐 บันทึกความลับส่วนตัว</h4>
@@ -4238,6 +4229,28 @@ function triggerOCR() {
 
   function handleVaultSearch(term) { vaultSearchTerm = term.toLowerCase().trim(); renderVaultGrid(); }
 
+  function openVaultModal() { 
+      try {
+          document.getElementById('vaultForm').reset(); 
+          document.getElementById('editVaultId').value = ''; 
+          
+          const catSelect = document.getElementById('vaultCategory');
+          if(catSelect) catSelect.value = '📌 โน้ตทั่วไป';
+          
+          isVaultBlurred = true; 
+          const contentBox = document.getElementById('vaultContent');
+          if(contentBox) contentBox.style.filter = 'blur(5px)'; 
+          
+          const blurBtn = document.getElementById('btnToggleBlur');
+          if(blurBtn) blurBtn.innerHTML = '👁️ แสดงข้อความ';
+          
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
+      } catch(e) {
+          console.error("Error opening modal:", e);
+          Swal.fire('Error', 'เกิดข้อผิดพลาดในการเปิดหน้าต่าง', 'error');
+      }
+  }
+  
   // 🌟 1. ฟังก์ชันแสดงผลการ์ด (แก้ปัญหาตัวหนังสือทับปุ่ม)
   function renderVaultGrid() {
       const area = document.getElementById('vaultGridArea');
