@@ -1729,10 +1729,11 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
         document.getElementById('btnClearSchedule').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
         document.getElementById('btnAssignShift').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
         document.getElementById('addBtn').style.display = 'block';
-        document.getElementById('btnManageBot').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; 
-        document.getElementById('addManualBtn').style.display = 'block'; 
-        
-        // แยกปุ่มตั้งค่าให้ชัดเจน
+        document.getElementById('btnManageBot').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; 
+        document.getElementById('addManualBtn').style.display = 'block'; 
+        document.getElementById('addPenaltyBtn').style.display = 'block'; // 🌟 เพิ่มบรรทัดนี้เพื่อให้ปุ่มบันทึกความผิดโชว์
+        
+        // แยกปุ่มตั้งค่าให้ชัดเจน
         document.getElementById('btnJobSettings').style.display = 'block'; 
         document.getElementById('btnQuotaSettings').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none';
 
@@ -4314,50 +4315,49 @@ function triggerOCR() {
       bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
   }
   
-  // 🌟 1. ฟังก์ชันแสดงผลการ์ด (แก้ปัญหาตัวหนังสือทับปุ่ม)
-  function renderVaultGrid() {
-      const area = document.getElementById('vaultGridArea');
-      area.innerHTML = '';
-      
-      let filteredData = allVaultData;
-      if (currentVaultCategory !== 'ALL') {
-          filteredData = filteredData.filter(v => v.category === currentVaultCategory);
-      }
-      if (vaultSearchTerm) {
-          filteredData = filteredData.filter(v => v.title.toLowerCase().includes(vaultSearchTerm) || v.content.toLowerCase().includes(vaultSearchTerm));
-      }
+  // 🌟 1. ฟังก์ชันแสดงผลการ์ด
+  function renderVaultGrid() {
+      const area = document.getElementById('vaultGridArea');
+      area.innerHTML = '';
+      
+      let filteredData = allVaultData;
+      if (currentVaultCategory !== 'ALL') {
+          filteredData = filteredData.filter(v => v.category === currentVaultCategory);
+      }
+      if (vaultSearchTerm) {
+          filteredData = filteredData.filter(v => v.title.toLowerCase().includes(vaultSearchTerm) || v.content.toLowerCase().includes(vaultSearchTerm));
+      }
 
-      if (filteredData.length === 0) {
-          area.innerHTML = `<div class="text-center py-5 w-100 text-muted" style="border: 1px dashed #ff00ff; border-radius: 15px; background: rgba(255,0,255,0.05);">ตู้เซฟหมวดหมู่นี้ว่างเปล่า...</div>`;
-          return;
-      }
+      if (filteredData.length === 0) {
+          area.innerHTML = `<div class="text-center py-5 w-100 text-muted" style="border: 1px dashed #ff00ff; border-radius: 15px; background: rgba(255,0,255,0.05);">ตู้เซฟหมวดหมู่นี้ว่างเปล่า...</div>`;
+          return;
+      }
 
-      filteredData.forEach(v => {
-          let dateStr = new Date(v.created_at).toLocaleString('th-TH');
-          let cat = v.category || '📌 โน้ตทั่วไป';
-          
-          area.innerHTML += `
-              <div class="manual-card" style="border-color: #ff00ff; background: rgba(255,0,255,0.02); position: relative; display: flex; flex-direction: column; cursor: pointer;" onclick="openEditVault('${v.id}')">
-                  
-                  <div class="card-actions" style="top: 15px; right: 15px; display: flex; gap: 5px; z-index: 10;">
-                      <button class="btn-action" style="border-color:#00f0ff; color:#00f0ff; padding: 4px 8px; font-weight: bold;" onclick="event.stopPropagation(); copyVaultContent('${v.id}')" title="คัดลอกด่วน">📝 คัดลอก</button>
-                      <button class="btn-action edit" style="padding: 4px 8px; font-weight: bold;" onclick="event.stopPropagation(); openEditVault('${v.id}')">✏️ แก้ไข</button>
-                      <button class="btn-action delete" style="padding: 4px 8px; font-weight: bold;" onclick="event.stopPropagation(); deleteVaultData('${v.id}')">✖ ลบ</button>
-                  </div>
+      filteredData.forEach(v => {
+          let dateStr = new Date(v.created_at).toLocaleString('th-TH');
+          let cat = v.category || '📌 โน้ตทั่วไป';
+          
+          area.innerHTML += `
+              <div class="manual-card" style="border-color: #ff00ff; background: rgba(255,0,255,0.02); position: relative; display: flex; flex-direction: column; cursor: pointer;" onclick="openEditVault('${v.id}')">
+                  
+                  <div class="card-actions" style="top: 15px; right: 15px; display: flex; gap: 5px; z-index: 10;">
+                      <button class="btn-action edit" style="padding: 4px 8px; font-weight: bold; border-color: var(--neon-yellow); color: var(--neon-yellow);" onclick="event.stopPropagation(); openEditVault('${v.id}')">✏️ เปิดอ่าน/แก้ไข</button>
+                      <button class="btn-action delete" style="padding: 4px 8px; font-weight: bold;" onclick="event.stopPropagation(); deleteVaultData('${v.id}')">✖ ลบ</button>
+                  </div>
 
-                  <div class="d-flex align-items-start mt-1">
-                      <span class="icon" style="font-size: 1.8rem; margin-right: 15px;">🗝️</span>
-                      <div style="padding-right: 180px; width: 100%;">
-                          <h5 class="title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255,0,255,0.3); margin-top: 0; word-break: break-word; line-height: 1.4;">${v.title}</h5>
-                          <div class="mt-2 mb-1">
-                              <span class="badge bg-dark border border-secondary px-2 py-1">${cat}</span>
-                          </div>
-                          <div class="small text-muted">อัปเดต: ${dateStr}</div>
-                      </div>
-                  </div>
-              </div>`;
-      });
-  }
+                  <div class="d-flex align-items-start mt-1">
+                      <span class="icon" style="font-size: 1.8rem; margin-right: 15px;">🗝️</span>
+                      <div style="padding-right: 140px; width: 100%;">
+                          <h5 class="title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255,0,255,0.3); margin-top: 0; word-break: break-word; line-height: 1.4;">${v.title}</h5>
+                          <div class="mt-2 mb-1">
+                              <span class="badge bg-dark border border-secondary px-2 py-1">${cat}</span>
+                          </div>
+                          <div class="small text-muted">อัปเดต: ${dateStr}</div>
+                      </div>
+                  </div>
+              </div>`;
+      });
+  }
 
   // 🌟 2. ฟังก์ชันเปิดหน้าต่างแก้ไข (เคลียร์บั๊กเบลอ และโหลดข้อมูลมาแก้)
   function openEditVault(id) { 
@@ -4410,14 +4410,25 @@ function triggerOCR() {
   }
   
   function deleteVaultData(id) {
-      Swal.fire({title: 'ทำลายความลับนี้?', text: 'ข้อมูลนี้จะหายไปตลอดกาล', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'}).then(async r => {
-          if (r.isConfirmed) {
-              Swal.fire({title:'กำลังทำลาย...', didOpen:()=>Swal.showLoading()});
-              await supabaseClient.from('private_vault').delete().eq('id', id); loadPrivateVault();
-              Swal.fire({toast:true, position:'top-end', title:'ทำลายสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-          }
-      });
-  }
+      Swal.fire({title: 'ทำลายความลับนี้?', text: 'ข้อมูลนี้จะหายไปตลอดกาล', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'}).then(async r => {
+          if (r.isConfirmed) {
+              Swal.fire({title:'กำลังทำลาย...', didOpen:()=>Swal.showLoading()});
+              await supabaseClient.from('private_vault').delete().eq('id', id); loadPrivateVault();
+              Swal.fire({toast:true, position:'top-end', title:'ทำลายสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+      });
+  }
+
+  // ==========================================
+  // 🔔 & 💬 ระบบแจ้งเตือนและแชท (เปิดหน้าต่าง)
+  // ==========================================
+  function openNotiModal() { 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('notiModal')).show(); 
+  }
+  
+  function openChatModal() { 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('chatModal')).show(); 
+  }
 // 👆 จบโค้ดสมองกล 👆
 
 </script>
