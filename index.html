@@ -637,15 +637,12 @@
                 📷 แคปหน้าจอ (ดึงเลขจากรูป/สลิป)
              </button>
 
-             <div class="mb-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                   <label class="text-white small fw-bold mb-0">⚙️ เลือกระบบค้นหา (Bot)</label>
-                   <span id="botStatusBadge" class="badge bg-success text-dark">🟢 ว่าง (พร้อมใช้งาน)</span>
+             <div class="mb-4 p-3 rounded" style="background: rgba(0, 255, 102, 0.05); border: 1px dashed rgba(0, 255, 102, 0.3);">
+                <div class="d-flex justify-content-between align-items-center">
+                   <label class="text-white small fw-bold mb-0">⚙️ ระบบจ่ายงานอัตโนมัติ (Auto-Queue)</label>
+                   <span id="botStatusBadge" class="badge bg-success text-dark px-3 py-2 fw-bold" style="box-shadow: 0 0 8px rgba(0,255,102,0.4);">🟢 พร้อมรับงาน</span>
                 </div>
-                <select id="systemSelect" class="form-select bg-dark text-white border-secondary" style="cursor: pointer;">
-                   <option value="kbiz1">kbiz1 - 🟢 ออนไลน์</option>
-                   <option value="kbiz2">kbiz2 - 🟢 ออนไลน์</option>
-                </select>
+                <div class="small text-muted mt-2" style="font-size: 0.8rem;">ระบบจะค้นหาบอทที่ว่างที่สุดให้เอง หากคิวเต็มระบบจะรอคิวให้อัตโนมัติ</div>
              </div>
 
              <label class="text-white small fw-bold mb-2">🏦 ธนาคารปลายทาง</label>
