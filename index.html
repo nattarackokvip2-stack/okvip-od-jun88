@@ -1256,16 +1256,23 @@
       </div>
       <div class="modal-body p-0">
         <div class="row g-0">
-          <div class="col-4 chat-user-list" id="chatUserList">
-              <div class="p-3 text-center text-muted small">กำลังโหลดรายชื่อ...</div>
+          <div class="col-4 chat-user-list d-flex flex-column" style="height: 405px;">
+              <div class="p-2 border-bottom border-secondary" style="background: #111;">
+                  <input type="text" class="form-control bg-dark text-info border-info form-control-sm" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="filterChatUsers(this.value)">
+              </div>
+              <div id="chatUserList" style="flex-grow: 1; overflow-y: auto;">
+                  <div class="p-3 text-center text-muted small">กำลังโหลดรายชื่อ...</div>
+              </div>
           </div>
-          <div class="col-8 d-flex flex-column" style="background: #0f0f12;">
+          <div class="col-8 d-flex flex-column" style="background: #0f0f12; height: 405px;">
               <div class="p-3 border-bottom border-secondary text-white fw-bold" id="chatHeaderName">
                   เลือกรายชื่อเพื่อเริ่มสนทนา
               </div>
-              <div class="chat-box-area m-2" id="chatBoxArea">
+              <div class="chat-box-area m-2 flex-grow-1" id="chatBoxArea" style="height: auto;">
                   </div>
-              <div class="p-2 border-top border-secondary mt-auto d-flex gap-2">
+              <div class="p-2 border-top border-secondary mt-auto d-flex gap-2 align-items-center">
+                  <input type="file" id="chatImageInput" accept="image/*" style="display:none;" onchange="handleChatImageUpload(event)">
+                  <button class="btn btn-outline-secondary p-2 d-flex align-items-center justify-content-center" onclick="document.getElementById('chatImageInput').click()" id="btnSendChatImg" disabled title="ส่งรูปภาพ" style="border-radius: 8px;">📷</button>
                   <input type="text" id="chatInputMsg" class="form-control bg-dark text-white border-secondary" placeholder="พิมพ์ข้อความ..." disabled>
                   <button class="btn btn-info fw-bold" id="btnSendChat" disabled>ส่ง</button>
               </div>
@@ -4447,28 +4454,26 @@ function triggerOCR() {
   }
 
   // ==========================================
-  // 🔔 & 💬 ระบบแจ้งเตือนและแชท (Core Logic)
+  // 🔔 & 💬 ระบบแจ้งเตือนและแชท (Core Logic + Realtime)
   // ==========================================
   let currentChatTarget = null;
   let allMyChats = [];
   let allMyNotis = [];
+  let chatSearchTerm = '';
 
-  // เรียกใช้ฟังก์ชันนี้ตอนเข้าสู่ระบบสำเร็จ
   async function initChatAndNoti() {
       if(!currentUsername) return;
       const myNick = localStorage.getItem('okvip_nick');
       
-      // โหลดการแจ้งเตือน
       const { data: nData } = await supabaseClient.from('sys_notifications').select('*').eq('target_user', myNick).order('created_at', { ascending: false }).limit(50);
       allMyNotis = nData || [];
       updateNotiUI();
 
-      // โหลดแชท
       const { data: cData } = await supabaseClient.from('sys_chats').select('*').or(`sender.eq.${myNick},receiver.eq.${myNick}`).order('created_at', { ascending: true });
       allMyChats = cData || [];
       updateChatBadge();
 
-      // จับสัญญาณ Realtime
+      // 🌟 ดักฟัง Realtime ทั้งตอนเพิ่ม (INSERT) และตอนลบ (DELETE)
       supabaseClient.channel('realtime-alerts')
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sys_notifications', filter: `target_user=eq.${myNick}` }, payload => {
               allMyNotis.unshift(payload.new);
@@ -4478,12 +4483,21 @@ function triggerOCR() {
               if(payload.new.receiver === myNick || payload.new.sender === myNick) {
                   allMyChats.push(payload.new);
                   updateChatBadge();
-                  if(document.getElementById('chatModal').classList.contains('show')) renderChatMessages();
+                  if(document.getElementById('chatModal').classList.contains('show')) {
+                      renderChatUserList(); // รีเฟรชรายชื่อให้คนทักเด้งไปบนสุด
+                      if(payload.new.sender === currentChatTarget || payload.new.receiver === currentChatTarget) renderChatMessages();
+                  }
+              }
+          })
+          .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'sys_chats' }, payload => {
+              allMyChats = allMyChats.filter(c => c.id !== payload.old.id);
+              if(document.getElementById('chatModal').classList.contains('show')) {
+                  renderChatUserList();
+                  renderChatMessages();
               }
           }).subscribe();
   }
 
-  // ---- ระบบแจ้งเตือน (Noti) ----
   function updateNotiUI() {
       const unread = allMyNotis.filter(n => !n.is_read).length;
       const badge = document.getElementById('notiBadge');
@@ -4538,31 +4552,46 @@ function triggerOCR() {
       } else {
           badge.style.display = 'none'; btn.classList.remove('anim-bounce');
       }
-      renderChatUserList();
+      if(document.getElementById('chatModal').classList.contains('show')) renderChatUserList();
   }
+
+  function filterChatUsers(term) { chatSearchTerm = term.toLowerCase().trim(); renderChatUserList(); }
 
   function renderChatUserList() {
       const listArea = document.getElementById('chatUserList');
       if(!listArea) return;
       const myNick = localStorage.getItem('okvip_nick');
-      let html = '';
       
-      allUsersData.forEach(u => {
-          if(u[7] !== 'Active' || u[1] === myNick) return;
-          const targetNick = u[1];
+      // 🌟 ดึงข้อมูลและเรียงลำดับคนที่แชทล่าสุดให้อยู่บนสุด
+      let usersWithChats = allUsersData.filter(u => u[7] === 'Active' && u[1] !== myNick).map(u => {
+          let tNick = u[1];
+          let userChats = allMyChats.filter(c => c.sender === tNick || c.receiver === tNick);
+          let lastTime = userChats.length > 0 ? new Date(userChats[userChats.length - 1].created_at).getTime() : 0;
+          return { nick: tNick, lastTime: lastTime };
+      });
+      
+      usersWithChats.sort((a, b) => b.lastTime - a.lastTime); // เรียงจากเวลาล่าสุด
+      
+      let html = '';
+      usersWithChats.forEach(uData => {
+          const targetNick = uData.nick;
+          if(chatSearchTerm && !targetNick.toLowerCase().includes(chatSearchTerm)) return; // กรองค้นหา
+          
           const unreadCount = allMyChats.filter(c => c.sender === targetNick && c.receiver === myNick && !c.is_read).length;
-          const badgeHtml = unreadCount > 0 ? `<span class="badge bg-danger ms-2">${unreadCount}</span>` : '';
+          const badgeHtml = unreadCount > 0 ? `<span class="badge bg-danger ms-2 anim-bounce">${unreadCount} ใหม่</span>` : '';
           const activeClass = currentChatTarget === targetNick ? 'active' : '';
           
           html += `<div class="chat-user-item ${activeClass}" onclick="openChatWith('${targetNick}')">
               👤 ${targetNick} ${badgeHtml}
           </div>`;
       });
-      listArea.innerHTML = html || '<div class="text-muted p-2 text-center mt-3">ไม่มีผู้ติดต่อ</div>';
+      listArea.innerHTML = html || '<div class="text-muted p-2 text-center mt-3">ไม่พบรายชื่อ</div>';
   }
 
   function openChatModal() {
       bootstrap.Modal.getOrCreateInstance(document.getElementById('chatModal')).show();
+      chatSearchTerm = ''; // ล้างคำค้นหา
+      document.querySelector('.chat-user-list input').value = '';
       renderChatUserList();
   }
 
@@ -4571,6 +4600,7 @@ function triggerOCR() {
       document.getElementById('chatHeaderName').innerText = `สนทนากับ: ${targetNick}`;
       document.getElementById('chatInputMsg').disabled = false;
       document.getElementById('btnSendChat').disabled = false;
+      document.getElementById('btnSendChatImg').disabled = false;
       
       document.getElementById('btnSendChat').onclick = () => sendChatMessage();
       document.getElementById('chatInputMsg').onkeypress = function(e) { if(e.key === 'Enter') sendChatMessage(); };
@@ -4598,7 +4628,23 @@ function triggerOCR() {
           const isMe = c.sender === myNick;
           const cssClass = isMe ? 'msg-me' : 'msg-them';
           const timeStr = new Date(c.created_at).toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'});
-          html += `<div class="msg-bubble ${cssClass}">${c.message} <div style="font-size:0.6rem; opacity:0.7; text-align:${isMe?'right':'left'}; margin-top:3px;">${timeStr}</div></div>`;
+          
+          // 🌟 เช็คว่ามีรูปภาพไหม
+          let contentHtml = c.message;
+          if (c.message.startsWith('[IMG]') && c.message.endsWith('[/IMG]')) {
+              let imgUrl = c.message.replace('[IMG]', '').replace('[/IMG]', '');
+              contentHtml = `<img src="${imgUrl}" style="max-width: 100%; border-radius: 10px; cursor: pointer; border: 1px solid #000;" onclick="openLightbox('${imgUrl}')">`;
+          }
+          
+          // 🌟 ปุ่มลบข้อความ (ถังขยะ) สำหรับข้อความของเรา
+          let deleteBtn = isMe ? `<span style="cursor:pointer; margin-right: 8px; color: #555; transition:0.3s;" onmouseover="this.style.color='#ff3366'" onmouseout="this.style.color='#555'" onclick="deleteChatMessage('${c.id}')" title="ลบข้อความ">🗑️</span>` : '';
+
+          html += `<div class="msg-bubble ${cssClass}">
+                      ${contentHtml} 
+                      <div style="font-size:0.65rem; opacity:0.7; text-align:${isMe?'right':'left'}; margin-top:5px; display:flex; justify-content:${isMe?'flex-end':'flex-start'}; align-items:center;">
+                          ${deleteBtn} ${timeStr}
+                      </div>
+                   </div>`;
       });
       
       if(targetChats.length === 0) html = '<div class="text-center text-muted mt-5">เริ่มต้นการสนทนา...</div>';
@@ -4614,6 +4660,42 @@ function triggerOCR() {
       const myNick = localStorage.getItem('okvip_nick');
       input.value = '';
       try { await supabaseClient.from('sys_chats').insert([{ sender: myNick, receiver: currentChatTarget, message: msg, is_read: false }]); } catch(e) { console.error('Send Chat Error:', e); }
+  }
+
+  // 🌟 ฟังก์ชันส่งรูปภาพในแชท
+  function handleChatImageUpload(e) {
+      const file = e.target.files[0];
+      if(!file || !currentChatTarget) return;
+      
+      const btn = document.getElementById('btnSendChatImg');
+      btn.disabled = true; btn.innerText = '⏳';
+      
+      compressImageHQ(file, async (base64) => { 
+          try {
+              let imgUrl = await uploadToSupabase(base64, 'chat'); 
+              const myNick = localStorage.getItem('okvip_nick');
+              const finalMsg = `[IMG]${imgUrl}[/IMG]`;
+              await supabaseClient.from('sys_chats').insert([{ sender: myNick, receiver: currentChatTarget, message: finalMsg, is_read: false }]);
+          } catch(err) {
+              Swal.fire('Error', 'อัปโหลดรูปไม่สำเร็จ', 'error');
+          } finally {
+              btn.disabled = false; btn.innerText = '📷';
+              e.target.value = ''; 
+          }
+      });
+  }
+
+  // 🌟 ฟังก์ชันลบข้อความ
+  async function deleteChatMessage(msgId) {
+      Swal.fire({title:'ลบข้อความนี้?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff', confirmButtonText: 'ลบเลย'}).then(async r => {
+          if(r.isConfirmed) {
+              try {
+                  await supabaseClient.from('sys_chats').delete().eq('id', msgId);
+                  allMyChats = allMyChats.filter(c => c.id !== msgId);
+                  renderChatMessages();
+              } catch(e) { console.error(e); }
+          }
+      });
   }
 
   const origVerifyUserStatus = verifyUserStatus;
