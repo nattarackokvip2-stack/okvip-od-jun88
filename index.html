@@ -2438,9 +2438,20 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   rowId = existingMap[nick].id; 
               } 
               
+              // 🌟 ส่วนที่เพิ่มใหม่: เตรียมข้อความแจ้งเตือนกระดิ่ง 🌟
+              let notiMessages = [];
+
               for (const d in changes) { 
-                  if (changes[d] === '') delete currentDays[d]; 
-                  else currentDays[d] = changes[d]; 
+                  let stampVal = changes[d];
+                  if (stampVal === '') {
+                      delete currentDays[d]; 
+                      notiMessages.push(`วันที่ ${d} -> 🗑️ ลบออก`);
+                  } else {
+                      currentDays[d] = stampVal; 
+                      // แปลงตัวย่อให้เป็นชื่อเต็ม เช่น X -> X (หยุด)
+                      let stampLabel = stampConfig[stampVal] ? stampConfig[stampVal].label : stampVal;
+                      notiMessages.push(`วันที่ ${d} -> ${stampLabel}`);
+                  }
               } 
               
               if (rowId) { 
@@ -2448,6 +2459,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               } else { 
                   await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); 
               } 
+
+              // 🌟 ส่งกระดิ่งแจ้งเตือนให้พนักงานคนนั้น (ถ้ามีฟังก์ชัน sendSystemNoti) 🌟
+              if (notiMessages.length > 0 && typeof sendSystemNoti === 'function') {
+                  let finalMsg = `เดือน ${ym} มีการปรับแก้:\n${notiMessages.join('\n')}`;
+                  sendSystemNoti(nick, '📅 อัปเดตตารางงาน', finalMsg);
+              }
           }
           
           unsavedChanges = {}; 
