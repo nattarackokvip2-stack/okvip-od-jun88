@@ -592,14 +592,25 @@
         <div class="d-flex gap-2 align-items-center flex-wrap">
             <span class="text-white small">📅 เลือกเดือน:</span>
             <input type="month" id="penaltyMonthFilter" class="form-control" style="width: auto; background: #111; color: #ff3366; border-color: #ff3366;" onchange="loadPenaltiesTable()">
-            <input type="text" id="penaltySearchInput" class="form-control neon-input-search" style="width: 200px; border-color: #ff3366;" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="loadPenaltiesTable()">
-            <button class="btn btn-outline-success px-3 ms-2" onclick="exportTableToExcel('penaltyTable', 'Penalty_Report')">📥 โหลด Excel</button>
+            <input type="text" id="penaltySearchInput" class="form-control neon-input-search" style="width: 200px; border-color: #ff3366; display: none;" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="loadPenaltiesTable()">
+            <button id="btnExportPenalty" class="btn btn-outline-success px-3 ms-2" style="display: none;" onclick="exportTableToExcel('penaltyTable', 'Penalty_Report')">📥 โหลด Excel</button>
             <button id="addPenaltyBtn" class="btn btn-neon-red px-4 ms-2" style="display:none;" onclick="openPenaltyModal()">➕ บันทึกความผิด</button>
         </div>
       </div>
       <div class="table-responsive mt-3">
         <table class="table table-hover align-middle" id="penaltyTable">
-          <thead><tr><th>เดือน/ปี</th><th>พนักงาน</th><th>แผนก</th><th>รายละเอียดความผิด</th><th>บทลงโทษ</th><th>ยอดหักสุทธิ</th><th>สถานะ</th><th class="text-center">จัดการ</th></tr></thead>
+          <thead>
+            <tr>
+              <th>เดือน/ปี</th>
+              <th>พนักงาน</th>
+              <th>แผนก</th>
+              <th id="thPenaltyDetail" style="display: none;">รายละเอียดความผิด</th>
+              <th>บทลงโทษ</th>
+              <th>ยอดหักสุทธิ</th>
+              <th>สถานะ</th>
+              <th class="text-center" id="thPenaltyManage" style="display: none;">จัดการ</th>
+            </tr>
+          </thead>
           <tbody id="penaltyTableBody"></tbody>
         </table>
       </div>
@@ -1754,20 +1765,20 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
         document.getElementById('addBtn').style.display = 'block';
         document.getElementById('btnManageBot').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; 
         document.getElementById('addManualBtn').style.display = 'block'; 
-        document.getElementById('addPenaltyBtn').style.display = 'block'; // 🌟 เพิ่มบรรทัดนี้เพื่อให้ปุ่มบันทึกความผิดโชว์
-        
-        // แยกปุ่มตั้งค่าให้ชัดเจน
-        document.getElementById('btnJobSettings').style.display = 'block'; 
-        document.getElementById('btnQuotaSettings').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none';
-
-        document.getElementById('addAnnounceBtn').style.display = 'block'; 
-        const isFrontend = document.getElementById('tabFrontEnd').classList.contains('active'); 
-        document.getElementById('addPortalBtn').style.display = isFrontend ? 'block' : 'none'; document.getElementById('addBackendBtn').style.display = isFrontend ? 'none' : 'block'; document.getElementById('thAnnounceManage').style.display = 'table-cell'; document.getElementById('mealActionBtns').style.display = 'flex';
-        
-    } else { 
-        document.getElementById('dashboardWidgets').style.setProperty('display', 'none', 'important');
-        document.getElementById('btnClearSchedule').style.display = 'none'; document.getElementById('btnAssignShift').style.display = 'none'; document.getElementById('addAnnounceBtn').style.display = 'none'; document.getElementById('thAnnounceManage').style.display = 'none'; document.getElementById('mealActionBtns').style.display = 'none';
-    }
+        // 🌟 ตั้งค่าสิทธิ์ตารางลงโทษ: โชว์เครื่องมือเฉพาะ SuperAdmin เท่านั้น
+      if (myRole === 'SuperAdmin') {
+          document.getElementById('addPenaltyBtn').style.display = 'block';
+          document.getElementById('penaltySearchInput').style.display = 'block';
+          document.getElementById('btnExportPenalty').style.display = 'inline-block';
+          document.getElementById('thPenaltyDetail').style.display = 'table-cell';
+          document.getElementById('thPenaltyManage').style.display = 'table-cell';
+      } else {
+          document.getElementById('addPenaltyBtn').style.display = 'none';
+          document.getElementById('penaltySearchInput').style.display = 'none';
+          document.getElementById('btnExportPenalty').style.display = 'none';
+          document.getElementById('thPenaltyDetail').style.display = 'none';
+          document.getElementById('thPenaltyManage').style.display = 'none';
+      }
     
     renderStampPalette(); 
     switchMainTab('hubSection'); 
@@ -1930,36 +1941,51 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   
   async function deleteSupabasePenalty(id) { Swal.fire({title:'ลบประวัติลงโทษ?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('penalties').delete().eq('id', id); await loadSupabasePenalties(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); } }); }
   
-  // 🌟 ฟังก์ชันโหลดตารางลงโทษ (อัปเกรด: ซ่อนของคนอื่น)
+  // 🌟 ฟังก์ชันโหลดตารางลงโทษ (อัปเกรด: ตัดคอลัมน์รายละเอียดออกสำหรับคนที่ไม่ใช่ SuperAdmin)
   function loadPenaltiesTable() {
     const tb = document.getElementById('penaltyTableBody'); tb.innerHTML = ''; 
     const filterMonth = document.getElementById('penaltyMonthFilter') ? document.getElementById('penaltyMonthFilter').value : ''; 
     const searchTerm = document.getElementById('penaltySearchInput') ? document.getElementById('penaltySearchInput').value.toLowerCase().trim() : ''; 
     const myNick = localStorage.getItem('okvip_nick') || ''; 
     
-    if(allPenalties.length === 0) { tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีประวัติการลงโทษ</td></tr>`; return; }
+    const isSuperAdmin = (myRole === 'SuperAdmin');
+    const colSpanNum = isSuperAdmin ? 8 : 6; // ปรับความกว้างตารางเวลามันว่าง
+    
+    if(allPenalties.length === 0) { tb.innerHTML = `<tr><td colspan="${colSpanNum}" class="text-center text-muted py-4">ไม่มีประวัติการลงโทษ</td></tr>`; return; }
     
     let hasData = false;
     allPenalties.forEach(p => { 
         const nickName = p[2] || ''; 
         
         // 🚨 ล็อคสิทธิ์: ถ้าไม่ใช่ SuperAdmin ให้ดูได้แค่ชื่อตัวเองเท่านั้น!
-        if (myRole !== 'SuperAdmin' && nickName !== myNick) return;
+        if (!isSuperAdmin && nickName !== myNick) return;
 
         const matchMonth = (!filterMonth || p[9] === filterMonth); 
         const matchSearch = (!searchTerm || nickName.toLowerCase().includes(searchTerm));
         
         if (matchMonth && matchSearch) {
             hasData = true; 
-            let btn = (myRole === 'SuperAdmin') ? `<button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button>` : '-'; 
             let deductStr = p[5] === '3. ใบปรับตามข้อและเกิดความเสียหาย' ? `<span class="text-danger fw-bold">${p[8]} ฿</span> <br><small class="text-muted">(${p[7]}% จาก ${p[6]}฿)</small>` : '-'; 
             let displayNick = nickName; 
             if (nickName === myNick) displayNick = `<span style="color: var(--neon-red); text-shadow: 0 0 10px rgba(255,51,102,0.8); font-weight: bold; border: 1px solid var(--neon-red); padding: 4px 10px; border-radius: 6px;">${nickName} (ฉัน)</span>`;
             
-            tb.innerHTML += `<tr><td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td><td class="fw-bold">${displayNick}</td><td>${p[3]}</td><td>${p[4]}</td><td class="text-warning">${p[5]}</td><td>${deductStr}</td><td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td><td class="text-center">${btn}</td></tr>`; 
+            // 🌟 ซ่อนคอลัมน์ "รายละเอียด" และ "จัดการ" ถ้าไม่ใช่ SuperAdmin
+            let detailCol = isSuperAdmin ? `<td>${p[4]}</td>` : '';
+            let manageCol = isSuperAdmin ? `<td class="text-center"><button class="btn btn-sm btn-outline-danger" onclick="deleteSupabasePenalty('${p[0]}')">ลบ</button></td>` : '';
+
+            tb.innerHTML += `<tr>
+                <td><span class="text-info">${p[9]}</span><br><small class="text-muted">${new Date(p[1]).toLocaleDateString('th-TH')}</small></td>
+                <td class="fw-bold">${displayNick}</td>
+                <td>${p[3]}</td>
+                ${detailCol}
+                <td class="text-warning">${p[5]}</td>
+                <td>${deductStr}</td>
+                <td><span class="badge bg-warning text-dark border">${p[10] || 'บันทึกแล้ว'}</span></td>
+                ${manageCol}
+            </tr>`; 
         }
     });
-    if (!hasData) tb.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่มีข้อมูล หรือคุณไม่มีสิทธิ์ดูประวัติของผู้อื่น</td></tr>`;
+    if (!hasData) tb.innerHTML = `<tr><td colspan="${colSpanNum}" class="text-center text-muted py-4">ไม่มีข้อมูล หรือคุณไม่มีสิทธิ์ดูประวัติของผู้อื่น</td></tr>`;
   }
   function renderStampPalette() { let html = ''; for (const [code, style] of Object.entries(stampConfig)) { let isDisabled = ""; let opacityStyle = ""; if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; } html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; } document.getElementById('stampPalette').innerHTML = html; }
   
