@@ -4349,7 +4349,7 @@ function triggerOCR() {
       bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
   }
   
-  // 🌟 1. ฟังก์ชันแสดงผลฐานลับ (อัปเกรด: เป็นแถบแนวนอนจัดเรียงสวยงาม)
+  // 🌟 1. ฟังก์ชันแสดงผลการ์ดฐานลับ (ลบปุ่มแก้ไขออก + ขยายพื้นที่ข้อความ)
   function renderVaultGrid() {
       const area = document.getElementById('vaultGridArea');
       area.innerHTML = '';
@@ -4372,22 +4372,21 @@ function triggerOCR() {
           let cat = v.category || '📌 โน้ตทั่วไป';
           
           area.innerHTML += `
-              <div style="background: #111; border: 1px solid #ff00ff; border-radius: 12px; padding: 15px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; cursor: pointer;" onmouseover="this.style.boxShadow='0 0 15px rgba(255,0,255,0.3)'" onmouseout="this.style.boxShadow='none'" onclick="openEditVault('${v.id}')">
+              <div class="manual-card" style="border-color: #ff00ff; background: rgba(255,0,255,0.02); position: relative; display: flex; flex-direction: column; cursor: pointer;" onclick="openEditVault('${v.id}')">
                   
-                  <div class="d-flex align-items-center gap-3" style="flex-grow: 1; overflow: hidden;">
-                      <span style="font-size: 2rem;">🗝️</span>
-                      <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                          <h5 class="mb-1" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255,0,255,0.3); margin: 0;">${v.title}</h5>
-                          <span class="badge bg-dark border border-secondary">${cat}</span>
-                          <span class="small text-muted ms-2">อัปเดต: ${dateStr}</span>
-                      </div>
+                  <div class="card-actions" style="top: 12px; right: 12px; display: flex; gap: 5px; z-index: 10;">
+                      <button class="btn-action delete" style="padding: 4px 8px; font-weight: bold;" onclick="event.stopPropagation(); deleteVaultData('${v.id}')">✖ ลบ</button>
                   </div>
 
-                  <div class="d-flex gap-2 ms-3 flex-shrink-0">
-                      <button class="btn btn-sm" style="border: 1px solid #00f0ff; color: #00f0ff; font-weight: bold;" onclick="event.stopPropagation(); openEditVault('${v.id}')">👁️ เปิดดู/แก้ไข</button>
-                      <button class="btn btn-sm btn-outline-danger fw-bold" onclick="event.stopPropagation(); deleteVaultData('${v.id}')">✖ ลบ</button>
+                  <div class="d-flex align-items-start mt-1">
+                      <span class="icon" style="font-size: 1.8rem; margin-right: 15px;">🗝️</span>
+                      <div style="width: 100%; padding-right: 35px;"> <h5 class="title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255,0,255,0.3); margin-top: 0; word-break: break-word; line-height: 1.4;">${v.title}</h5>
+                          <div class="mt-2 mb-1">
+                              <span class="badge bg-dark border border-secondary px-2 py-1">${cat}</span>
+                          </div>
+                          <div class="small text-muted mt-2">อัปเดต: ${dateStr}</div>
+                      </div>
                   </div>
-                  
               </div>`;
       });
   }
