@@ -310,7 +310,7 @@
            <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
         </div>
         
-        <div class="hub-card" style="border: 1px solid #00ffcc; ... onclick="switchMainTab('bankCheckSection')">
+        <div class="hub-card" style="border: 1px solid #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(0, 255, 204, 0.4)'; this.style.background='rgba(0, 255, 204, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(0, 255, 204, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('bankCheckSection')">
            <div class="hub-icon" style="text-shadow: none;">🏦</div>
            <div class="hub-title" style="color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3);">ตรวจสอบบัญชี</div>
         </div>
@@ -1751,38 +1751,40 @@
 }
 
 function verifyUserStatus(user, nick, role, isLoginEvent = false) {
-    myRole = role; 
-    currentUsername = user; 
-    document.getElementById('userDisplay').innerText = nick; 
-    document.getElementById('roleLabel').innerText = role; 
-    document.getElementById('roleLabel').className = `role-${role}`;
-    document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
-    
-    if(myRole !== 'Member') { 
-        document.getElementById('dashboardWidgets').style.setProperty('display', 'flex', 'important');
-        document.getElementById('btnClearSchedule').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
-        document.getElementById('btnAssignShift').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
-        document.getElementById('addBtn').style.display = 'block';
-        document.getElementById('btnManageBot').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; 
-        document.getElementById('addManualBtn').style.display = 'block'; 
-        // 🌟 ตั้งค่าสิทธิ์ตารางลงโทษ: โชว์เครื่องมือเฉพาะ SuperAdmin เท่านั้น
-      if (myRole === 'SuperAdmin') {
+  myRole = role; 
+  currentUsername = user; 
+  document.getElementById('userDisplay').innerText = nick; 
+  document.getElementById('roleLabel').innerText = role; 
+  document.getElementById('roleLabel').className = `role-${role}`;
+  document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
+  
+  if(myRole !== 'Member') { 
+      document.getElementById('dashboardWidgets').style.setProperty('display', 'flex', 'important');
+      document.getElementById('btnClearSchedule').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
+      document.getElementById('btnAssignShift').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
+      document.getElementById('addBtn').style.display = 'block';
+      document.getElementById('btnManageBot').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; 
+      document.getElementById('addManualBtn').style.display = 'block'; 
+      
+      // 🌟 ตั้งค่าสิทธิ์ตารางลงโทษ: โชว์เครื่องมือเฉพาะ SuperAdmin เท่านั้น
+      if (myRole === 'SuperAdmin') { 
           document.getElementById('addPenaltyBtn').style.display = 'block';
           document.getElementById('penaltySearchInput').style.display = 'block';
           document.getElementById('btnExportPenalty').style.display = 'inline-block';
           document.getElementById('thPenaltyDetail').style.display = 'table-cell';
           document.getElementById('thPenaltyManage').style.display = 'table-cell';
-      } else {
+      } else { 
           document.getElementById('addPenaltyBtn').style.display = 'none';
           document.getElementById('penaltySearchInput').style.display = 'none';
           document.getElementById('btnExportPenalty').style.display = 'none';
           document.getElementById('thPenaltyDetail').style.display = 'none';
           document.getElementById('thPenaltyManage').style.display = 'none';
-      }
-    
-    renderStampPalette(); 
-    switchMainTab('hubSection'); 
-    refreshData(document.getElementById('refreshBtn'), isLoginEvent);
+      } 
+  }
+  
+  renderStampPalette(); 
+  switchMainTab('hubSection'); 
+  refreshData(document.getElementById('refreshBtn'), isLoginEvent);
 }
   
   function handleLogout() { 
