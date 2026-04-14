@@ -4272,11 +4272,18 @@ function addHistory(name, acc, icon) {
       area.innerHTML = '<div class="text-center py-5 w-100 text-muted">⏳ กำลังปลดล็อคตู้เซฟ...</div>';
       try {
           const { data, error } = await supabaseClient.from('private_vault').select('*').eq('owner_user', currentUsername).order('id', { ascending: false });
-          if (error) throw error;
+          
+          if (error) throw error; // ดักจับ Error จาก Supabase โดยตรง
+          
           allVaultData = data || [];
           renderVaultGrid();
       } catch (err) {
-          area.innerHTML = '<div class="text-center py-5 w-100 text-danger">❌ เกิดข้อผิดพลาดในการโหลดข้อมูล</div>';
+          console.error("Vault Load Error:", err);
+          // ให้เว็บโชว์ข้อความ Error สีแดงๆ ออกมาตรงๆ จะได้รู้สาเหตุ
+          area.innerHTML = `<div class="text-center py-5 w-100 text-danger">
+              <h5>❌ เกิดข้อผิดพลาดในการโหลดข้อมูล</h5>
+              <p class="text-muted small">สาเหตุ: ${err.message}</p>
+          </div>`;
       }
   }
 
