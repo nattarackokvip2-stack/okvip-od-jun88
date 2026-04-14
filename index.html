@@ -656,67 +656,6 @@
         </table>
       </div>
     </div>
-
-      <div class="row justify-content-center mt-2">
-        <div class="col-md-6 col-lg-5">
-          <div class="card-custom" style="background: #0a0a0c; border: 1px solid #00ffcc; box-shadow: 0 0 20px rgba(0,255,204,0.1); padding: 25px;">
-             
-             <button class="btn w-100 mb-4 fw-bold" style="background: #e67e22; color: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onclick="triggerOCR()">
-                📷 แคปหน้าจอ (ดึงเลขจากรูป/สลิป)
-             </button>
-
-             <div class="mb-4 p-3 rounded" style="background: rgba(0, 255, 102, 0.05); border: 1px dashed rgba(0, 255, 102, 0.3);">
-                <div class="d-flex justify-content-between align-items-center">
-                   <label class="text-white small fw-bold mb-0">⚙️ ระบบจ่ายงานอัตโนมัติ (Auto-Queue)</label>
-                   <span id="botStatusBadge" class="badge bg-success text-dark px-3 py-2 fw-bold" style="box-shadow: 0 0 8px rgba(0,255,102,0.4);">🟢 พร้อมรับงาน</span>
-                </div>
-                <div class="small text-muted mt-2" style="font-size: 0.8rem;">ระบบจะค้นหาบอทที่ว่างที่สุดให้เอง หากคิวเต็มระบบจะรอคิวให้อัตโนมัติ</div>
-             </div>
-
-             <label class="text-white small fw-bold mb-2">🏦 ธนาคารปลายทาง</label>
-             <div style="position: relative; margin-bottom: 20px;">
-                <input type="text" id="customBankInput" class="form-control bg-dark text-white border-secondary" placeholder="พิมพ์เพื่อค้นหาธนาคาร..." autocomplete="off" onfocus="document.getElementById('customBankDropdown').style.display='block'" oninput="filterCustomBanks()">
-                <div id="clearBankBtn" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #ff3366; font-size: 14px; display: none;" onclick="clearBankSelection()">✖</div>
-
-                <ul id="customBankDropdown" style="position: absolute; top: 100%; left: 0; width: 100%; background: #1a1a1a; border: 1px solid #00ffcc; border-radius: 8px; max-height: 250px; overflow-y: auto; z-index: 1000; display: none; padding: 0; margin-top: 5px; list-style: none; box-shadow: 0 8px 16px rgba(0,0,0,0.8);">
-                    </ul>
-             </div>
-
-             <label class="text-white small fw-bold mb-2" id="accLabel">🔢 เลขที่บัญชี</label>
-             <input type="text" id="bankAccNumber" class="form-control mb-4 bg-dark text-white border-secondary fw-bold text-center" placeholder="เลขบัญชี 10-12 หลัก" style="font-size: 1.2rem; letter-spacing: 2px;" oninput="this.value = this.value.replace(/[^0-9]/g, '');" maxlength="10">
-
-             <button id="btnVerifyBank" class="btn w-100 py-3 fw-bold fs-5" style="background-color: #00a950; color: white; border-radius: 10px; transition: 0.3s;" onclick="mockCheckBank()">
-                🔍 ค้นหาชื่อบัญชี
-             </button>
-
-             <div id="bankResultMsg" class="mt-3 text-center fw-bold px-3 py-2 rounded" style="display: none; font-size: 14px;"></div>
-
-             <div id="resultCard" style="display: none; margin-top: 20px; background: #151515; border-radius: 12px; padding: 15px; border: 1px solid #333; align-items: center; gap: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.5);">
-                <div style="width: 50px; height: 50px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; padding: 2px; border: 2px solid #00ffcc;">
-                    <span id="resultLogoIcon" style="font-size: 26px;">🏦</span>
-                </div>
-                <div style="text-align: left; flex-grow: 1; overflow: hidden;">
-                    <div id="cardName" style="font-weight: bold; font-size: 16px; color: #00ffcc; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">-</div>
-                    <div id="cardBank" style="font-size: 13px; color: #aaa; margin-bottom: 2px;">-</div>
-                    <div id="cardAcc" style="font-size: 14px; color: #fff; font-family: monospace; letter-spacing: 1px;">-</div>
-                </div>
-             </div>
-
-             <button id="copyDataBtn" class="btn w-100 mt-3 fw-bold" style="display: none; background: #2980b9; color: white; border-radius: 8px;" onclick="copyBankResult()">
-                📝 คัดลอกข้อมูล
-             </button>
-
-             <div id="historyContainer" style="margin-top: 25px; border-top: 1px solid #333; padding-top: 15px;">
-                <div style="font-size: 12px; color: #888; margin-bottom: 10px;">🕒 ประวัติล่าสุด (10 รายการ)</div>
-                <ul id="historyList" style="list-style: none; padding: 0; margin: 0;">
-                    <li class="text-muted small text-center" id="emptyHistory">ยังไม่มีประวัติการค้นหา</li>
-                </ul>
-             </div>
-
-          </div>
-        </div>
-      </div>
-    </div>
     
     <div id="portalSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
