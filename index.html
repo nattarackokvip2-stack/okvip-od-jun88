@@ -4338,7 +4338,10 @@ function addHistory(name, acc, icon) {
       }
 
       if (filteredData.length === 0) {
-          area.innerHTML = `<div class="text-center py-5 w-100 text-muted" style="border: 1px dashed #ff00ff; border-radius: 15px; background: rgba(255,0,255,0.05);">ตู้เซฟหมวดหมู่นี้ว่างเปล่า...</div>`;
+          area.innerHTML = `<div class="text-center py-5 w-100" style="border: 1px dashed #ff00ff; border-radius: 15px; background: rgba(255,0,255,0.05); color: #ff3366;">
+              <span style="font-size: 1.1rem; font-weight: bold;">โน๊ตบันทึกส่วนตัว</span><br>
+              <span style="font-size: 0.9rem;">( การบันทึกนี้เห็นแค่เจ้าของแอคเคาท์เท่านั้น<br>สำหรับบันทึกหรือเซฟข้อความเอาไว้ )</span>
+          </div>`;
           return;
       }
 
