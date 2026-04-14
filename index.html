@@ -221,11 +221,11 @@
   @keyframes bounceChat { 0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 5px var(--neon-blue)); } 50% { transform: translateY(-5px); filter: drop-shadow(0 0 15px var(--neon-blue)); } }
   .anim-bounce { animation: bounceChat 1s infinite; color: var(--neon-blue) !important; }
   
-  .chat-user-list { max-height: 400px; overflow-y: auto; border-right: 1px solid #333; }
+  .chat-user-list { max-height: 600px; overflow-y: auto; border-right: 1px solid #333; }
   .chat-user-item { padding: 10px; cursor: pointer; border-bottom: 1px solid #222; transition: 0.2s; color: #ccc; }
   .chat-user-item:hover { background: rgba(0, 240, 255, 0.1); color: #fff; }
   .chat-user-item.active { background: rgba(0, 240, 255, 0.2); border-left: 3px solid var(--neon-blue); color: #fff; font-weight: bold; }
-  .chat-box-area { height: 350px; overflow-y: auto; background: #0a0a0c; padding: 15px; border-radius: 10px; border: 1px solid #333; display: flex; flex-direction: column; gap: 10px; }
+  .chat-box-area { height: 550px; overflow-y: auto; background: #0a0a0c; padding: 15px; border-radius: 10px; border: 1px solid #333; display: flex; flex-direction: column; gap: 10px; }
   .msg-bubble { max-width: 75%; padding: 8px 15px; border-radius: 15px; font-size: 0.9rem; clear: both; word-break: break-word; }
   .msg-me { background: var(--neon-blue); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
   .msg-them { background: #222; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #444; }
@@ -1259,7 +1259,7 @@
 </div>
 
 <div class="modal fade" id="chatModal" tabindex="-1" data-bs-theme="dark">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content" style="border: 1px solid #00f0ff; box-shadow: 0 0 20px rgba(0,240,255,0.2);">
       <div class="modal-header border-bottom border-secondary p-3">
         <h5 class="modal-title fw-bold text-info">💬 ระบบข้อความภายใน (Internal Chat)</h5>
@@ -1267,7 +1267,7 @@
       </div>
       <div class="modal-body p-0">
         <div class="row g-0">
-          <div class="col-4 chat-user-list d-flex flex-column" style="height: 405px;">
+          <div class="col-4 chat-user-list d-flex flex-column" style="height: 600px;">
               <div class="p-2 border-bottom border-secondary" style="background: #111;">
                   <input type="text" class="form-control bg-dark text-info border-info form-control-sm" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="filterChatUsers(this.value)">
               </div>
@@ -1275,7 +1275,7 @@
                   <div class="p-3 text-center text-muted small">กำลังโหลดรายชื่อ...</div>
               </div>
           </div>
-          <div class="col-8 d-flex flex-column" style="background: #0f0f12; height: 405px;">
+          <div class="col-8 d-flex flex-column" style="background: #0f0f12; height: 600px;">
               <div class="p-3 border-bottom border-secondary text-white fw-bold" id="chatHeaderName">
                   เลือกรายชื่อเพื่อเริ่มสนทนา
               </div>
