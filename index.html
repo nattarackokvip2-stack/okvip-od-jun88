@@ -4337,8 +4337,9 @@ function addHistory(name, acc, icon) {
       bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
   }
   
-  // 🌟 1. ฟังก์ชันแสดงผลการ์ดฐานลับ (ลบปุ่มแก้ไขออก + ขยายพื้นที่ข้อความ)
-  document.getElementById('vaultOwnerName').innerText = localStorage.getItem('okvip_nick') || currentUsername;
+  function renderVaultGrid() {
+      // 🌟 เพิ่มบรรทัดนี้: ให้แสดงชื่อเล่นของเจ้าของตู้เซฟทันที
+      document.getElementById('vaultOwnerName').innerText = localStorage.getItem('okvip_nick') || currentUsername;
       
       const area = document.getElementById('vaultGridArea');
       area.innerHTML = '';
@@ -4382,7 +4383,7 @@ function addHistory(name, acc, icon) {
               </div>`;
       });
   }
-
+  
   // 🌟 2. ฟังก์ชันเปิดหน้าต่างแก้ไข (เคลียร์บั๊กเบลอ)
   function openEditVault(id) { 
       const v = allVaultData.find(x => x.id.toString() === id.toString()); 
