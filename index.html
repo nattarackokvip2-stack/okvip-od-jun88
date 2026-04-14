@@ -2538,6 +2538,20 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   // ==========================================
+  // 🔀 ระบบ AI โหมดจำลองสลับกะ (Sandbox)
+  // ==========================================
+  function openShiftSwapModal() {
+      const ym = document.getElementById('monthPicker').value;
+      if (!ym) return;
+      
+      const [year, month] = ym.split('-');
+      // ... (วางโค้ดทั้งหมดที่คุณให้มาต่อลงมาเรื่อยๆ จนจบฟังก์ชัน executeShiftSwap) ...
+      
+          Swal.fire({toast: true, position: 'top-end', title: `สลับกะให้ ${swapCount} คน สำเร็จ!`, icon: 'success', timer: 2500, showConfirmButton: false, background:'#111', color:'#fff'});
+      }, 800);
+  }
+
+  // ==========================================
   // 🚀 6. หน้าที่ & สถิติ (Jobs & Stats)
   // ==========================================
   function openJobSettingsModal() {
