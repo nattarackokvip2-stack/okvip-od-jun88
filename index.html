@@ -1499,7 +1499,10 @@
           await loadScheduleTable();
           await loadDailyJobData();
           await loadDailyMealData(); 
-          await loadDiscordAttendance(); 
+          await loadDiscordAttendance();
+          if (currentUsername) {
+              await loadPrivateVault();
+          }
           updateDashboardWidgets();
 
           if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
