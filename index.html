@@ -4431,7 +4431,10 @@ function triggerOCR() {
   let allMyChats = [];
   let allMyNotis = [];
   let chatSearchTerm = '';
-
+  renderStampPalette(); 
+  switchMainTab('hubSection'); 
+  refreshData(document.getElementById('refreshBtn'), isLoginEvent);
+  
   async function initChatAndNoti() {
       if(!currentUsername) return;
       const myNick = localStorage.getItem('okvip_nick');
@@ -4668,12 +4671,6 @@ function triggerOCR() {
           }
       });
   }
-
-  const origVerifyUserStatus = verifyUserStatus;
-  verifyUserStatus = function(user, nick, role, isLoginEvent) {
-      origVerifyUserStatus(user, nick, role, isLoginEvent);
-      initChatAndNoti(); 
-  };
 
 </script>
 
