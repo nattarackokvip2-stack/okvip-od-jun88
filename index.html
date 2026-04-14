@@ -310,7 +310,7 @@
            <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
         </div>
 
-        <div class="hub-card" style="border: 1px solid #ff00ff; box-shadow: 0 0 10px rgba(255, 0, 255, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(255, 0, 255, 0.4)'; this.style.background='rgba(255, 0, 255, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(255, 0, 255, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('vaultSection'); loadPrivateVault();">
+        <div class="hub-card" style="border: 1px solid #ff00ff; box-shadow: 0 0 10px rgba(255, 0, 255, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(255, 0, 255, 0.4)'; this.style.background='rgba(255, 0, 255, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(255, 0, 255, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('vaultSection'); renderVaultGrid();">
            <div class="hub-icon" style="text-shadow: none;">🔐</div>
            <div class="hub-title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255, 0, 255, 0.3);">ฐานลับส่วนบุคคล</div>
         </div>
@@ -4335,7 +4335,8 @@ function addHistory(name, acc, icon) {
   }
   
   // 🌟 1. ฟังก์ชันแสดงผลการ์ดฐานลับ (ลบปุ่มแก้ไขออก + ขยายพื้นที่ข้อความ)
-  function renderVaultGrid() {
+  document.getElementById('vaultOwnerName').innerText = localStorage.getItem('okvip_nick') || currentUsername;
+      
       const area = document.getElementById('vaultGridArea');
       area.innerHTML = '';
       
