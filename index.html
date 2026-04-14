@@ -1927,6 +1927,25 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     });
     if (!hasData) tb.innerHTML = `<tr><td colspan="${colSpanNum}" class="text-center text-muted py-4">ไม่มีข้อมูล หรือคุณไม่มีสิทธิ์ดูประวัติของผู้อื่น</td></tr>`;
   }
+
+  function changeMonth(offset) { 
+      if(Object.keys(unsavedChanges).length > 0){ 
+          Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณาบันทึกตารางปัจจุบันก่อนเปลี่ยนเดือน', icon:'warning', background:'#111', color:'#fff'}); 
+          return; 
+      } 
+      const p = document.getElementById('monthPicker'); 
+      if(!p.value) return; 
+      
+      let [y, m] = p.value.split('-').map(Number); 
+      m += offset; 
+      
+      if (m > 12) { m = 1; y++; } 
+      else if (m < 1) { m = 12; y--; } 
+      
+      p.value = `${y}-${String(m).padStart(2, '0')}`; 
+      loadScheduleTable(); 
+      if (typeof checkLeaveAlerts === 'function') checkLeaveAlerts(); 
+  }
   
   function switchScheduleTab(mode) {
       if(Object.keys(unsavedChanges).length > 0 && mode === 'SANDBOX'){ 
