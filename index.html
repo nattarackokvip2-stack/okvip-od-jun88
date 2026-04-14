@@ -1711,8 +1711,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       } 
   }
   
-  renderStampPalette(); 
-  switchMainTab('hubSection'); 
+  let targetTab = 'hubSection'; // ค่าเริ่มต้นคือหน้าเมนูหลัก
+  // ถ้าไม่ได้เพิ่งล็อกอินเข้ามาใหม่ และมีหน้าเก่าจำไว้ ให้ใช้หน้าเก่า
+  if (!isLoginEvent && localStorage.getItem('okvip_current_tab')) {
+      targetTab = localStorage.getItem('okvip_current_tab');
+  }
+  switchMainTab(targetTab);
   refreshData(document.getElementById('refreshBtn'), isLoginEvent);
   
   // 🌟 เรียกใช้งานระบบกระดิ่งแจ้งเตือนและแชท
@@ -1743,6 +1747,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if (unsavedChanges && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); return; } 
           document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); const target = document.getElementById(sectionId); if (target) target.classList.add('active'); 
           const nav = document.getElementById('topNavBar'); if (nav) nav.style.display = (sectionId === 'hubSection') ? 'none' : 'flex'; 
+          
+          localStorage.setItem('okvip_current_tab', sectionId);
+          
       } catch(e) { console.error(e); }
   }
   
