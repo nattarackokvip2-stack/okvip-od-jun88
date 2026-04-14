@@ -1689,7 +1689,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       document.getElementById('btnClearSchedule').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
       document.getElementById('btnAssignShift').style.display = (myRole === 'SuperAdmin') ? 'inline-block' : 'none'; 
       document.getElementById('addBtn').style.display = 'block';
-      document.getElementById('btnManageBot').style.display = (myRole === 'SuperAdmin') ? 'block' : 'none'; 
       document.getElementById('addManualBtn').style.display = 'block'; 
       
       // 🌟 ตั้งค่าสิทธิ์ตารางลงโทษ: โชว์เครื่องมือเฉพาะ SuperAdmin เท่านั้น
@@ -1711,6 +1710,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   renderStampPalette(); 
   switchMainTab('hubSection'); 
   refreshData(document.getElementById('refreshBtn'), isLoginEvent);
+  
+  // 🌟 เรียกใช้งานระบบกระดิ่งแจ้งเตือนและแชท
+  initChatAndNoti();
 }
   
   function handleLogout() { 
@@ -4422,9 +4424,6 @@ function addHistory(name, acc, icon) {
   let allMyChats = [];
   let allMyNotis = [];
   let chatSearchTerm = '';
-  renderStampPalette(); 
-  switchMainTab('hubSection'); 
-  refreshData(document.getElementById('refreshBtn'), isLoginEvent);
   
   async function initChatAndNoti() {
       if(!currentUsername) return;
