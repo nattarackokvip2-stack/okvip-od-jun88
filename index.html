@@ -4274,23 +4274,26 @@ function addHistory(name, acc, icon) {
 }
 
   async function loadPrivateVault() {
-      document.getElementById('vaultOwnerName').innerText = currentUsername;
-      const area = document.getElementById('vaultGridArea');
-      area.innerHTML = '<div class="text-center py-5 w-100 text-muted">⏳ กำลังปลดล็อคตู้เซฟ...</div>';
       try {
           const { data, error } = await supabaseClient.from('private_vault').select('*').eq('owner_user', currentUsername).order('id', { ascending: false });
           
-          if (error) throw error; // ดักจับ Error จาก Supabase โดยตรง
+          if (error) throw error;
           
           allVaultData = data || [];
-          renderVaultGrid();
+          
+          // ถ้าผู้ใช้กำลังเปิดหน้าฐานลับอยู่ ให้โชว์ข้อมูลขึ้นมาแบบเนียนๆ เลย
+          if (document.getElementById('vaultSection').classList.contains('active')) {
+              renderVaultGrid();
+          }
       } catch (err) {
           console.error("Vault Load Error:", err);
-          // ให้เว็บโชว์ข้อความ Error สีแดงๆ ออกมาตรงๆ จะได้รู้สาเหตุ
-          area.innerHTML = `<div class="text-center py-5 w-100 text-danger">
-              <h5>❌ เกิดข้อผิดพลาดในการโหลดข้อมูล</h5>
-              <p class="text-muted small">สาเหตุ: ${err.message}</p>
-          </div>`;
+          const area = document.getElementById('vaultGridArea');
+          if (area && document.getElementById('vaultSection').classList.contains('active')) {
+              area.innerHTML = `<div class="text-center py-5 w-100 text-danger">
+                  <h5>❌ เกิดข้อผิดพลาดในการโหลดข้อมูล</h5>
+                  <p class="text-muted small">สาเหตุ: ${err.message}</p>
+              </div>`;
+          }
       }
   }
 
