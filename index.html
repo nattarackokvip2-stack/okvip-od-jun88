@@ -1236,6 +1236,10 @@
   let currentSearchTerm = ''; 
   let currentPage = 1; 
   const itemsPerPage = 10;
+
+  let allVaultData = [];
+  let vaultSearchTerm = '';
+  let currentVaultCategory = 'ALL';
   
   let currentManualFilter = 'ALL'; 
   let currentlyViewingManualId = null; 
@@ -4258,13 +4262,6 @@ function addHistory(name, acc, icon) {
     list.prepend(li);
     if(list.children.length > 10) list.lastChild.remove();
 }
-
-// ==========================================
-  // 🔐 ระบบฐานลับส่วนบุคคล (Private Vault) - VIP Edition
-  // ==========================================
-  let allVaultData = [];
-  let vaultSearchTerm = '';
-  let currentVaultCategory = 'ALL';
 
   async function loadPrivateVault() {
       document.getElementById('vaultOwnerName').innerText = currentUsername;
