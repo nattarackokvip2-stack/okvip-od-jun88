@@ -1684,11 +1684,15 @@
 }
 
 function verifyUserStatus(user, nick, role, isLoginEvent = false) {
-  myRole = role; 
+  // 🌟 ตัดช่องว่างที่อาจติดมาจากฐานข้อมูลทิ้ง เพื่อป้องกันสิทธิ์เพี้ยน
+  const cleanRole = role ? role.toString().trim() : "";
+  
+  myRole = cleanRole; 
   currentUsername = user; 
+  
   document.getElementById('userDisplay').innerText = nick; 
-  document.getElementById('roleLabel').innerText = role; 
-  document.getElementById('roleLabel').className = `role-${role}`;
+  document.getElementById('roleLabel').innerText = cleanRole; 
+  document.getElementById('roleLabel').className = `role-${cleanRole}`;
   document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
   
   if(myRole !== 'Member') { 
@@ -1714,12 +1718,14 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       } 
   }
   
+  renderStampPalette(); 
+  
   let targetTab = 'hubSection'; // ค่าเริ่มต้นคือหน้าเมนูหลัก
-  // ถ้าไม่ได้เพิ่งล็อกอินเข้ามาใหม่ และมีหน้าเก่าจำไว้ ให้ใช้หน้าเก่า
   if (!isLoginEvent && localStorage.getItem('okvip_current_tab')) {
       targetTab = localStorage.getItem('okvip_current_tab');
   }
   switchMainTab(targetTab);
+  
   refreshData(document.getElementById('refreshBtn'), isLoginEvent);
   
   // 🌟 เรียกใช้งานระบบกระดิ่งแจ้งเตือนและแชท
