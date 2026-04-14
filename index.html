@@ -1919,6 +1919,42 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     }
   }
 
+  function renderStampPalette() { 
+      let html = ''; 
+      for (const [code, style] of Object.entries(stampConfig)) { 
+          let isDisabled = ""; 
+          let opacityStyle = ""; 
+          if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
+              isDisabled = "disabled"; 
+              opacityStyle = "opacity: 0.5; cursor: not-allowed;"; 
+          } 
+          html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; 
+      } 
+      document.getElementById('stampPalette').innerHTML = html; 
+  }
+  
+  function selectStamp(code, btn) { 
+      if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
+          Swal.fire({toast:true, position:'top', title:'ไม่มีสิทธิ์ใช้งาน', text:'คุณใช้งานได้เฉพาะ (X) และ (ยางลบ) เท่านั้น', icon:'error', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          return; 
+      } 
+      currentStamp = code; 
+      document.querySelectorAll('.stamp-btn').forEach(b => b.classList.remove('active')); 
+      btn.classList.add('active'); 
+      if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); 
+  }
+
+  // ตัวแปรสำหรับจับการลากเมาส์
+  document.addEventListener('mouseup', function() { isDraggingStamp = false; });
+  function startStampDrag(cell, nick, dept, day) { 
+      if(currentStamp===null){ Swal.fire({toast:true, position:'top', title:'เลือกตรายางก่อนครับ', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); return;} 
+      isDraggingStamp = true; applyStamp(cell, nick, dept, day); 
+  }
+  function enterStampDrag(e, cell, nick, dept, day) { 
+      if(isDraggingStamp && currentStamp !== null && e.buttons === 1) { applyStamp(cell, nick, dept, day); } 
+      else { isDraggingStamp = false; } 
+  }
+
   function applyStamp(cell, nick, dept, day) {
       if(currentStamp === null || cell.innerText === currentStamp) return; 
       
@@ -3513,453 +3549,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           openShiftLog();
       }
   }
-
-  // ==========================================
-  // 🏦 11. ฟังก์ชันตรวจสอบชื่อบัญชีธนาคาร (Name Enquiry)
-  // ==========================================
-  let currentBankLimit = 10; // ลิมิตเริ่มต้นที่ 10 หลัก
-
-  // 🌟 ฟังก์ชันจัดการเมื่อเลือกธนาคาร (สลับ 10 หลัก / 12 หลัก)
-  function handleBankSelection() {
-      const val = document.getElementById('bankInput').value;
-      const accInput = document.getElementById('bankAccNumber');
-      const accLabel = document.getElementById('accLabel');
-      
-      if (val.includes('ออมสิน') || val.includes('ธ.ก.ส.') || val.includes('อาคารสงเคราะห์')) {
-          currentBankLimit = 12;
-          accInput.setAttribute('maxlength', '12');
-          accLabel.innerHTML = '2. กรอกเลขที่บัญชี <span class="text-warning fw-bold">(เฉพาะตัวเลข 12 หลัก)</span>';
-      } else if (val) {
-          currentBankLimit = 10;
-          accInput.setAttribute('maxlength', '10');
-          accLabel.innerHTML = '2. กรอกเลขที่บัญชี <span class="text-info fw-bold">(เฉพาะตัวเลข 10 หลัก)</span>';
-      }
-      
-      if (accInput.value.length > currentBankLimit) {
-          accInput.value = accInput.value.substring(0, currentBankLimit);
-      }
-  }
-
-  // 🌟 ฟังก์ชันบล็อกไม่ให้พิมพ์ตัวอักษร
-  function handleAccInput(input) {
-      input.value = input.value.replace(/[^0-9]/g, ''); // บังคับให้เป็นตัวเลขเท่านั้น
-  }
-
-  // 🌟 ฟังก์ชันกดส่งข้อมูลเช็คบัญชี
-  async function verifyBankAccount(e) {
-      e.preventDefault();
-      
-      const bankVal = document.getElementById('bankInput').value;
-      const acc = document.getElementById('bankAccNumber').value;
-      const btn = document.getElementById('btnVerifyBank');
-      const resultArea = document.getElementById('bankResultArea');
-      const resultName = document.getElementById('bankResultName');
-      const resultDetails = document.getElementById('bankResultDetails');
-
-      if (!bankVal || !acc) return;
-
-      // สกัดเอาเฉพาะตัวย่อภาษาอังกฤษมาใช้ เช่น (KBANK) -> KBANK
-      const bankMatch = bankVal.match(/\(([^)]+)\)/);
-      const bankCode = bankMatch ? bankMatch[1] : bankVal;
-
-      // ตรวจสอบความยาวเลขบัญชีให้เป๊ะก่อนส่งข้อมูล
-      if (acc.length !== currentBankLimit) {
-          Swal.fire({
-              toast: true, position: 'top', 
-              title: `เลขบัญชีธนาคารนี้ต้องมี ${currentBankLimit} หลักครับ`, 
-              icon: 'warning', showConfirmButton: false, timer: 3000, background: '#111', color: '#fff'
-          });
-          return;
-      }
-
-      // ซ่อนผลลัพธ์เก่า และเปลี่ยนสถานะปุ่ม
-      resultArea.style.display = 'none';
-      btn.disabled = true;
-      btn.innerHTML = '⏳ กำลังเชื่อมต่อระบบธนาคาร...';
-
-      try {
-            const response = await fetch('https://okvip-bank-api.loca.lt/api/check-name', {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Bypass-Tunnel-Reminder': 'true' // 🌟 คาถาทะลวงหน้าจอป้องกันของ localtunnel
-                },
-                body: JSON.stringify({ bankCode: bankCode, accountNumber: acc })
-            });
-            
-            const data = await response.json();
-
-            if (data.success) {
-                resultName.innerText = "✅ " + data.accountName;
-                resultName.style.color = "#00ffcc";
-                resultDetails.innerText = `${bankCode} - ${acc}`;
-                resultArea.style.display = 'block';
-                Swal.fire({toast: true, position: 'top-end', title: 'ดึงข้อมูลสำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'});
-            } else {
-                resultName.innerText = "❌ " + data.message;
-                resultName.style.color = "#ff3366";
-                resultDetails.innerText = `${bankCode} - ${acc}`;
-                resultArea.style.display = 'block';
-                Swal.fire({toast: true, position: 'top-end', title: 'ดึงข้อมูลไม่สำเร็จ', icon: 'error', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'});
-            }
-        } catch (error) {
-            console.error("Error:", error);
-            Swal.fire('Error', 'ไม่สามารถเชื่อมต่อได้', 'error');
-        } finally {
-            // คืนค่าปุ่มกลับมาเหมือนเดิม
-            btn.disabled = false;
-            btn.innerHTML = '🔍 ตรวจสอบชื่อเจ้าของบัญชี';
-        }
-  }
-  // ==========================================
-// 🤖 ฟังก์ชันจัดการบัญชีบอท (เฉพาะ SuperAdmin)
-// ==========================================
-let allBankBots = [];
-
-// 1. เปิดหน้าต่างและโหลดข้อมูล
-function openBotModal() {
-    document.getElementById('botManageForm').reset();
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('botManageModal')).show();
-    loadBankBots(); // โหลดรายชื่อบัญชีทุกครั้งที่เปิด
-}
-
-// 2. ดึงข้อมูลบอทจากฐานข้อมูล
-async function loadBankBots() {
-    const tbody = document.getElementById('botListBody');
-    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">⏳ กำลังโหลด...</td></tr>';
-    try {
-        // ดึงข้อมูลจากตาราง bank_bots
-        const { data, error } = await supabaseClient.from('bank_bots').select('*').order('id', { ascending: false });
-        if (error) throw error;
-        
-        allBankBots = data || [];
-        renderBankBots();
-    } catch (err) {
-        console.error('Error loading bots:', err);
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">❌ โหลดข้อมูลไม่สำเร็จ</td></tr>';
-    }
-}
-
-// 3. แสดงผลตาราง
-function renderBankBots() {
-    const tbody = document.getElementById('botListBody');
-    tbody.innerHTML = '';
-    
-    if (allBankBots.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">ไม่มีบัญชีบอทในระบบ</td></tr>';
-        return;
-    }
-    
-    allBankBots.forEach(bot => {
-        let bankDisp = bot.bank_code;
-        if(bot.bank_code === 'kbank') bankDisp = "<span class='text-success fw-bold'>🟢 กสิกรไทย</span>";
-        else if(bot.bank_code === 'scb') bankDisp = "<span class='fw-bold' style='color:#cc66ff;'>🟣 SCB</span>";
-        else if(bot.bank_code === 'ktb') bankDisp = "<span class='text-info fw-bold'>🔵 KTB</span>";
-        else if(bot.bank_code === 'bbl') bankDisp = "<span class='text-primary fw-bold'>🟦 BBL</span>";
-        else if(bot.bank_code === 'bay') bankDisp = "<span class='text-warning fw-bold'>🟡 BAY</span>";
-
-        tbody.innerHTML += `
-            <tr>
-                <td>${bankDisp}</td>
-                <td class="text-white fw-bold">${bot.username}</td>
-                <td class="text-center">
-                    <button class="btn btn-sm btn-outline-danger py-1" onclick="deleteBankBot('${bot.id}', '${bot.username}')">ลบ</button>
-                </td>
-            </tr>
-        `;
-    });
-}
-
-// 4. บันทึกเพิ่มบัญชีใหม่
-async function saveBotData(e) {
-    e.preventDefault();
-    const bank = document.getElementById('bankSelect').value;
-    const user = document.getElementById('botUser').value;
-    const pass = document.getElementById('botPass').value;
-
-    const btn = document.querySelector('#botManageForm button[type="submit"]');
-    btn.disabled = true;
-    btn.innerText = '⏳ กำลังบันทึก...';
-
-    try {
-        // ส่งข้อมูลเข้าตาราง bank_bots
-        const { error } = await supabaseClient.from('bank_bots').insert([{ bank_code: bank, username: user, password: pass }]);
-        if (error) throw error;
-        
-        document.getElementById('botManageForm').reset();
-        Swal.fire({toast:true, position:'top-end', title:'เพิ่มบัญชีบอทสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
-        
-        loadBankBots(); // รีเฟรชตารางทันที
-    } catch (err) {
-        Swal.fire('Error', err.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerText = '💾 บันทึกข้อมูลบัญชี';
-    }
-}
-
-// 5. ลบบัญชี
-function deleteBankBot(id, username) {
-    Swal.fire({
-        title: `ลบบัญชี ${username}?`,
-        text: "บอทจะไม่สามารถเข้าสู่ระบบด้วยบัญชีนี้ได้อีก",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ff3366',
-        confirmButtonText: 'ลบเลย!',
-        background: '#111', color: '#fff'
-    }).then(async (r) => {
-        if (r.isConfirmed) {
-            Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()});
-            try {
-                const { error } = await supabaseClient.from('bank_bots').delete().eq('id', id);
-                if (error) throw error;
-                
-                Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
-                loadBankBots(); // รีเฟรชตารางทันที
-            } catch(err) {
-                Swal.fire('Error', err.message, 'error');
-            }
-        }
-    });
-}
-
-  // ==========================================
-// 🏦 ระบบตรวจสอบบัญชีธนาคาร (Frontend Logic)
-// ==========================================
-const bankListData = [
-    { code: "KBANK", name: "กสิกรไทย", icon: "🟢", length: 10 },
-    { code: "BBL", name: "กรุงเทพ", icon: "🟦", length: 10 },
-    { code: "KTB", name: "กรุงไทย", icon: "🔵", length: 10 },
-    { code: "SCB", name: "ไทยพาณิชย์", icon: "🟣", length: 10 },
-    { code: "BAY", name: "กรุงศรีอยุธยา", icon: "🟡", length: 10 },
-    { code: "TTB", name: "ทหารไทยธนชาต", icon: "🟠", length: 10 },
-    { code: "GSB", name: "ออมสิน", icon: "🩷", length: 12 },
-    { code: "BAAC", name: "ธ.ก.ส.", icon: "🌾", length: 12 },
-    { code: "GHB", name: "อาคารสงเคราะห์", icon: "🏠", length: 12 },
-    { code: "KKP", name: "เกียรตินาคินภัทร", icon: "🟪", length: 10 },
-    { code: "CIMB", name: "ซีไอเอ็มบี", icon: "🔴", length: 10 },
-    { code: "UOB", name: "ยูโอบี", icon: "👖", length: 10 }
-];
-
-let selectedBank = null;
-let searchHistory = [];
-
-// 1. วาดรายการธนาคารลงใน Dropdown
-function renderBankDropdown(data = bankListData) {
-    const list = document.getElementById('customBankDropdown');
-    list.innerHTML = '';
-    data.forEach(b => {
-        list.innerHTML += `
-            <li style="padding: 10px 15px; cursor: pointer; color: #ddd; border-bottom: 1px solid #333; display: flex; align-items: center; gap: 12px; font-size: 14px;" 
-                onmouseover="this.style.background='#222'; this.style.color='#00ffcc'" 
-                onmouseout="this.style.background='transparent'; this.style.color='#ddd'"
-                onclick="selectCustomBank('${b.code}')">
-                <span style="font-size: 18px; background: #fff; border-radius: 50%; padding: 2px; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;">${b.icon}</span> 
-                ธนาคาร${b.name} (${b.code})
-            </li>`;
-    });
-}
-
-// 2. เมื่อคลิกเลือกธนาคาร
-function selectCustomBank(code) {
-    selectedBank = bankListData.find(b => b.code === code);
-    document.getElementById('customBankInput').value = `ธนาคาร${selectedBank.name} (${selectedBank.code})`;
-    document.getElementById('customBankDropdown').style.display = 'none';
-    document.getElementById('clearBankBtn').style.display = 'block';
-    
-    // อัปเดตความยาวเลขบัญชี (10 หรือ 12 หลัก)
-    const accInput = document.getElementById('bankAccNumber');
-    accInput.setAttribute('maxlength', selectedBank.length);
-    document.getElementById('accLabel').innerHTML = `🔢 เลขที่บัญชี <span class="text-warning">(${selectedBank.length} หลัก)</span>`;
-    
-    if (accInput.value.length > selectedBank.length) {
-        accInput.value = accInput.value.substring(0, selectedBank.length);
-    }
-}
-
-// 3. พิมพ์ค้นหาธนาคาร
-function filterCustomBanks() {
-    const term = document.getElementById('customBankInput').value.toLowerCase();
-    const filtered = bankListData.filter(b => b.name.toLowerCase().includes(term) || b.code.toLowerCase().includes(term));
-    renderBankDropdown(filtered);
-}
-
-// 4. ล้างค่าธนาคาร
-function clearBankSelection() {
-    selectedBank = null;
-    document.getElementById('customBankInput').value = "";
-    document.getElementById('clearBankBtn').style.display = 'none';
-    document.getElementById('customBankDropdown').style.display = 'block';
-    document.getElementById('accLabel').innerHTML = `🔢 เลขที่บัญชี`;
-    renderBankDropdown();
-}
-
-// ซ่อน Dropdown เมื่อคลิกที่อื่น
-document.addEventListener('click', function(e) {
-    if (!e.target.closest('#customBankInput') && !e.target.closest('#customBankDropdown')) {
-        const dd = document.getElementById('customBankDropdown');
-        if(dd) dd.style.display = 'none';
-    }
-});
-
-// เรียกตอนเปิดหน้าเว็บ
-renderBankDropdown();
-
-// 5. ส่งข้อมูลเข้าคิว (Queue) และรอผลลัพธ์แบบ Realtime จากบอท
-async function mockCheckBank() {
-    const acc = document.getElementById('bankAccNumber').value;
-    if (!selectedBank || !acc) {
-        Swal.fire({toast:true, position:'top', title:'กรุณาเลือกธนาคารและกรอกเลขบัญชี', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
-        return;
-    }
-    if (acc.length !== selectedBank.length) {
-        Swal.fire({toast:true, position:'top', title:`ธนาคารนี้ต้องใช้เลขบัญชี ${selectedBank.length} หลัก`, icon:'error', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
-        return;
-    }
-
-    const btn = document.getElementById('btnVerifyBank');
-    const msg = document.getElementById('bankResultMsg');
-    const card = document.getElementById('resultCard');
-    const copyBtn = document.getElementById('copyDataBtn');
-
-    // ซ่อนการ์ดเก่า ปิดปุ่มกันกดซ้ำ
-    card.style.display = 'none';
-    copyBtn.style.display = 'none';
-    btn.disabled = true;
-
-    // แสดงสถานะกำลังรอคิว (สีเหลือง)
-    msg.style.display = 'block';
-    msg.className = "mt-3 text-center fw-bold px-3 py-2 rounded";
-    msg.style.backgroundColor = "#332b00";
-    msg.style.color = "#ffcc00";
-    msg.style.border = "1px solid #554400";
-    msg.innerHTML = `🟡 โยนงานลงตะกร้า... รอระบบจ่ายคิวให้บอท`;
-
-    try {
-        // 🌟 สเต็ปที่ 1: โยนงานลงตู้เซฟ (ตาราง bank_queue)
-        const { data: queueData, error: insertError } = await supabaseClient
-            .from('bank_queue')
-            .insert([{
-                bank_code: selectedBank.code,
-                account_number: acc,
-                status: 'pending' // สถานะรอกำลังทำ
-            }])
-            .select()
-            .single();
-
-        if (insertError) throw insertError;
-
-        const queueId = queueData.id;
-
-        // 🌟 สเต็ปที่ 2: ดักฟังคลื่นวิทยุ (Realtime) รอผลลัพธ์จากบอท
-        const queueChannel = supabaseClient.channel(`queue-${queueId}`)
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'bank_queue',
-                filter: `id=eq.${queueId}` // ดักฟังเฉพาะงานของตัวเอง
-            }, (payload) => {
-                const updatedData = payload.new;
-                
-                // ถ้าบอทรับงานไปแล้ว (เปลี่ยนสถานะเป็นสีฟ้า)
-                if (updatedData.status === 'processing') {
-                    msg.style.backgroundColor = "#002b3d";
-                    msg.style.color = "#00f0ff";
-                    msg.style.border = "1px solid #00a3cc";
-                    msg.innerHTML = `🔵 บอท [${updatedData.assigned_bot}] รับคิวแล้ว! กำลังดึงข้อมูล...`;
-                } 
-                // ถ้าบอททำงานสำเร็จ (แสดงการ์ดผลลัพธ์)
-                else if (updatedData.status === 'completed') {
-                    msg.style.display = 'none'; // ซ่อนข้อความโหลด
-                    btn.disabled = false; // ปลดล็อกปุ่ม
-
-                    // ใส่ข้อมูลลงในการ์ด
-                    document.getElementById('resultLogoIcon').innerText = selectedBank.icon;
-                    document.getElementById('cardName').innerText = updatedData.result_name;
-                    document.getElementById('cardName').style.color = "#00ffcc";
-                    document.getElementById('cardBank').innerText = `ธนาคาร${selectedBank.name}`;
-                    document.getElementById('cardBank').style.color = getBankColor(selectedBank.code);
-                    document.getElementById('cardAcc').innerText = acc;
-
-                    // โชว์การ์ดผลลัพธ์ และปุ่มก๊อปปี้
-                    card.style.display = 'flex';
-                    copyBtn.style.display = 'block';
-
-                    // เพิ่มลงประวัติที่มุมล่าง
-                    addHistory(updatedData.result_name, acc, selectedBank.icon);
-
-                    Swal.fire({toast:true, position:'top-end', title:'ดึงข้อมูลสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
-                    
-                    // ปิดช่องรับสัญญาณ
-                    supabaseClient.removeChannel(queueChannel);
-                } 
-                // ถ้าบอททำงานพลาด (Error)
-                else if (updatedData.status === 'error') {
-                    msg.style.backgroundColor = "#3a1c1c";
-                    msg.style.color = "#ff3366";
-                    msg.style.border = "1px solid #5c2c2c";
-                    msg.innerHTML = `❌ เกิดข้อผิดพลาด: ${updatedData.error_message}`;
-                    btn.disabled = false;
-                    
-                    // ปิดช่องรับสัญญาณ
-                    supabaseClient.removeChannel(queueChannel);
-                }
-            })
-            .subscribe();
-
-        // 🌟 สเต็ปที่ 3: ตั้งเวลา Timeout (60 วินาที) เผื่อบอทค้างหรือไฟดับ
-        setTimeout(() => {
-            if (btn.disabled) {
-                msg.style.backgroundColor = "#3a1c1c";
-                msg.style.color = "#ff3366";
-                msg.style.border = "1px solid #5c2c2c";
-                msg.innerHTML = `❌ คิวรอนานเกิน 60 วินาที (บอทอาจจะคิวเต็ม หรือปิดอยู่)`;
-                btn.disabled = false;
-                supabaseClient.removeChannel(queueChannel); // ปิดการรับสัญญาณ
-            }
-        }, 60000);
-
-    } catch (err) {
-        console.error("Queue Error:", err);
-        msg.style.backgroundColor = "#3a1c1c";
-        msg.style.color = "#ff3366";
-        msg.style.border = "1px solid #5c2c2c";
-        msg.innerHTML = `❌ ระบบคิวขัดข้อง: ${err.message}`;
-        btn.disabled = false;
-    }
-}
-
-// 6. สีเฉพาะธนาคาร
-function getBankColor(code) {
-    const colors = { KBANK: "#00a950", SCB: "#4e2a84", KTB: "#00aeeef", BBL: "#1e4598", BAY: "#fec43b", GSB: "#eb198d" };
-    return colors[code] || "#aaa";
-}
-
-// 7. คัดลอกข้อมูล
-function copyBankResult() {
-    const name = document.getElementById('cardName').innerText;
-    const bank = document.getElementById('cardBank').innerText;
-    const acc = document.getElementById('cardAcc').innerText;
-    const textToCopy = `${bank}\n${acc}\n${name}`;
-    
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        Swal.fire({toast:true, position:'top', title:'📝 คัดลอกแล้ว', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
-    });
-}
-
-// 8. เพิ่มประวัติการค้นหา
-function addHistory(name, acc, icon) {
-    document.getElementById('emptyHistory').style.display = 'none';
-    const list = document.getElementById('historyList');
-    
-    const li = document.createElement('li');
-    li.style.cssText = "font-size: 13px; padding: 10px; background: #1a1a1a; margin-bottom: 5px; border-radius: 8px; display: flex; justify-content: space-between; border: 1px solid #333;";
-    li.innerHTML = `<span><span style="font-size: 14px;">${icon}</span> ${acc}</span><span style="color:#aaa; text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:140px;">${name}</span>`;
-    
-    list.prepend(li);
-    if(list.children.length > 10) list.lastChild.remove();
-}
 
   async function loadPrivateVault() {
       try {
