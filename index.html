@@ -415,7 +415,7 @@
                </div>
                
                <div style="border-left: 2px solid #444; padding-left: 10px; display: flex; align-items: center;">
-                 <button onclick="saveAllScheduleChanges()" class="neon-save-button" id="btnSaveSchedule" style="display: none;">💾 บันทึกตารางจริง</button>
+                 <button onclick="saveAllScheduleChanges()" class="neon-save-button" id="btnSaveSchedule" style="display: none;">💾 บันทึก</button>
                  </div>
            </div>
         </div>
@@ -1930,7 +1930,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   
   function switchScheduleTab(mode) {
       if(Object.keys(unsavedChanges).length > 0 && mode === 'SANDBOX'){ 
-          Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางจริงก่อนสลับโหมด', icon:'warning', background:'#111', color:'#fff'}); 
+          Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณากดบันทึกก่อนสลับโหมด', icon:'warning', background:'#111', color:'#fff'}); 
           return; 
       }
       currentScheduleMode = mode;
