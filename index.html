@@ -2060,25 +2060,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       }
       loadScheduleTable();
   }
-      currentScheduleMode = mode;
-      document.getElementById('tabBtnRealSchedule').classList.toggle('active', mode === 'REAL');
-      document.getElementById('tabBtnSwapSandbox').classList.toggle('active', mode === 'SANDBOX');
-      
-      if(mode === 'REAL') {
-          document.getElementById('tabBtnRealSchedule').style.borderColor = "#fff"; document.getElementById('tabBtnRealSchedule').style.color = "#fff";
-          document.getElementById('tabBtnSwapSandbox').style.borderColor = "#ff9900"; document.getElementById('tabBtnSwapSandbox').style.color = "#ff9900";
-          document.getElementById('realScheduleActions').style.display = 'flex';
-          document.getElementById('sandboxScheduleActions').style.display = 'none';
-          document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
-      } else {
-          document.getElementById('tabBtnSwapSandbox').style.borderColor = "#fff"; document.getElementById('tabBtnSwapSandbox').style.color = "#fff";
-          document.getElementById('tabBtnRealSchedule').style.borderColor = "#444"; document.getElementById('tabBtnRealSchedule').style.color = "#ccc";
-          document.getElementById('realScheduleActions').style.display = 'none';
-          document.getElementById('sandboxScheduleActions').style.display = 'flex'; // โชว์กรอบปุ่มจำลอง แต่สิทธิ์ถูกซ่อนไว้ใน verifyUserStatus
-          document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important'); // 🌟 เปิดตรายางให้ทุกคนในโหมด Sandbox
-      }
-      loadScheduleTable();
-  }
 
   async function loadScheduleTable() {
     try {
