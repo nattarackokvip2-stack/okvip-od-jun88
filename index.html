@@ -2300,6 +2300,37 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       } 
       document.getElementById('stampPalette').innerHTML = html; 
   }
+
+  function recalcScheduleSummary() {
+      const ym = document.getElementById('monthPicker').value;
+      if(!ym) return;
+      const [year, month] = ym.split('-'); 
+      const daysInMonth = new Date(year, month, 0).getDate();
+
+      for(let d=1; d<=daysInMonth; d++) {
+          // รีเซ็ตค่านับของทั้ง 2 กะ
+          let counts = { 'A': { work: 0, off: 0 }, 'B': { work: 0, off: 0 } };
+          
+          document.querySelectorAll('#schTbody tr').forEach(tr => {
+              let cell = tr.querySelector(`td[data-day="${d}"]`);
+              let shiftType = tr.getAttribute('data-shift'); // ดึงค่ากะที่ฝังไว้ในแถว
+              
+              if(cell && shiftType && counts[shiftType]) {
+                  let val = cell.innerText.trim();
+                  if(val === 'D' || val === 'N' || val === 'M') counts[shiftType].work++;
+                  if(['X', 'PN', 'TX', 'XX'].includes(val)) counts[shiftType].off++; 
+              }
+          });
+
+          // อัปเดตตัวเลขลงบนตาราง (เฉพาะบรรทัดที่แสดงผลอยู่)
+          ['A', 'B'].forEach(sh => {
+              const wEl = document.getElementById(`sum-work-${sh}-${d}`);
+              const oEl = document.getElementById(`sum-off-${sh}-${d}`);
+              if(wEl) wEl.innerText = counts[sh].work;
+              if(oEl) oEl.innerText = counts[sh].off;
+          });
+      }
+  }
   
   function selectStamp(code, btn) { 
       if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
