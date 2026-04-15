@@ -370,17 +370,72 @@
                  <div class="dept-badge" onclick="filterHrEvalDept('ODOL', this)">ODOL</div>
                </div>
            </div>
-           <input type="text" id="searchHrEval" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." style="width: 200px;">
+           <input type="text" id="searchHrEval" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." style="width: 200px;" oninput="renderHrEvalList()">
         </div>
         
         <div class="table-responsive">
           <table class="table table-hover align-middle">
-            <thead><tr><th>ชื่อพนักงาน</th><th>แผนก</th><th>สถานะประเมินเดือนนี้</th><th class="text-center">ประเมิน/ดูผล</th></tr></thead>
+            <thead>
+              <tr>
+                <th>ชื่อพนักงาน</th>
+                <th>แผนก</th>
+                <th class="text-center">การปฏิบัติงาน</th>
+                <th class="text-center">คะแนน</th>
+                <th class="text-center">ผู้ประเมิน</th>
+                <th class="text-center">สถานะประเมินเดือนนี้</th>
+                <th class="text-center">ผลการประเมิน</th>
+              </tr>
+            </thead>
             <tbody id="hrEvalTableBody">
                </tbody>
           </table>
         </div>
       </div>
+
+      <div id="hrBehaviorArea" style="display: none;">
+        <div class="d-flex justify-content-between mb-3">
+            <input type="month" id="hrBehaviorMonth" class="form-control bg-dark text-warning border-warning" style="width: auto;">
+            <button class="btn btn-outline-warning fw-bold" onclick="openBehaviorModal()">➕ บันทึกพฤติกรรมใหม่</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>วันที่บันทึก</th><th>พนักงาน</th><th>รายละเอียดพฤติกรรม</th><th>ผู้บันทึก</th></tr></thead>
+            <tbody id="hrBehaviorTableBody"><tr><td colspan="4" class="text-center text-muted py-4">รอการเชื่อมต่อฐานข้อมูล...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="hrProbationArea" style="display: none;">
+        <div class="alert alert-dark border-success text-success small mb-3" style="background: rgba(0, 255, 102, 0.05);">
+            <b>🎓 ขั้นตอนและเงื่อนไขการสอบประเมินผ่านโปร:</b><br>
+            1. พนักงานต้องมีอายุงานตามที่กำหนดและไม่มีประวัติพฤติกรรมร้ายแรง<br>
+            2. ผู้สอบ (Admin/SuperAdmin) เป็นผู้บันทึกผลการทดสอบและข้อเสนอแนะ<br>
+            3. ข้อมูลนี้ใช้พิจารณาปรับฐานเงินเดือน
+        </div>
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-outline-success fw-bold" onclick="openProbationModal()">➕ บันทึกผลสอบประเมิน</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>วันที่ประเมิน</th><th>พนักงาน</th><th>รายละเอียดการผ่านโปร</th><th>พฤติกรรมที่ผ่านมา (สรุป)</th><th>สถานะ</th></tr></thead>
+            <tbody id="hrProbationTableBody"><tr><td colspan="5" class="text-center text-muted py-4">รอการเชื่อมต่อฐานข้อมูล...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div> <div id="announceSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
+        <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>สถานะ</th><th>หัวข้อประกาศ</th><th>เนื้อหา</th><th class="text-center" id="thAnnounceManage">จัดการ</th></tr></thead>
+          <tbody id="announceTableBody"></tbody>
+        </table>
+      </div>
+    </div> ```
+
+โครงสร้าง `<div id="hrSection">` ถูกต้องและปิดแท็กสมบูรณ์แล้วครับ ลากไปวางได้เลยครับ!
 
       <div id="hrBehaviorArea" style="display: none;">
         <div class="d-flex justify-content-between mb-3">
@@ -1312,56 +1367,52 @@
             <thead>
                <tr>
                  <th colspan="2" class="eval-bg-teal text-center fs-5">ส่วนที่ 1 แบบประเมินผลการปฏิบัติงาน</th>
-                 <th class="eval-bg-red">0-60 คะแนน</th>
-                 <th class="eval-bg-orange">60-70 คะแนน</th>
-                 <th class="eval-bg-blue">70-80 คะแนน</th>
-                 <th class="eval-bg-lgreen">80-90 คะแนน</th>
-                 <th class="eval-bg-dgreen">90-100 คะแนน</th>
+                 <th class="eval-bg-red text-center">0-60 คะแนน</th>
+                 <th class="eval-bg-orange text-center">60-70 คะแนน</th>
+                 <th class="eval-bg-blue text-center">70-80 คะแนน</th>
+                 <th class="eval-bg-lgreen text-center">80-90 คะแนน</th>
+                 <th class="eval-bg-dgreen text-center">90-100 คะแนน</th>
                  <th class="eval-bg-red text-center">เกรด</th>
                </tr>
                <tr class="text-center fw-bold" style="background: #f2f2f2;">
-                 <th style="width: 80px; vertical-align: middle;">ระดับ<br>ความชำนาญ</th>
+                 <th style="width: 60px; vertical-align: middle;">ระดับ<br>ความชำนาญ</th>
                  <th style="min-width: 300px; vertical-align: middle;">พฤติกรรมที่กำหนดสำหรับสมรรถนะ</th>
-                 <th colspan="5" class="align-bottom pb-2">
-                    ความถี่ในการแสดงพฤติกรรม<br>
-                    <div class="d-flex justify-content-between gap-3 mt-2 px-2" style="width: 100%;">
-                        <div style="flex: 1; text-align: center;">
-                            <span class="text-dark">คนที่ 1 (0-100)</span>
-                            <input type="text" id="evaluatorName1" class="form-control form-control-sm mt-1 text-center border-secondary fw-bold" style="background: #fff; color: #000;" placeholder="ลงชื่อผู้ประเมิน 1">
-                        </div>
-                        <div style="flex: 1; text-align: center;">
-                            <span class="text-dark">คนที่ 2 (0-100)</span>
-                            <input type="text" id="evaluatorName2" class="form-control form-control-sm mt-1 text-center border-secondary fw-bold" style="background: #fff; color: #000;" placeholder="ลงชื่อผู้ประเมิน 2">
-                        </div>
-                    </div>
+                 <th colspan="3" class="align-bottom pb-2">ความถี่ในการแสดงพฤติกรรม</th>
+                 <th style="width: 100px; vertical-align: bottom; padding: 5px;">
+                    <span class="text-dark small d-block mb-1">คนที่ 1 (0-100)</span>
+                    <input type="text" id="evaluatorName1" class="form-control form-control-sm text-center border-secondary fw-bold mx-auto" style="background: #fff; color: #000; width: 90%;" placeholder="ลงชื่อ 1">
+                 </th>
+                 <th style="width: 100px; vertical-align: bottom; padding: 5px;">
+                    <span class="text-dark small d-block mb-1">คนที่ 2 (0-100)</span>
+                    <input type="text" id="evaluatorName2" class="form-control form-control-sm text-center border-secondary fw-bold mx-auto" style="background: #fff; color: #000; width: 90%;" placeholder="ลงชื่อ 2">
                  </th>
                  <th style="width: 80px; vertical-align: middle;">สรุป<br>คะแนน</th>
                </tr>
             </thead>
             <tbody id="evalFormBody">
                <tr><td colspan="8" class="eval-bg-teal" style="font-size: 1rem;">1.ลักษณะส่วนตัว</td></tr>
-               <tr><td class="text-center fw-bold">1</td><td>ความรับผิดชอบ/ความกระตือรือร้น</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q1_1" max="100"><input type="number" class="eval-input sc2" id="q1_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q1_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">2</td><td>การสื่อสารระหว่างแผนก/ความสุภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q2_1" max="100"><input type="number" class="eval-input sc2" id="q2_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q2_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">3</td><td>ความมีน้ำใจ ความร่วมมือ และการสนับสนุนการทำงานของผู้อื่นด้วยความยินดีโดยไม่ต้องร้องขอ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q3_1" max="100"><input type="number" class="eval-input sc2" id="q3_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q3_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">4</td><td>ความซื่อสัตย์</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q4_1" max="100"><input type="number" class="eval-input sc2" id="q4_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q4_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">5</td><td>มีการวางแผน การทำงานอย่างเป็นระบบ ทำงานตามกระบวนการ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q5_1" max="100"><input type="number" class="eval-input sc2" id="q5_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q5_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">6</td><td>การทำงานได้มาตรฐาน และ ทำงานมีประสิทธิภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q6_1" max="100"><input type="number" class="eval-input sc2" id="q6_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q6_avg" disabled></td></tr>
-               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><div class="eval-sum-box w-100" id="sumSec1_1">0</div><div class="eval-sum-box w-100" id="sumSec1_2">0</div></div></td><td class="eval-sum-box fs-6" id="sumSec1_total">0</td></tr>
+               <tr><td class="text-center fw-bold">1</td><td>ความรับผิดชอบ/ความกระตือรือร้น</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q1_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q1_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q1_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">2</td><td>การสื่อสารระหว่างแผนก/ความสุภาพ</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q2_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q2_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q2_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">3</td><td>ความมีน้ำใจ ความร่วมมือ และการสนับสนุนการทำงานของผู้อื่นด้วยความยินดีโดยไม่ต้องร้องขอ</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q3_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q3_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q3_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">4</td><td>ความซื่อสัตย์</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q4_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q4_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q4_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">5</td><td>มีการวางแผน การทำงานอย่างเป็นระบบ ทำงานตามกระบวนการ</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q5_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q5_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q5_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">6</td><td>การทำงานได้มาตรฐาน และ ทำงานมีประสิทธิภาพ</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q6_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q6_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q6_avg" disabled></td></tr>
+               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="3"></td><td class="eval-sum-box" id="sumSec1_1">0</td><td class="eval-sum-box" id="sumSec1_2">0</td><td class="eval-sum-box fs-6" id="sumSec1_total">0</td></tr>
 
                <tr><td colspan="8" class="eval-bg-teal mt-3" style="font-size: 1rem;">2.ความพร้อมในการทำงาน และ ปฏิบัติตามกฎระเบียบ : การมาทำงานตามเวลา / การขาดงาน / การลางาน / มาสาย / การปฏิบัติตามระเบียบ</td></tr>
-               <tr><td class="text-center fw-bold">7</td><td>มีทัศนคติในการทำงาน มีความเชื่อมั่น มีความรับผิดชอบงาน และ เชื่อฟังผู้บังคับบัญชา</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q7_1" max="100"><input type="number" class="eval-input sc2" id="q7_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q7_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">8</td><td>ปฏิบัติตามกฎระเบียบและข้อบังคับของบริษัท ข้อกำหนดประกาศต่างๆ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q8_1" max="100"><input type="number" class="eval-input sc2" id="q8_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q8_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">9</td><td>การติดต่อสื่อสารอย่างมีประสิทธิภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q9_1" max="100"><input type="number" class="eval-input sc2" id="q9_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q9_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">10</td><td>การลางาน การขาดงาน</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q10_1" max="100"><input type="number" class="eval-input sc2" id="q10_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q10_avg" disabled></td></tr>
-               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><div class="eval-sum-box w-100" id="sumSec2_1">0</div><div class="eval-sum-box w-100" id="sumSec2_2">0</div></div></td><td class="eval-sum-box fs-6" id="sumSec2_total">0</td></tr>
+               <tr><td class="text-center fw-bold">7</td><td>มีทัศนคติในการทำงาน มีความเชื่อมั่น มีความรับผิดชอบงาน และ เชื่อฟังผู้บังคับบัญชา</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q7_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q7_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q7_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">8</td><td>ปฏิบัติตามกฎระเบียบและข้อบังคับของบริษัท ข้อกำหนดประกาศต่างๆ</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q8_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q8_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q8_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">9</td><td>การติดต่อสื่อสารอย่างมีประสิทธิภาพ</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q9_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q9_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q9_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">10</td><td>การลางาน การขาดงาน</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q10_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q10_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q10_avg" disabled></td></tr>
+               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="3"></td><td class="eval-sum-box" id="sumSec2_1">0</td><td class="eval-sum-box" id="sumSec2_2">0</td><td class="eval-sum-box fs-6" id="sumSec2_total">0</td></tr>
 
                <tr><td colspan="8" class="eval-bg-teal mt-3" style="font-size: 1rem;">3.การเรียนรู้ที่ได้รับจากการทำงาน</td></tr>
-               <tr><td class="text-center fw-bold">11</td><td>การเรียนรู้ จากการทำงานที่ผ่านมา</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q11_1" max="100"><input type="number" class="eval-input sc2" id="q11_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q11_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">12</td><td>มีการพัฒนาตัวเองอยู่เสมอ ใฝ่เรียนรู้ หาความรู้อยู่เสมอ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q12_1" max="100"><input type="number" class="eval-input sc2" id="q12_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q12_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">13</td><td>การแก้ไขในการทำงาน และ กล้าแก้ไขข้อบกพร่องของตัวเอง</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q13_1" max="100"><input type="number" class="eval-input sc2" id="q13_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q13_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">14</td><td>สามารถทำงานที่ตัวเองได้รับมอบหมายอย่างมีประสิทธิภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q14_1" max="100"><input type="number" class="eval-input sc2" id="q14_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q14_avg" disabled></td></tr>
-               <tr><td class="text-center fw-bold">15</td><td>มีความคิดสร้างสรรค์ และ สามารถนำมาปรับใช้ในการทำงานได้</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q15_1" max="100"><input type="number" class="eval-input sc2" id="q15_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q15_avg" disabled></td></tr>
-               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><div class="eval-sum-box w-100" id="sumSec3_1">0</div><div class="eval-sum-box w-100" id="sumSec3_2">0</div></div></td><td class="eval-sum-box fs-6" id="sumSec3_total">0</td></tr>
+               <tr><td class="text-center fw-bold">11</td><td>การเรียนรู้ จากการทำงานที่ผ่านมา</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q11_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q11_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q11_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">12</td><td>มีการพัฒนาตัวเองอยู่เสมอ ใฝ่เรียนรู้ หาความรู้อยู่เสมอ</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q12_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q12_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q12_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">13</td><td>การแก้ไขในการทำงาน และ กล้าแก้ไขข้อบกพร่องของตัวเอง</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q13_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q13_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q13_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">14</td><td>สามารถทำงานที่ตัวเองได้รับมอบหมายอย่างมีประสิทธิภาพ</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q14_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q14_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q14_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">15</td><td>มีความคิดสร้างสรรค์ และ สามารถนำมาปรับใช้ในการทำงานได้</td><td colspan="3"></td><td><input type="number" class="eval-input sc1" id="q15_1" max="100"></td><td><input type="number" class="eval-input sc2" id="q15_2" max="100"></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q15_avg" disabled></td></tr>
+               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="3"></td><td class="eval-sum-box" id="sumSec3_1">0</td><td class="eval-sum-box" id="sumSec3_2">0</td><td class="eval-sum-box fs-6" id="sumSec3_total">0</td></tr>
 
                <tr><td colspan="2" rowspan="2" class="eval-bg-teal fw-bold">4.KPI รายบุคคล</td><td colspan="5" class="eval-bg-dgreen text-end pe-3 fw-bold fs-6">คะแนนรวม (เต็ม 1500)</td><td class="eval-bg-dgreen fw-bold fs-5" id="grandTotalScore">0</td></tr>
                <tr><td colspan="5" class="eval-bg-teal text-end pe-3 fw-bold fs-6">คะแนนรวมคิดเป็น %</td><td class="eval-bg-teal fw-bold fs-5" id="grandTotalPercent">0%</td></tr>
