@@ -1908,15 +1908,24 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       const totalPages = Math.ceil(filteredData.length / itemsPerPage); if (currentPage > totalPages) currentPage = totalPages;
       const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+      const myNick = localStorage.getItem('okvip_nick') || ''; // 🌟 ดึงชื่อตัวเองมาตรวจสอบ
+
       paginatedData.forEach(row => {
           const origIdx = allUsersData.findIndex(r => r[0] === row[0] && r[1] === row[1]); const sClass = row[7] === 'Active' ? 'status-active' : 'status-blocked'; const tgData = row[8] ? row[8] : ''; const tgDisp = tgData ? `<span class="text-info fw-bold">${tgData}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`; const setBadge = row[9] ? `<span class="badge border border-info text-info">${row[9]}</span>` : '-';
+          
+          // 🌟 เช็คว่าเป็นชื่อตัวเองไหม ถ้าใช่ให้แสดงเป็นกรอบสีเขียวเรืองแสง
+          const isMe = (row[1] === myNick);
+          const nameDisplay = isMe ? `<span style="color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.8); font-weight: bold; border: 1px solid var(--neon-green); padding: 2px 8px; border-radius: 6px;">${row[1]}</span>` : row[1];
+
           let toolsTd = ''; 
           if (row[4] === currentUsername) { toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-secondary border border-secondary px-3 py-2">บัญชีของฉัน</span><button class="tool-btn telegram" onclick="changeTelegram(${origIdx}, '${tgData}', '${row[1]}')">💬</button><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button></div></td>`; } 
           else if (myRole === 'SuperAdmin' || myRole === 'Admin') {
               if (getRoleWeight(myRole) < getRoleWeight(row[6])) toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button><button class="tool-btn settings" onclick="changeStatus(${origIdx},'${row[7]}')">⚙️</button><button class="tool-btn delete" onclick="confirmDeleteUser(${origIdx}, '${row[1]}')">🗑️</button></div></td>`;
               else toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-danger border border-danger opacity-75 px-3 py-2">🔒 ไม่มีสิทธิ์</span></div></td>`;
           } else { toolsTd = `<td></td>`; }
-          tbody.innerHTML += `<tr><td class="fw-bold">${row[1]}</td><td>${setBadge}</td><td>${row[3]}</td><td>${row[4]}</td><td class="role-${row[6]}">${row[6]}</td><td><span class="${sClass}">${row[7]}</span></td><td>${tgDisp}</td>${toolsTd}</tr>`;
+          
+          // 🌟 แสดงชื่อที่ถูกปรับแต่ง (nameDisplay)
+          tbody.innerHTML += `<tr><td class="fw-bold">${nameDisplay}</td><td>${setBadge}</td><td>${row[3]}</td><td>${row[4]}</td><td class="role-${row[6]}">${row[6]}</td><td><span class="${sClass}">${row[7]}</span></td><td>${tgDisp}</td>${toolsTd}</tr>`;
       });
       if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) pageHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`; pageHtml += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; paginationArea.innerHTML = pageHtml; }
   }
