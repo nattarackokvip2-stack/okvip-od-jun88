@@ -435,61 +435,7 @@
         </table>
       </div>
     </div>
-    
-      <div id="hrBehaviorArea" style="display: none;">
-        <div class="d-flex justify-content-between mb-3">
-            <input type="month" id="hrBehaviorMonth" class="form-control bg-dark text-warning border-warning" style="width: auto;">
-            <button class="btn btn-outline-warning fw-bold" onclick="openBehaviorModal()">➕ บันทึกพฤติกรรมใหม่</button>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead><tr><th>วันที่บันทึก</th><th>พนักงาน</th><th>รายละเอียดพฤติกรรม</th><th>ผู้บันทึก</th></tr></thead>
-            <tbody id="hrBehaviorTableBody"><tr><td colspan="4" class="text-center text-muted py-4">รอการเชื่อมต่อฐานข้อมูล...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
 
-      <div id="hrProbationArea" style="display: none;">
-        <div class="alert alert-dark border-success text-success small mb-3" style="background: rgba(0, 255, 102, 0.05);">
-            <b>🎓 ขั้นตอนและเงื่อนไขการสอบประเมินผ่านโปร:</b><br>
-            1. พนักงานต้องมีอายุงานตามที่กำหนดและไม่มีประวัติพฤติกรรมร้ายแรง<br>
-            2. ผู้สอบ (Admin/SuperAdmin) เป็นผู้บันทึกผลการทดสอบและข้อเสนอแนะ<br>
-            3. ข้อมูลนี้ใช้พิจารณาปรับฐานเงินเดือน
-        </div>
-        <div class="d-flex justify-content-end mb-3">
-            <button class="btn btn-outline-success fw-bold" onclick="openProbationModal()">➕ บันทึกผลสอบประเมิน</button>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead><tr><th>วันที่ประเมิน</th><th>พนักงาน</th><th>รายละเอียดการผ่านโปร</th><th>พฤติกรรมที่ผ่านมา (สรุป)</th><th>สถานะ</th></tr></thead>
-            <tbody id="hrProbationTableBody"><tr><td colspan="5" class="text-center text-muted py-4">รอการเชื่อมต่อฐานข้อมูล...</td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-      
-    <div id="announceSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
-        <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
-      </div>
-      <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead>
-              <tr>
-                <th>ชื่อพนักงาน</th>
-                <th>แผนก</th>
-                <th class="text-center">การปฏิบัติงาน</th>
-                <th class="text-center">คะแนน</th>
-                <th class="text-center">ผู้ประเมิน</th>
-                <th class="text-center">สถานะประเมินเดือนนี้</th>
-                <th class="text-center">ผลการประเมิน</th>
-              </tr>
-            </thead>
-            <tbody id="hrEvalTableBody">
-               </tbody>
-          </table>
-        </div>
 
     <div id="staffSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
@@ -834,7 +780,7 @@
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
     </div>
     
-        <div id="vaultSection" class="content-section">
+    <div id="vaultSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
         <div>
            <h4 class="fw-bold mb-0" style="color: #ff00ff; text-shadow: 0 0 10px rgba(255,0,255,0.5);">🔐 ฐานลับส่วนบุคคล (Private Vault)</h4>
@@ -3565,7 +3511,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if(saveBtn) { saveBtn.innerText = myRole === 'Member' ? '💾 บันทึกเวลาทานข้าวของฉัน' : '💾 บันทึกตารางทานข้าว'; saveBtn.disabled = false; }
       } 
   }
-  
+
   // ==========================================
   // 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests)
   // ==========================================
