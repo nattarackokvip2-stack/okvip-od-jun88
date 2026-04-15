@@ -1690,11 +1690,11 @@
               ctx.imageSmoothingEnabled = true;
               ctx.imageSmoothingQuality = "high";
               ctx.drawImage(img, 0, 0, width, height);
-              const compressedBase64 = canvas.toDataURL('image/jpeg', 0.98); 
+          const compressedBase64 = canvas.toDataURL('image/png'); 
+              
               Swal.close(); callback(compressedBase64);
           };
-      };
-  }
+      };}
 
   function setupPasteArea(areaId, fileId, processCallback, isHighQuality = false) {
       const area = document.getElementById(areaId); const fileInput = document.getElementById(fileId);
@@ -3730,41 +3730,325 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   function confirmDeleteManual(id) { Swal.fire({title:'ลบหมวดหมู่นี้?', text:'ข้อมูลด้านในจะหายทั้งหมด', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { await supabaseClient.from('manuals').delete().eq('id', id); refreshData(document.getElementById('refreshBtn')); } }); }
 
   // ==========================================
-  // 🚀 8. จัดการเว็บไซต์ (Portals/Backends)
-  // ==========================================
-  async function loadSupabaseWebsites() { try { const { data: pData } = await supabaseClient.from('portals').select('*').order('id', { ascending: false }); allPortalsData = (pData || []).map(r => [r.id, r.title, r.linkUrl, r.imageUrl]); renderPortalGrid(); const { data: bData } = await supabaseClient.from('backends').select('*').order('id', { ascending: false }); allBackendsData = (bData || []).map(r => [r.id, r.title, r.linkUrl, r.imageUrl]); renderBackendGrid(); } catch (err) { console.error('Supabase error:', err); } }
-  
-  async function uploadToSupabase(base64Data, prefix) { if (!base64Data.startsWith('data:image')) return base64Data; const res = await fetch(base64Data); const blob = await res.blob(); const fileName = prefix + '_' + new Date().getTime() + '.jpg'; const { error } = await supabaseClient.storage.from('images').upload(fileName, blob, { upsert: true }); if (error) throw error; const { data: urlData } = supabaseClient.storage.from('images').getPublicUrl(fileName); return urlData.publicUrl; }
-  
-  function switchWebZone(zone, btn) { document.getElementById('tabFrontEnd').classList.remove('active'); document.getElementById('tabBackEnd').classList.remove('active'); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; if(zone==='frontend'){document.getElementById('tabBackEnd').style.borderColor="#444"; document.getElementById('tabBackEnd').style.color="#ccc";} else {document.getElementById('tabFrontEnd').style.borderColor="#444"; document.getElementById('tabFrontEnd').style.color="#ccc";} document.getElementById('portalGridArea').style.display = zone==='frontend'?'grid':'none'; document.getElementById('backendGridArea').style.display = zone==='backend'?'grid':'none'; document.getElementById('addPortalBtn').style.display = zone==='frontend'?'block':'none'; document.getElementById('addBackendBtn').style.display = zone==='backend'?'block':'none'; }
-  
-  function processPortalImage(b64) { document.getElementById('portalImagePreview').src = b64; document.getElementById('portalImagePreview').style.display = 'block'; document.getElementById('portalMediaBase64').value = b64; document.getElementById('portalPasteText').style.display = 'none'; document.getElementById('btnPortalClearImage').style.display = 'block'; }
-  
-  function clearPortalImage() { document.getElementById('portalImagePreview').src = ''; document.getElementById('portalImagePreview').style.display = 'none'; document.getElementById('portalMediaBase64').value = ''; document.getElementById('portalPasteText').style.display = 'block'; document.getElementById('btnPortalClearImage').style.display = 'none'; document.getElementById('portalMediaFile').value = ''; }
-  
-  function processBackendImage(b64) { document.getElementById('backendImagePreview').src = b64; document.getElementById('backendImagePreview').style.display = 'block'; document.getElementById('backendMediaBase64').value = b64; document.getElementById('backendPasteText').style.display = 'none'; document.getElementById('btnBackendClearImage').style.display = 'block'; }
-  
-  function clearBackendImage() { document.getElementById('backendImagePreview').src = ''; document.getElementById('backendImagePreview').style.display = 'none'; document.getElementById('backendMediaBase64').value = ''; document.getElementById('backendPasteText').style.display = 'block'; document.getElementById('btnBackendClearImage').style.display = 'none'; document.getElementById('backendMediaFile').value = ''; }
-  
-  function openPortalModal() { document.getElementById('addPortalForm').reset(); document.getElementById('editPortalId').value = ''; clearPortalImage(); document.getElementById('portalModalTitle').innerText='🌐 เพิ่มเว็บไซต์หน้าบ้าน'; bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).show(); }
-  
-  function openBackendModal() { document.getElementById('addBackendForm').reset(); document.getElementById('editBackendId').value = ''; clearBackendImage(); document.getElementById('backendModalTitle').innerText='⚙️ เพิ่มเว็บไซต์หลังบ้าน'; bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).show(); }
-  
-  async function handlePortalSubmit(e) { e.preventDefault(); const btn = document.getElementById('btnSavePortal'); btn.disabled = true; btn.innerText = '⏳ อัปโหลดรูป...'; try { const title = document.getElementById('portalTitle').value; const linkUrl = document.getElementById('portalLink').value; let imageUrl = document.getElementById('portalMediaBase64').value; const id = document.getElementById('editPortalId').value; if(!imageUrl){ Swal.fire({toast:true, position:'top', title:'ใส่รูปด้วยครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); btn.disabled=false; btn.innerText='💾 บันทึกและเผยแพร่'; return; } imageUrl = await uploadToSupabase(imageUrl, 'portal'); if(id) await supabaseClient.from('portals').update({ title, linkUrl, imageUrl }).eq('id', id); else await supabaseClient.from('portals').insert([{ title, linkUrl, imageUrl }]); bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).hide(); Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); await loadSupabaseWebsites(); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกและเผยแพร่'; } }
-  
-  async function handleBackendSubmit(e) { e.preventDefault(); const btn = document.getElementById('btnSaveBackend'); btn.disabled = true; btn.innerText = '⏳ อัปโหลดรูป...'; try { const title = document.getElementById('backendTitle').value; const linkUrl = document.getElementById('backendLink').value; let imageUrl = document.getElementById('backendMediaBase64').value; const id = document.getElementById('editBackendId').value; if(!imageUrl){ Swal.fire({toast:true, position:'top', title:'ใส่รูปด้วยครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); btn.disabled=false; btn.innerText='💾 บันทึกและเผยแพร่'; return; } imageUrl = await uploadToSupabase(imageUrl, 'backend'); if(id) await supabaseClient.from('backends').update({ title, linkUrl, imageUrl }).eq('id', id); else await supabaseClient.from('backends').insert([{ title, linkUrl, imageUrl }]); bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).hide(); Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); await loadSupabaseWebsites(); } catch (err) { Swal.fire('Error', err.message, 'error'); } finally { btn.disabled = false; btn.innerText = '💾 บันทึกและเผยแพร่'; } }
-  
-  function renderPortalGrid() { const area = document.getElementById('portalGridArea'); area.innerHTML = ''; if(allPortalsData.length===0){area.innerHTML=`<div class="text-center py-5 w-100 text-muted">ไม่มีเว็บ</div>`; return;} allPortalsData.forEach(r => { const [pId, pTitle, pLink, pImg] = r; const admin = myRole!=='Member' ? `<div class="card-actions"><button class="btn-action edit" onclick="event.preventDefault(); openEditPortal('${pId}')">✏️</button><button class="btn-action delete" onclick="event.preventDefault(); confirmDeletePortal('${pId}')">✖</button></div>` : ''; area.innerHTML += `<a href="${pLink}" target="_blank" class="portal-card">${admin}<div class="portal-img-container"><img src="${pImg}" class="portal-img"></div><div class="portal-info"><div class="portal-title">${pTitle}</div><div class="portal-link-text">เข้าสู่เว็บไซต์ ↗</div></div></a>`; }); }
-  
-  function renderBackendGrid() { const area = document.getElementById('backendGridArea'); area.innerHTML = ''; if(allBackendsData.length===0){area.innerHTML=`<div class="text-center py-5 w-100 text-muted">ไม่มีเว็บ</div>`; return;} allBackendsData.forEach(r => { const [pId, pTitle, pLink, pImg] = r; const admin = myRole!=='Member' ? `<div class="card-actions"><button class="btn-action edit" onclick="event.preventDefault(); openEditBackend('${pId}')">✏️</button><button class="btn-action delete" onclick="event.preventDefault(); confirmDeleteBackend('${pId}')">✖</button></div>` : ''; area.innerHTML += `<a href="${pLink}" target="_blank" class="portal-card backend-mode">${admin}<div class="portal-img-container"><img src="${pImg}" class="portal-img"></div><div class="portal-info"><div class="portal-title">${pTitle}</div><div class="portal-link-text">เข้าระบบ ↗</div></div></a>`; }); }
-  
-  function openEditPortal(id) { const p = allPortalsData.find(r=>r[0].toString()===id.toString()); if(!p) return; document.getElementById('editPortalId').value = id; document.getElementById('portalTitle').value = p[1]; document.getElementById('portalLink').value = p[2]; if(p[3]) processPortalImage(p[3]); else clearPortalImage(); document.getElementById('portalModalTitle').innerText='✏️ แก้ไขเว็บหน้าบ้าน'; bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).show(); }
-  
-  function openEditBackend(id) { const p = allBackendsData.find(r=>r[0].toString()===id.toString()); if(!p) return; document.getElementById('editBackendId').value = id; document.getElementById('backendTitle').value = p[1]; document.getElementById('backendLink').value = p[2]; if(p[3]) processBackendImage(p[3]); else clearBackendImage(); document.getElementById('backendModalTitle').innerText='✏️ แก้ไขเว็บหลังบ้าน'; bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).show(); }
-  
-  async function confirmDeletePortal(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('portals').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
-  
-  async function confirmDeleteBackend(id) { Swal.fire({title:'ลบเว็บไซต์?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); await supabaseClient.from('backends').delete().eq('id', id); await loadSupabaseWebsites(); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); } }); }
+// 🚀 8. จัดการเว็บไซต์ (Portals/Backends)
+// ==========================================
+
+// 📌 1. โหลดข้อมูลเว็บไซต์ทั้งหมด
+async function loadSupabaseWebsites() { 
+    try { 
+        // โหลดหน้าบ้าน (Portals)
+        const { data: pData } = await supabaseClient.from('portals').select('*').order('id', { ascending: false }); 
+        allPortalsData = (pData || []).map(r => [r.id, r.title, r.linkUrl, r.imageUrl]); 
+        renderPortalGrid(); 
+        
+        // โหลดหลังบ้าน (Backends)
+        const { data: bData } = await supabaseClient.from('backends').select('*').order('id', { ascending: false }); 
+        allBackendsData = (bData || []).map(r => [r.id, r.title, r.linkUrl, r.imageUrl]); 
+        renderBackendGrid(); 
+    } catch (err) { 
+        console.error('Supabase error:', err); 
+    } 
+}
+
+// 📌 2. ระบบอัปโหลดรูปภาพ (เพิ่มระบบเช็ค PNG เพื่อแก้ปัญหารูปตัวหนังสือแตกแล้ว)
+async function uploadToSupabase(base64Data, prefix) { 
+    if (!base64Data.startsWith('data:image')) return base64Data; 
+    
+    const res = await fetch(base64Data); 
+    const blob = await res.blob(); 
+    
+    // ตรวจสอบนามสกุลไฟล์ให้ถูกต้อง
+    const extension = blob.type === 'image/png' ? '.png' : '.jpg';
+    const fileName = `${prefix}_${new Date().getTime()}${extension}`; 
+    
+    const { error } = await supabaseClient.storage.from('images').upload(fileName, blob, { upsert: true }); 
+    if (error) throw error; 
+    
+    const { data: urlData } = supabaseClient.storage.from('images').getPublicUrl(fileName); 
+    return urlData.publicUrl; 
+}
+
+// 📌 3. สลับแท็บ หน้าบ้าน / หลังบ้าน
+function switchWebZone(zone, btn) { 
+    document.getElementById('tabFrontEnd').classList.remove('active'); 
+    document.getElementById('tabBackEnd').classList.remove('active'); 
+    
+    btn.classList.add('active'); 
+    btn.style.borderColor = "#fff"; 
+    btn.style.color = "#fff"; 
+    
+    if(zone === 'frontend') {
+        document.getElementById('tabBackEnd').style.borderColor = "#444"; 
+        document.getElementById('tabBackEnd').style.color = "#ccc";
+    } else {
+        document.getElementById('tabFrontEnd').style.borderColor = "#444"; 
+        document.getElementById('tabFrontEnd').style.color = "#ccc";
+    } 
+    
+    document.getElementById('portalGridArea').style.display = (zone === 'frontend') ? 'grid' : 'none'; 
+    document.getElementById('backendGridArea').style.display = (zone === 'backend') ? 'grid' : 'none'; 
+    document.getElementById('addPortalBtn').style.display = (zone === 'frontend') ? 'block' : 'none'; 
+    document.getElementById('addBackendBtn').style.display = (zone === 'backend') ? 'block' : 'none'; 
+}
+
+// 📌 4. ระบบจัดการรูปภาพพรีวิว (หน้าบ้าน)
+function processPortalImage(b64) { 
+    document.getElementById('portalImagePreview').src = b64; 
+    document.getElementById('portalImagePreview').style.display = 'block'; 
+    document.getElementById('portalMediaBase64').value = b64; 
+    document.getElementById('portalPasteText').style.display = 'none'; 
+    document.getElementById('btnPortalClearImage').style.display = 'block'; 
+}
+
+function clearPortalImage() { 
+    document.getElementById('portalImagePreview').src = ''; 
+    document.getElementById('portalImagePreview').style.display = 'none'; 
+    document.getElementById('portalMediaBase64').value = ''; 
+    document.getElementById('portalPasteText').style.display = 'block'; 
+    document.getElementById('btnPortalClearImage').style.display = 'none'; 
+    document.getElementById('portalMediaFile').value = ''; 
+}
+
+// 📌 5. ระบบจัดการรูปภาพพรีวิว (หลังบ้าน)
+function processBackendImage(b64) { 
+    document.getElementById('backendImagePreview').src = b64; 
+    document.getElementById('backendImagePreview').style.display = 'block'; 
+    document.getElementById('backendMediaBase64').value = b64; 
+    document.getElementById('backendPasteText').style.display = 'none'; 
+    document.getElementById('btnBackendClearImage').style.display = 'block'; 
+}
+
+function clearBackendImage() { 
+    document.getElementById('backendImagePreview').src = ''; 
+    document.getElementById('backendImagePreview').style.display = 'none'; 
+    document.getElementById('backendMediaBase64').value = ''; 
+    document.getElementById('backendPasteText').style.display = 'block'; 
+    document.getElementById('btnBackendClearImage').style.display = 'none'; 
+    document.getElementById('backendMediaFile').value = ''; 
+}
+
+// 📌 6. เปิด Modal เพิ่ม/แก้ไข ข้อมูล
+function openPortalModal() { 
+    document.getElementById('addPortalForm').reset(); 
+    document.getElementById('editPortalId').value = ''; 
+    clearPortalImage(); 
+    document.getElementById('portalModalTitle').innerText = '🌐 เพิ่มเว็บไซต์หน้าบ้าน'; 
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).show(); 
+}
+
+function openBackendModal() { 
+    document.getElementById('addBackendForm').reset(); 
+    document.getElementById('editBackendId').value = ''; 
+    clearBackendImage(); 
+    document.getElementById('backendModalTitle').innerText = '⚙️ เพิ่มเว็บไซต์หลังบ้าน'; 
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).show(); 
+}
+
+function openEditPortal(id) { 
+    const p = allPortalsData.find(r => r[0].toString() === id.toString()); 
+    if(!p) return; 
+    document.getElementById('editPortalId').value = id; 
+    document.getElementById('portalTitle').value = p[1]; 
+    document.getElementById('portalLink').value = p[2]; 
+    
+    if(p[3]) processPortalImage(p[3]); 
+    else clearPortalImage(); 
+    
+    document.getElementById('portalModalTitle').innerText = '✏️ แก้ไขเว็บหน้าบ้าน'; 
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).show(); 
+}
+
+function openEditBackend(id) { 
+    const p = allBackendsData.find(r => r[0].toString() === id.toString()); 
+    if(!p) return; 
+    document.getElementById('editBackendId').value = id; 
+    document.getElementById('backendTitle').value = p[1]; 
+    document.getElementById('backendLink').value = p[2]; 
+    
+    if(p[3]) processBackendImage(p[3]); 
+    else clearBackendImage(); 
+    
+    document.getElementById('backendModalTitle').innerText = '✏️ แก้ไขเว็บหลังบ้าน'; 
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).show(); 
+}
+
+// 📌 7. บันทึกข้อมูลเว็บหน้าบ้าน
+async function handlePortalSubmit(e) { 
+    e.preventDefault(); 
+    const btn = document.getElementById('btnSavePortal'); 
+    btn.disabled = true; 
+    btn.innerText = '⏳ อัปโหลดรูป...'; 
+    
+    try { 
+        const title = document.getElementById('portalTitle').value; 
+        const linkUrl = document.getElementById('portalLink').value; 
+        let imageUrl = document.getElementById('portalMediaBase64').value; 
+        const id = document.getElementById('editPortalId').value; 
+        
+        if(!imageUrl){ 
+            Swal.fire({toast:true, position:'top', title:'ใส่รูปด้วยครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); 
+            btn.disabled = false; 
+            btn.innerText = '💾 บันทึกและเผยแพร่'; 
+            return; 
+        } 
+        
+        imageUrl = await uploadToSupabase(imageUrl, 'portal'); 
+        
+        if(id) {
+            await supabaseClient.from('portals').update({ title, linkUrl, imageUrl }).eq('id', id); 
+        } else {
+            await supabaseClient.from('portals').insert([{ title, linkUrl, imageUrl }]); 
+        }
+        
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('portalModal')).hide(); 
+        Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+        await loadSupabaseWebsites(); 
+    } catch (err) { 
+        Swal.fire('Error', err.message, 'error'); 
+    } finally { 
+        btn.disabled = false; 
+        btn.innerText = '💾 บันทึกและเผยแพร่'; 
+    } 
+}
+
+// 📌 8. บันทึกข้อมูลเว็บหลังบ้าน
+async function handleBackendSubmit(e) { 
+    e.preventDefault(); 
+    const btn = document.getElementById('btnSaveBackend'); 
+    btn.disabled = true; 
+    btn.innerText = '⏳ อัปโหลดรูป...'; 
+    
+    try { 
+        const title = document.getElementById('backendTitle').value; 
+        const linkUrl = document.getElementById('backendLink').value; 
+        let imageUrl = document.getElementById('backendMediaBase64').value; 
+        const id = document.getElementById('editBackendId').value; 
+        
+        if(!imageUrl){ 
+            Swal.fire({toast:true, position:'top', title:'ใส่รูปด้วยครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false}); 
+            btn.disabled = false; 
+            btn.innerText = '💾 บันทึกและเผยแพร่'; 
+            return; 
+        } 
+        
+        imageUrl = await uploadToSupabase(imageUrl, 'backend'); 
+        
+        if(id) {
+            await supabaseClient.from('backends').update({ title, linkUrl, imageUrl }).eq('id', id); 
+        } else {
+            await supabaseClient.from('backends').insert([{ title, linkUrl, imageUrl }]); 
+        }
+        
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).hide(); 
+        Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+        await loadSupabaseWebsites(); 
+    } catch (err) { 
+        Swal.fire('Error', err.message, 'error'); 
+    } finally { 
+        btn.disabled = false; 
+        btn.innerText = '💾 บันทึกและเผยแพร่'; 
+    } 
+}
+
+// 📌 9. Render แสดงผลตารางเว็บไซต์
+function renderPortalGrid() { 
+    const area = document.getElementById('portalGridArea'); 
+    area.innerHTML = ''; 
+    
+    if(allPortalsData.length === 0) {
+        area.innerHTML = `<div class="text-center py-5 w-100 text-muted">ไม่มีเว็บ</div>`; 
+        return;
+    } 
+    
+    allPortalsData.forEach(r => { 
+        const [pId, pTitle, pLink, pImg] = r; 
+        const admin = myRole !== 'Member' ? `
+            <div class="card-actions">
+                <button class="btn-action edit" onclick="event.preventDefault(); openEditPortal('${pId}')">✏️</button>
+                <button class="btn-action delete" onclick="event.preventDefault(); confirmDeletePortal('${pId}')">✖</button>
+            </div>` : ''; 
+            
+        area.innerHTML += `
+            <a href="${pLink}" target="_blank" class="portal-card">
+                ${admin}
+                <div class="portal-img-container">
+                    <img src="${pImg}" class="portal-img">
+                </div>
+                <div class="portal-info">
+                    <div class="portal-title">${pTitle}</div>
+                    <div class="portal-link-text">เข้าสู่เว็บไซต์ ↗</div>
+                </div>
+            </a>`; 
+    }); 
+}
+
+function renderBackendGrid() { 
+    const area = document.getElementById('backendGridArea'); 
+    area.innerHTML = ''; 
+    
+    if(allBackendsData.length === 0) {
+        area.innerHTML = `<div class="text-center py-5 w-100 text-muted">ไม่มีเว็บ</div>`; 
+        return;
+    } 
+    
+    allBackendsData.forEach(r => { 
+        const [pId, pTitle, pLink, pImg] = r; 
+        const admin = myRole !== 'Member' ? `
+            <div class="card-actions">
+                <button class="btn-action edit" onclick="event.preventDefault(); openEditBackend('${pId}')">✏️</button>
+                <button class="btn-action delete" onclick="event.preventDefault(); confirmDeleteBackend('${pId}')">✖</button>
+            </div>` : ''; 
+            
+        area.innerHTML += `
+            <a href="${pLink}" target="_blank" class="portal-card backend-mode">
+                ${admin}
+                <div class="portal-img-container">
+                    <img src="${pImg}" class="portal-img">
+                </div>
+                <div class="portal-info">
+                    <div class="portal-title">${pTitle}</div>
+                    <div class="portal-link-text">เข้าระบบ ↗</div>
+                </div>
+            </a>`; 
+    }); 
+}
+
+// 📌 10. ระบบลบเว็บไซต์
+async function confirmDeletePortal(id) { 
+    Swal.fire({
+        title: 'ลบเว็บไซต์?', 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#ff3366', 
+        background: '#111', 
+        color: '#fff'
+    }).then(async r => { 
+        if(r.isConfirmed) { 
+            Swal.fire({title: 'กำลังลบ...', didOpen: () => Swal.showLoading()}); 
+            await supabaseClient.from('portals').delete().eq('id', id); 
+            await loadSupabaseWebsites(); 
+            Swal.fire({toast: true, position: 'top-end', title: 'ลบสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'}); 
+        } 
+    }); 
+}
+
+async function confirmDeleteBackend(id) { 
+    Swal.fire({
+        title: 'ลบเว็บไซต์?', 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#ff3366', 
+        background: '#111', 
+        color: '#fff'
+    }).then(async r => { 
+        if(r.isConfirmed) { 
+            Swal.fire({title: 'กำลังลบ...', didOpen: () => Swal.showLoading()}); 
+            await supabaseClient.from('backends').delete().eq('id', id); 
+            await loadSupabaseWebsites(); 
+            Swal.fire({toast: true, position: 'top-end', title: 'ลบสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'}); 
+        } 
+    }); 
+}
 
   // ==========================================
   // 🚀 10. ระบบ Discord (แยกแท็บสมบูรณ์แบบ + โหมดคนนอก)
