@@ -253,8 +253,10 @@
 
   <div class="top-nav">
     <div>
+      <div class="d-flex align-items-center">
       <span class="text-muted small">ยินดีต้อนรับ:</span> 
       <b id="userDisplay" class="ms-1 fs-5 text-white"></b> 
+      <button class="btn btn-sm ms-2" style="background: transparent; border: 1px solid #00f0ff; color: #00f0ff; border-radius: 50px; padding: 2px 10px; font-size: 0.8rem; box-shadow: 0 0 5px rgba(0,240,255,0.3);" onclick="openMyProfileModal()" title="แก้ไขข้อมูลส่วนตัว">👤 ✏️</button>
       <span class="mx-2 text-secondary">|</span>
       <span id="roleLabel"></span>
     </div>
@@ -1218,6 +1220,37 @@
     </div>
   </div>
 </div>
+  
+<div class="modal fade" id="myProfileModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: 1px solid #00f0ff; box-shadow: 0 0 20px rgba(0,240,255,0.2);">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-4 text-center text-info">👤 จัดการข้อมูลส่วนตัว</h4>
+        <form id="myProfileForm" onsubmit="saveMyProfile(event)">
+          <div class="mb-3">
+            <label class="small text-muted mb-1">Telegram (ช่องทางติดต่อ)</label>
+            <input type="text" id="myProfileTelegram" class="form-control bg-dark text-white" placeholder="@username" style="border-color: #444;">
+          </div>
+          <hr class="border-secondary my-4">
+          <h6 class="text-warning mb-3">🔑 เปลี่ยนรหัสผ่าน (หากไม่เปลี่ยน ให้เว้นว่างไว้)</h6>
+          <div class="mb-3">
+            <label class="small text-muted mb-1">รหัสผ่านเก่า <span class="text-danger">*</span> (เพื่อยืนยันตัวตน)</label>
+            <input type="password" id="myProfileOldPass" class="form-control bg-dark text-white" placeholder="รหัสผ่านปัจจุบัน" style="border-color: #444;">
+          </div>
+          <div class="mb-3">
+            <label class="small text-muted mb-1">รหัสผ่านใหม่</label>
+            <input type="password" id="myProfileNewPass" class="form-control bg-dark text-white" placeholder="ตั้งรหัสผ่านใหม่" style="border-color: #444;">
+          </div>
+          <div class="mb-4">
+            <label class="small text-muted mb-1">ยืนยันรหัสผ่านใหม่</label>
+            <input type="password" id="myProfileConfirmPass" class="form-control bg-dark text-white" placeholder="พิมพ์รหัสผ่านใหม่อีกครั้ง" style="border-color: #444;">
+          </div>
+          <button type="submit" id="btnSaveMyProfile" class="btn btn-neon-blue w-100 py-2">💾 บันทึกข้อมูล</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 <script>
@@ -1732,6 +1765,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       initChatAndNoti();
   }
 
+  // ==========================================
+  // 🛠️ คืนชีพฟังก์ชันหลักที่หายไป (ห้ามลบ)
+  // ==========================================
   function handleLogout() { 
       localStorage.clear(); 
       document.getElementById('mainDashboard').style.display = 'none'; 
@@ -1744,84 +1780,89 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
 
   function switchMainTab(sectionId) { 
       try {
-          if (unsavedChanges && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); return; } 
-          document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); const target = document.getElementById(sectionId); if (target) target.classList.add('active'); 
-          const nav = document.getElementById('topNavBar'); if (nav) nav.style.display = (sectionId === 'hubSection') ? 'none' : 'flex'; 
+          if (typeof unsavedChanges !== 'undefined' && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { 
+              Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); 
+              return; 
+          } 
+          document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); 
+          const target = document.getElementById(sectionId); 
+          if (target) target.classList.add('active'); 
+          const nav = document.getElementById('topNavBar'); 
+          if (nav) nav.style.display = (sectionId === 'hubSection') ? 'none' : 'flex'; 
           localStorage.setItem('okvip_current_tab', sectionId);
       } catch(e) { console.error(e); }
   }
   
   function goToHub() { switchMainTab('hubSection'); }
 
-  function getRoleWeight(roleStr) { if (!roleStr) return 3; const r = roleStr.toString().trim(); if (r === 'SuperAdmin') return 1; if (r === 'Admin') return 2; return 3; }
-  
-  function filterStaffDept(dept, btn) { currentDeptFilter = dept; currentPage = 1; document.querySelectorAll('#staffSection .dept-badge').forEach(b => { b.classList.remove('active'); b.style.borderColor = "#444"; b.style.boxShadow = "none"; b.style.color = "#ccc"; }); btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.5)"; btn.style.color = "#fff"; loadUsers(); }
-  
-  function handleSearch(term) { currentSearchTerm = term.toLowerCase().trim(); currentPage = 1; loadUsers(); }
-  
-  function changePage(page) { currentPage = page; loadUsers(); }
-
-  function loadUsers() {
-      const tbody = document.getElementById('userTable'); const paginationArea = document.getElementById('paginationArea'); tbody.innerHTML = ''; paginationArea.innerHTML = '';
-      let filteredData = allUsersData.filter(row => {
-          if (!row || !row[1]) return false; 
-          const dept = row[3] ? row[3].toString() : ''; const nick = row[1] ? row[1].toString().toLowerCase() : ''; const user = row[4] ? row[4].toString().toLowerCase() : '';
-          if(currentDeptFilter !== 'ALL' && dept !== currentDeptFilter) return false;
-          if(currentSearchTerm && !nick.includes(currentSearchTerm) && !user.includes(currentSearchTerm)) return false;
-          return true;
-      });
-      if (filteredData.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่พบรายชื่อที่ค้นหา</td></tr>`; return; }
-      filteredData.sort((a, b) => getRoleWeight(a[6]) - getRoleWeight(b[6]));
-      const totalPages = Math.ceil(filteredData.length / itemsPerPage); if (currentPage > totalPages) currentPage = totalPages;
-      const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-      paginatedData.forEach(row => {
-          const origIdx = allUsersData.findIndex(r => r[0] === row[0] && r[1] === row[1]); const sClass = row[7] === 'Active' ? 'status-active' : 'status-blocked'; const tgData = row[8] ? row[8] : ''; const tgDisp = tgData ? `<span class="text-info fw-bold">${tgData}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`; const setBadge = row[9] ? `<span class="badge border border-info text-info">${row[9]}</span>` : '-';
-          let toolsTd = ''; 
-          if (row[4] === currentUsername) { toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-secondary border border-secondary px-3 py-2">บัญชีของฉัน</span><button class="tool-btn telegram" onclick="changeTelegram(${origIdx}, '${tgData}', '${row[1]}')">💬</button><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button></div></td>`; } 
-          else if (myRole === 'SuperAdmin' || myRole === 'Admin') {
-              if (getRoleWeight(myRole) < getRoleWeight(row[6])) toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button><button class="tool-btn settings" onclick="changeStatus(${origIdx},'${row[7]}')">⚙️</button><button class="tool-btn delete" onclick="confirmDeleteUser(${origIdx}, '${row[1]}')">🗑️</button></div></td>`;
-              else toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-danger border border-danger opacity-75 px-3 py-2">🔒 ไม่มีสิทธิ์</span></div></td>`;
-          } else { toolsTd = `<td></td>`; }
-          tbody.innerHTML += `<tr><td class="fw-bold">${row[1]}</td><td>${setBadge}</td><td>${row[3]}</td><td>${row[4]}</td><td class="role-${row[6]}">${row[6]}</td><td><span class="${sClass}">${row[7]}</span></td><td>${tgDisp}</td>${toolsTd}</tr>`;
-      });
-      if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) pageHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`; pageHtml += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; paginationArea.innerHTML = pageHtml; }
+  function renderStampPalette() { 
+      let html = ''; 
+      if (typeof stampConfig === 'undefined') return;
+      for (const [code, style] of Object.entries(stampConfig)) { 
+          let isDisabled = ""; let opacityStyle = ""; 
+          if (typeof myRole !== 'undefined' && myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
+              isDisabled = "disabled"; opacityStyle = "opacity: 0.5; cursor: not-allowed;"; 
+          } 
+          html += `<button class="stamp-btn" style="color:${style.text}; border-color:${style.text}; ${opacityStyle}" onclick="selectStamp('${code}', this)" ${isDisabled}>${style.label}</button>`; 
+      } 
+      const pal = document.getElementById('stampPalette');
+      if (pal) pal.innerHTML = html; 
   }
 
-  function changeTelegram(idx, currentTelegram, name) { Swal.fire({ title: `อัปเดตช่องทางติดต่อ`, html: `<div class="small text-muted mb-3 text-start">ตั้งค่า Telegram ให้กับ: <b class="text-white">${name}</b></div>`, input: 'text', inputPlaceholder: '@username', inputValue: currentTelegram, showCancelButton: true, confirmButtonText: 'บันทึก', confirmButtonColor: '#0088cc', background: '#111', color: '#fff', inputValidator: (value) => { if (!value) return 'กรุณาระบุ Telegram!'; } }).then(async (result) => { if (result.isConfirmed) { let tg = result.value.trim(); if (!tg.startsWith('@')) tg = '@' + tg; const userId = allUsersData[idx][0]; await supabaseClient.from('users').update({ telegram: tg }).eq('id', userId); Swal.fire({toast:true, position:'top-end', title:'อัปเดตสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); refreshData(document.getElementById('refreshBtn')); } }); }
-  function changeStatus(idx, current) { const optionsHtml = `<div class="text-start mb-2" style="font-size:0.9rem; color:#aaa;">เลือกสถานะใหม่:</div><select id="swal-status-select" class="swal2-select mx-0"><option value="Active" ${current === 'Active' ? 'selected' : ''}>🟢 Active</option><option value="Blocked" ${current === 'Blocked' ? 'selected' : ''}>🔴 Blocked</option></select>`; Swal.fire({ html: optionsHtml, showCancelButton: true, confirmButtonText: 'บันทึก', background:'#111', color:'#fff', preConfirm: () => { return document.getElementById('swal-status-select').value; } }).then(async r => { if(r.isConfirmed) { const userId = allUsersData[idx][0]; await supabaseClient.from('users').update({ status: r.value }).eq('id', userId); refreshData(document.getElementById('refreshBtn')); } }); }
-  function confirmDeleteUser(idx, name) { Swal.fire({ title: `ลบ "${name}" ?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff' }).then(async (r) => { if (r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); const userId = allUsersData[idx][0]; await supabaseClient.from('users').delete().eq('id', userId); refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); } }); }
-
-  function updateRoleDropdown(currentRoleValue = '') {
-      const roleSelect = document.getElementById('uRole'); roleSelect.innerHTML = '';
-      roleSelect.innerHTML += '<option value="Member">Member</option>'; roleSelect.innerHTML += '<option value="Admin">Admin</option>';
-      if (myRole === 'SuperAdmin') { roleSelect.innerHTML += '<option value="SuperAdmin">SuperAdmin</option>'; }
-      if (currentRoleValue) { if(roleSelect.querySelector(`option[value="${currentRoleValue}"]`)) { roleSelect.value = currentRoleValue; } else { roleSelect.value = 'Admin'; } } else { roleSelect.value = 'Member'; }
+  // ==========================================
+  // 👤 ระบบแก้ไขข้อมูลส่วนตัว (รหัสผ่าน / Telegram)
+  // ==========================================
+  function openMyProfileModal() {
+      document.getElementById('myProfileForm').reset();
+      const myNick = localStorage.getItem('okvip_nick');
+      const me = allUsersData.find(u => u[1] === myNick);
+      if (me) {
+          document.getElementById('myProfileTelegram').value = me[8] || ''; // ดึง Telegram เดิมมาโชว์
+      }
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('myProfileModal')).show();
   }
 
-  function openRegModal() { document.getElementById('adminRegForm').reset(); document.getElementById('editUserIdx').value = ''; document.getElementById('regModalTitle').innerText = '➕ เพิ่มรายชื่อสมาชิก'; document.getElementById('uPass').required = true; document.getElementById('otherWork').style.display = 'none'; document.getElementById('uSet').value = ""; updateRoleDropdown(''); bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).show(); }
+  async function saveMyProfile(e) {
+      e.preventDefault();
+      const tg = document.getElementById('myProfileTelegram').value.trim();
+      const oldPass = document.getElementById('myProfileOldPass').value;
+      const newPass = document.getElementById('myProfileNewPass').value;
+      const confirmPass = document.getElementById('myProfileConfirmPass').value;
+      const myUser = localStorage.getItem('okvip_user'); 
 
-  function openEditUserModal(idx) { 
-      const user = allUsersData[idx]; document.getElementById('adminRegForm').reset(); document.getElementById('editUserIdx').value = idx; document.getElementById('regModalTitle').innerText = '📝 แก้ไขข้อมูลสมาชิก'; document.getElementById('nick').value = user[1]; 
-      const workSel = document.getElementById('work'); const otherW = document.getElementById('otherWork'); 
-      if (Array.from(workSel.options).some(opt => opt.value === user[2])) { workSel.value = user[2]; otherW.style.display = 'none'; } else { workSel.value = 'OTHER'; otherW.value = user[2]; otherW.style.display = 'block'; } 
-      const deptSel = document.getElementById('dept'); let deptFound = false; const safeDept = user[3] ? user[3].toString() : ''; 
-      Array.from(deptSel.options).forEach(opt => { if (opt.value.includes(safeDept) || safeDept.includes(opt.value)) { deptSel.value = opt.value; deptFound = true; } }); 
-      if (!deptFound) deptSel.value = "อื่นๆ (OTHER)"; 
-      document.getElementById('uName').value = user[4]; document.getElementById('uPass').value = ''; document.getElementById('uPass').required = false; 
-      updateRoleDropdown(user[6]); document.getElementById('uSet').value = user[9] || ""; 
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).show(); 
-  }
+      const btn = document.getElementById('btnSaveMyProfile');
+      btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
 
-  async function handleRegSubmit(e) {
-      e.preventDefault(); const btn = document.getElementById('btnSubmitReg'); btn.innerText = '⏳ กำลังบันทึก...'; const idx = document.getElementById('editUserIdx').value;
-      const payload = { nickname: document.getElementById('nick').value, workGroup: document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value, department: document.getElementById('dept').value, username: document.getElementById('uName').value, role: document.getElementById('uRole').value, shiftSet: document.getElementById('uSet').value };
-      const passVal = document.getElementById('uPass').value; if(passVal) payload.password = passVal;
       try {
-          if (idx !== "") { const userId = allUsersData[idx][0]; const { data: dupCheck } = await supabaseClient.from('users').select('id').eq('username', payload.username).neq('id', userId); if (dupCheck && dupCheck.length > 0) { Swal.fire('Error', 'ยูสเซอร์เนมนี้มีคนใช้แล้ว', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } await supabaseClient.from('users').update(payload).eq('id', userId); } 
-          else { if(!payload.password) { Swal.fire('Error', 'กรุณาตั้งรหัสผ่าน', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } payload.status = 'Active'; const { data: dupCheck } = await supabaseClient.from('users').select('id, nickname, username').or(`nickname.eq.${payload.nickname},username.eq.${payload.username}`); if (dupCheck && dupCheck.length > 0) { Swal.fire('Error', 'ชื่อเล่น หรือ ยูสเซอร์เนม นี้มีในระบบแล้ว', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } await supabaseClient.from('users').insert([payload]); }
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); btn.innerText = 'บันทึกข้อมูล'; refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'บันทึกพนักงานสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
-      } catch (err) { Swal.fire('Error', err.message, 'error'); btn.innerText = 'บันทึกข้อมูล'; }
+          // ตรวจสอบรหัสผ่านเก่าเพื่อความปลอดภัย
+          const { data: userData, error: fetchErr } = await supabaseClient.from('users').select('id, password').eq('username', myUser).single();
+          if (fetchErr || !userData) throw new Error('ดึงข้อมูลผู้ใช้ไม่สำเร็จ');
+
+          let updatePayload = {};
+          let finalTg = tg;
+          if (finalTg && !finalTg.startsWith('@')) finalTg = '@' + finalTg;
+          updatePayload.telegram = finalTg;
+
+          // เช็คเงื่อนไขถ้ามีการกรอกรหัสผ่านเพื่อจะเปลี่ยน
+          if (oldPass || newPass || confirmPass) {
+              if (!oldPass) throw new Error('กรุณากรอก "รหัสผ่านเก่า" เพื่อยืนยันตัวตน');
+              if (userData.password !== oldPass) throw new Error('รหัสผ่านเก่าไม่ถูกต้อง!');
+              if (!newPass) throw new Error('กรุณากรอกรหัสผ่านใหม่');
+              if (newPass !== confirmPass) throw new Error('รหัสผ่านใหม่และการยืนยันไม่ตรงกัน');
+              updatePayload.password = newPass;
+          }
+
+          const { error: updateErr } = await supabaseClient.from('users').update(updatePayload).eq('id', userData.id);
+          if (updateErr) throw updateErr;
+
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('myProfileModal')).hide();
+          Swal.fire({toast: true, position: 'top-end', title: 'อัปเดตข้อมูลส่วนตัวสำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'});
+          refreshData(document.getElementById('refreshBtn')); 
+      } catch (err) {
+          Swal.fire('Error', err.message, 'error');
+      } finally {
+          btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูล';
+      }
   }
 
   async function loadSupabasePenalties() {
