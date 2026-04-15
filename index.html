@@ -1928,6 +1928,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     if (!hasData) tb.innerHTML = `<tr><td colspan="${colSpanNum}" class="text-center text-muted py-4">ไม่มีข้อมูล หรือคุณไม่มีสิทธิ์ดูประวัติของผู้อื่น</td></tr>`;
   }
 
+  // 🌟 1. ฟังก์ชันเปลี่ยนเดือน (ลูกศร ซ้าย-ขวา)
   function changeMonth(offset) { 
       if(Object.keys(unsavedChanges).length > 0){ 
           Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณาบันทึกตารางปัจจุบันก่อนเปลี่ยนเดือน', icon:'warning', background:'#111', color:'#fff'}); 
@@ -1935,23 +1936,131 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       } 
       const p = document.getElementById('monthPicker'); 
       if(!p.value) return; 
-      
       let [y, m] = p.value.split('-').map(Number); 
       m += offset; 
-      
-      if (m > 12) { m = 1; y++; } 
-      else if (m < 1) { m = 12; y--; } 
-      
+      if (m > 12) { m = 1; y++; } else if (m < 1) { m = 12; y--; } 
       p.value = `${y}-${String(m).padStart(2, '0')}`; 
       loadScheduleTable(); 
       if (typeof checkLeaveAlerts === 'function') checkLeaveAlerts(); 
   }
-  
-  function switchScheduleTab(mode) {
-      if(Object.keys(unsavedChanges).length > 0 && mode === 'SANDBOX'){ 
-          Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณากดบันทึกก่อนสลับโหมด', icon:'warning', background:'#111', color:'#fff'}); 
+
+  // 🌟 2. ฟังก์ชันเซฟตารางรวม
+  function handleUnifiedSave() {
+      if (currentScheduleMode === 'SANDBOX') { saveSandboxScheduleSilent(); document.getElementById('btnSaveSandbox').style.display = 'none'; } 
+      else { saveAllScheduleChanges(); }
+  }
+
+  async function saveAllScheduleChanges() {
+      if (Object.keys(unsavedChanges).length === 0) { 
+          Swal.fire({toast:true, position:'top', title:'ไม่มีอะไรเปลี่ยนแปลง', icon:'info', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); 
           return; 
       }
+      const btn = document.getElementById('btnSaveSchedule'); 
+      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
+      try {
+          const ym = document.getElementById('monthPicker').value;
+          const { data: existingSchedules, error: fetchErr } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
+          if (fetchErr) throw fetchErr;
+          const existingMap = {}; 
+          if (existingSchedules) { existingSchedules.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); }
+          for (const nick in unsavedChanges) { 
+              const changes = unsavedChanges[nick]; const dept = changes['dept'] || ''; delete changes['dept']; 
+              let currentDays = {}; let rowId = null; 
+              if (existingMap[nick]) { currentDays = existingMap[nick].days; rowId = existingMap[nick].id; } 
+              let notiMessages = [];
+              for (const d in changes) { 
+                  let stampVal = changes[d];
+                  if (stampVal === '') { delete currentDays[d]; notiMessages.push(`วันที่ ${d} -> 🗑️ ลบออก`); } 
+                  else { 
+                      currentDays[d] = stampVal; 
+                      let stampLabel = stampConfig[stampVal] ? stampConfig[stampVal].label : stampVal;
+                      notiMessages.push(`วันที่ ${d} -> ${stampLabel}`);
+                  }
+              } 
+              if (rowId) { await supabaseClient.from('schedules').update({ daysData: JSON.stringify(currentDays) }).eq('id', rowId); } 
+              else { await supabaseClient.from('schedules').insert([{ nickname: nick, department: dept, yearMonth: ym, daysData: JSON.stringify(currentDays) }]); } 
+              if (notiMessages.length > 0 && typeof sendSystemNoti === 'function') {
+                  let finalMsg = `เดือน ${ym} มีการปรับแก้:\n${notiMessages.join('\n')}`;
+                  sendSystemNoti(nick, '📅 อัปเดตตารางงาน', finalMsg);
+              }
+          }
+          unsavedChanges = {}; 
+          document.querySelectorAll('.unsaved-mark').forEach(c=>{ c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark'); }); 
+          if(btn) btn.style.display = 'none'; 
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจริงสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+      } catch(err) {
+          console.error("Save Schedule Error: ", err); Swal.fire('Error', 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+      } finally {
+          if(btn) { btn.disabled = false; btn.innerText = '💾 บันทึก'; }
+      }
+  }
+
+  // 🌟 3. ฟังก์ชันเปิดหน้าจัดเซ็ตกะรวดเดียว
+  function openShiftModal() {
+      document.getElementById('shiftStampSelect').value = 'D';
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).show();
+  }
+  
+  async function applyShiftToSet(e) {
+      e.preventDefault();
+      const set = document.getElementById('shiftSetSelect').value;
+      const stamp = document.getElementById('shiftStampSelect').value;
+      const ym = document.getElementById('monthPicker').value;
+      if(!set || !stamp || !ym) return;
+      const btn = document.querySelector('#shiftModal button[type="submit"]');
+      btn.disabled = true; btn.innerText = '⏳ กำลังประมวลผล...';
+      try {
+          let targetNicks = [];
+          allUsersData.forEach(u => { if (u[7] === 'Active' && u[9] && u[9].includes(set)) targetNicks.push({nick: u[1], dept: u[3]}); });
+          if(targetNicks.length === 0) { Swal.fire('Error', 'ไม่พบพนักงานในเซ็ตนี้', 'error'); btn.disabled = false; btn.innerText = '✅ ยืนยันการจัดกะ'; return; }
+          const [year, month] = ym.split('-'); const daysInMonth = new Date(year, month, 0).getDate();
+          const { data: existingSch } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym);
+          const existingMap = {}; if(existingSch) { existingSch.forEach(r => existingMap[r.nickname] = { id: r.id, days: r.daysData ? JSON.parse(r.daysData) : {} }); }
+          let updates = []; let inserts = [];
+          targetNicks.forEach(u => {
+              let dData = {}; let rId = null;
+              if(existingMap[u.nick]) { dData = existingMap[u.nick].days; rId = existingMap[u.nick].id; }
+              let changed = false;
+              for(let d=1; d<=daysInMonth; d++) {
+                  const cur = dData[d] || '';
+                  if(cur === '' || cur === 'D' || cur === 'N' || cur === 'M') { dData[d] = stamp; changed = true; }
+              }
+              if(changed) { if(rId) updates.push({ id: rId, daysData: JSON.stringify(dData) }); else inserts.push({ nickname: u.nick, department: u.dept, yearMonth: ym, daysData: JSON.stringify(dData) }); }
+          });
+          if(inserts.length > 0) await supabaseClient.from('schedules').insert(inserts);
+          for(let up of updates) { await supabaseClient.from('schedules').update({ daysData: up.daysData }).eq('id', up.id); }
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftModal')).hide();
+          Swal.fire({toast:true, position:'top-end', title:`จัดกะให้ ${targetNicks.length} คนสำเร็จ!`, icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
+          loadScheduleTable();
+      } catch(err) { console.error(err); Swal.fire('Error', err.message, 'error'); } 
+      finally { btn.disabled = false; btn.innerText = '✅ ยืนยันการจัดกะ'; }
+  }
+
+  function switchScheduleTab(mode) {
+      if(Object.keys(unsavedChanges).length > 0 && mode === 'SANDBOX'){ 
+          Swal.fire({title:'ยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางจริงก่อนสลับโหมด', icon:'warning', background:'#111', color:'#fff'}); 
+          return; 
+      }
+      currentScheduleMode = mode;
+      document.getElementById('tabBtnRealSchedule').classList.toggle('active', mode === 'REAL');
+      document.getElementById('tabBtnSwapSandbox').classList.toggle('active', mode === 'SANDBOX');
+      
+      if(mode === 'REAL') {
+          document.getElementById('tabBtnRealSchedule').style.borderColor = "#fff"; document.getElementById('tabBtnRealSchedule').style.color = "#fff";
+          document.getElementById('tabBtnSwapSandbox').style.borderColor = "#ff9900"; document.getElementById('tabBtnSwapSandbox').style.color = "#ff9900";
+          document.getElementById('realScheduleActions').style.display = 'flex';
+          document.getElementById('sandboxScheduleActions').style.display = 'none';
+          document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
+      } else {
+          document.getElementById('tabBtnSwapSandbox').style.borderColor = "#fff"; document.getElementById('tabBtnSwapSandbox').style.color = "#fff";
+          document.getElementById('tabBtnRealSchedule').style.borderColor = "#444"; document.getElementById('tabBtnRealSchedule').style.color = "#ccc";
+          document.getElementById('realScheduleActions').style.display = 'none';
+          document.getElementById('sandboxScheduleActions').style.display = 'flex';
+          document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important'); 
+      }
+      loadScheduleTable();
+  }
+  
       currentScheduleMode = mode;
       document.getElementById('tabBtnRealSchedule').classList.toggle('active', mode === 'REAL');
       document.getElementById('tabBtnSwapSandbox').classList.toggle('active', mode === 'SANDBOX');
