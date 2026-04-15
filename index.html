@@ -1578,6 +1578,89 @@
   }
 
   // ==========================================
+  // 📢 ระบบประกาศข่าวสาร (Announcements) - [เอามาวางตรงนี้เลยครับ]
+  // ==========================================
+  async function loadSupabaseAnnouncements() {
+      try {
+          const { data } = await supabaseClient.from('announcements').select('*').order('id', { ascending: false });
+          allAnnouncements = data || []; 
+          renderAnnouncementsTable();
+      } catch(e) {
+          console.error("Announcements Load Error:", e);
+      }
+  }
+
+  function renderAnnouncementsTable() {
+      const tb = document.getElementById('announceTableBody'); 
+      if(!tb) return;
+      tb.innerHTML = '';
+      if(allAnnouncements.length === 0) { tb.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">ยังไม่มีประกาศ</td></tr>`; return; }
+      allAnnouncements.forEach(a => {
+          let statusBadge = (a.is_active === 'true' || a.is_active === true) ? `<span class="badge bg-success border border-success px-3 py-2">✅ กำลังโชว์</span>` : `<span class="badge bg-secondary border border-secondary px-3 py-2">ปิด</span>`;
+          let contentPreview = a.content.substring(0, 50) + (a.content.length > 50 ? '...' : ''); let dateStr = new Date(a.created_at).toLocaleDateString('th-TH');
+          let tools = (myRole !== 'Member') ? `<button class="btn btn-sm btn-outline-info me-1" onclick="editAnnouncement('${a.id}')">✏️</button><button class="btn btn-sm btn-outline-danger" onclick="deleteAnnouncement('${a.id}')">✖</button>` : '-';
+          tb.innerHTML += `<tr><td>${statusBadge}</td><td class="fw-bold text-warning">${a.title}</td><td class="small text-muted">${contentPreview}</td><td class="text-muted small">${dateStr}</td><td class="text-center">${tools}</td></tr>`;
+      });
+  }
+
+  function showLoginAnnouncement() {
+      const activeAnn = allAnnouncements.find(a => a.is_active === true || a.is_active === 'true' || a.is_active === 't');
+      if(activeAnn) { Swal.fire({ title: '📢 ประกาศจากระบบ', html: `<h5 class="text-warning mt-2 mb-3 fw-bold">${activeAnn.title}</h5><div class="text-start" style="white-space: pre-wrap; color: #ddd; font-size: 0.95rem; background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333;">${activeAnn.content}</div>`, icon: 'info', background: '#151518', color: '#fff', confirmButtonText: 'รับทราบ (เข้าสู่ระบบ)', confirmButtonColor: '#ff9900', allowOutsideClick: false }); }
+  }
+
+  function openAnnounceModal() { 
+      document.getElementById('announceForm').reset(); 
+      document.getElementById('editAnnounceId').value = ''; 
+      document.getElementById('announceModalTitle').innerText = '📢 สร้างประกาศใหม่'; 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).show(); 
+  }
+
+  function editAnnouncement(id) {
+      const ann = allAnnouncements.find(a => a.id.toString() === id.toString()); if(!ann) return;
+      document.getElementById('editAnnounceId').value = ann.id; 
+      document.getElementById('annTitle').value = ann.title; 
+      document.getElementById('annContent').value = ann.content; 
+      document.getElementById('annActive').checked = (ann.is_active === true || ann.is_active === 'true');
+      document.getElementById('announceModalTitle').innerText = '✏️ แก้ไขประกาศ'; 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).show(); 
+  }
+
+  async function handleAnnounceSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('editAnnounceId').value;
+      const title = document.getElementById('annTitle').value;
+      const content = document.getElementById('annContent').value;
+      const isActive = document.getElementById('annActive').checked;
+      const btn = document.querySelector('#announceForm button[type="submit"]');
+      btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
+      
+      try {
+          if (id) {
+              await supabaseClient.from('announcements').update({ title, content, is_active: isActive }).eq('id', id);
+          } else {
+              await supabaseClient.from('announcements').insert([{ title, content, is_active: isActive }]);
+          }
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('announceModal')).hide();
+          await loadSupabaseAnnouncements();
+          Swal.fire({toast: true, position: 'top-end', title: 'บันทึกสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
+      } catch (err) {
+          Swal.fire('Error', err.message, 'error');
+      } finally {
+          btn.disabled = false; btn.innerText = '💾 บันทึกประกาศ';
+      }
+  }
+
+  function deleteAnnouncement(id) {
+      Swal.fire({title:'ลบประกาศนี้?', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { 
+          if(r.isConfirmed) { 
+              await supabaseClient.from('announcements').delete().eq('id', id); 
+              await loadSupabaseAnnouncements(); 
+              Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          } 
+      });
+  }
+  
+  // ==========================================
   // 🔐 3. ระบบจัดการผู้ใช้ & ล็อกอิน (Auth & Users)
   // ==========================================
   async function handleLogin() {
