@@ -229,6 +229,33 @@
   .msg-bubble { max-width: 75%; padding: 8px 15px; border-radius: 15px; font-size: 0.9rem; clear: both; word-break: break-word; }
   .msg-me { background: var(--neon-blue); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
   .msg-them { background: #222; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #444; }
+
+  /* ================= PERFORMANCE EVALUATION THEME ================= */
+  .hub-performance { border: 1px solid #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.1); }
+  .hub-performance .hub-title { color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3); }
+  .hub-performance:hover { box-shadow: 0 0 25px rgba(0, 255, 204, 0.4); background: rgba(0, 255, 204, 0.05); }
+
+  .eval-table-container { overflow-x: auto; max-height: 65vh; border: 1px solid #444; }
+  .eval-table { width: 100%; min-width: 900px; border-collapse: collapse; font-size: 0.9rem; background: #fff; color: #000; text-shadow: none; }
+  .eval-table th, .eval-table td { border: 1px solid #000; padding: 6px 10px; vertical-align: middle; }
+  
+  /* สีหัวตารางตามรูปภาพ */
+  .eval-header-main { background-color: #33cccc; font-weight: bold; text-align: center; }
+  .eval-header-sub { background-color: #e0e0e0; font-weight: bold; text-align: center; }
+  .eval-score-0 { background-color: #ff3333; color: white; text-align: center; }
+  .eval-score-60 { background-color: #ffcc00; text-align: center; }
+  .eval-score-70 { background-color: #6699ff; color: white; text-align: center; }
+  .eval-score-80 { background-color: #a3cc99; text-align: center; }
+  .eval-score-90 { background-color: #33cc66; color: white; text-align: center; }
+  .eval-score-grade { background-color: #ff0000; color: white; text-align: center; font-weight: bold; }
+  .eval-section-title { background-color: #66cccc; font-weight: bold; }
+  .eval-summary-row { background-color: #e0e0e0; font-weight: bold; text-align: right; }
+  .eval-summary-total { background-color: #ff9900; text-align: center; font-weight: bold; }
+  .eval-final-total { background-color: #33cc66; text-align: center; font-weight: bold; }
+  .eval-final-percent { background-color: #66cccc; text-align: center; font-weight: bold; }
+
+  .eval-input { width: 100%; border: none; background: transparent; text-align: center; font-weight: bold; outline: none; }
+  .eval-input:focus { background: rgba(0, 240, 255, 0.2); }  
   </style>
 </head>
 <body>
@@ -317,6 +344,9 @@
         <div class="hub-card" style="border: 1px solid #ff00ff; box-shadow: 0 0 10px rgba(255, 0, 255, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(255, 0, 255, 0.4)'; this.style.background='rgba(255, 0, 255, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(255, 0, 255, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('vaultSection'); renderVaultGrid();">
            <div class="hub-icon" style="text-shadow: none;">🔐</div>
            <div class="hub-title" style="color: #ff00ff; text-shadow: 0 0 5px rgba(255, 0, 255, 0.3);">ฐานลับส่วนบุคคล</div>
+        <div class="hub-card hub-performance" onclick="switchMainTab('performanceSection'); initPerformanceTab();">
+           <div class="hub-icon">📈</div>
+           <div class="hub-title">ข้อมูลการทำงาน</div>
         </div>
       </div>
     </div>
@@ -660,7 +690,68 @@
         </table>
       </div>
     </div>
-    
+
+    <div id="performanceSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h4 class="fw-bold mb-0" style="color: #00ffcc; text-shadow: 0 0 10px rgba(0,255,204,0.5);">📈 ข้อมูลการทำงาน (Performance)</h4>
+      </div>
+      
+      <div class="filter-bar mb-4 pb-3" style="border-bottom: 1px solid #333;" id="perfTabContainer">
+        <div id="tabPerfEval" class="dept-badge active" onclick="switchPerfTab('EVAL', this)" style="border-color: #fff; color: #fff;">📊 1. ประเมินการทำงาน</div>
+        <div id="tabPerfBehavior" class="dept-badge" onclick="switchPerfTab('BEHAVIOR', this)">📝 2. รายงานพฤติกรรม</div>
+        <div id="tabPerfAssess" class="dept-badge" onclick="switchPerfTab('ASSESS', this)">🎓 3. ข้อมูลการสอบประเมิน</div>
+      </div>
+
+      <div id="perfEvalWorkspace">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+           <h5 class="text-white">ตารางประเมินพนักงานแผนก OD / ODOL</h5>
+           <div class="d-flex align-items-center gap-2">
+               <span class="text-white small">📅 เลือกเดือน:</span>
+               <input type="month" id="evalMonthPicker" class="form-control bg-dark text-info border-info" onchange="loadPerformanceUsers()">
+           </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>ชื่อพนักงาน</th><th>แผนก</th><th>ระดับสิทธิ์</th><th class="text-center">จัดการประเมิน</th></tr></thead>
+            <tbody id="perfEvalTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="perfBehaviorWorkspace" style="display: none;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+           <h5 class="text-white">รายงานพฤติกรรมพนักงาน</h5>
+           <div class="d-flex align-items-center gap-2">
+               <span class="text-white small">📅 เลือกเดือน:</span>
+               <input type="month" id="behaviorMonthPicker" class="form-control bg-dark text-warning border-warning" onchange="loadBehaviors()">
+               <button class="btn btn-warning fw-bold text-dark px-3 ms-2" onclick="openBehaviorModal()">➕ เพิ่มรายงาน</button>
+           </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>วันที่บันทึก</th><th>ชื่อพนักงาน</th><th>รายละเอียดพฤติกรรม</th><th>ผู้บันทึก</th></tr></thead>
+            <tbody id="perfBehaviorTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="perfAssessWorkspace" style="display: none;">
+        <div class="alert alert-dark border-info mb-4" style="background: rgba(0, 240, 255, 0.05);">
+           <h5 class="text-info fw-bold">ℹ️ รายละเอียดและขั้นตอนการสอบประเมิน (ผ่านโปร)</h5>
+           <p class="text-white-50 small mb-0">ระบบนี้ใช้สำหรับบันทึกข้อมูลพนักงานที่ผ่านการทดสอบงาน โดยอ้างอิงจากพฤติกรรมที่ผ่านมาและการประเมินจากหัวหน้างาน เพื่อใช้เป็นหลักฐานในการปรับบรรจุเป็นพนักงานประจำเต็มตัว ผู้ที่มีสิทธิ์บันทึกและตรวจสอบข้อมูลส่วนนี้คือระดับ Admin และ SuperAdmin เท่านั้น</p>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-3">
+           <h5 class="text-white">รายชื่อพนักงานที่ผ่านการสอบประเมิน</h5>
+           <button class="btn btn-info fw-bold text-dark px-3" onclick="openAssessModal()">➕ บันทึกข้อมูลสอบผ่าน</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>ชื่อพนักงาน</th><th>รายละเอียดการสอบผ่าน</th><th>พฤติกรรมที่ผ่านมา</th><th>ผู้ประเมิน</th></tr></thead>
+            <tbody id="perfAssessTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>  
     <div id="portalSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">🌐 จัดการเว็บไซต์ (Websites)</h4>
@@ -1080,60 +1171,128 @@
     </div>
   </div>
 </div>
-<div class="modal fade" id="botManageModal" tabindex="-1" data-bs-theme="dark" style="z-index: 1060;">
-  <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content" style="background-color: var(--bg-card); border: 1px solid #00ff66;">
+<div class="modal fade" id="evalFormModal" tabindex="-1" data-bs-theme="light">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content" style="background: #fff; color: #000;">
+      <div class="modal-header" style="background: #111; border-bottom: 2px solid #00ffcc;">
+        <h5 class="modal-title fw-bold" style="color: #00ffcc;">แบบประเมินผลการปฏิบัติงาน - <span id="evalTargetName" class="text-white"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0 eval-table-container">
+        <table class="eval-table">
+          <thead>
+            <tr>
+              <th colspan="7" class="eval-header-main">แบบประเมินผลการปฏิบัติงานประจำเดือนแผนกฝาก-ถอน</th>
+            </tr>
+            <tr>
+              <th class="eval-header-sub">ชื่อ</th>
+              <td colspan="2" id="sheetEvalName" class="fw-bold text-center"></td>
+              <th class="eval-header-sub">วันที่เข้าทำงาน</th>
+              <td colspan="3"><input type="date" class="eval-input" id="sheetEvalDate"></td>
+            </tr>
+            <tr>
+              <th colspan="7" class="eval-header-main">ส่วนที่ 1 แบบประเมินผลการปฏิบัติงาน</th>
+            </tr>
+            <tr>
+              <th rowspan="2" class="eval-header-sub">ระดับ<br>ความชำนาญ</th>
+              <th rowspan="2" class="eval-header-sub">พฤติกรรมที่กำหนดสำหรับสมรรถนะ</th>
+              <th class="eval-score-0">0-60 คะแนน</th>
+              <th class="eval-score-60">60-70 คะแนน</th>
+              <th class="eval-score-70">70-80 คะแนน</th>
+              <th class="eval-score-80">80-90 คะแนน</th>
+              <th class="eval-score-90">90-100 คะแนน</th>
+            </tr>
+            <tr>
+              <th class="eval-score-0"><small>ไม่แสดงออก/แสดงออกเล็กน้อย</small></th>
+              <th class="eval-score-60"><small>แสดงออกให้เห็นบ้าง</small></th>
+              <th class="eval-score-70"><small>แสดงออกให้เห็นบ่อย</small></th>
+              <th class="eval-score-80"><small>แสดงออกให้เห็นบ่อยครั้ง</small></th>
+              <th class="eval-score-90"><small>แสดงออกให้เห็นบ่อยมาก</small></th>
+            </tr>
+            <tr>
+              <th colspan="2" rowspan="2" class="eval-header-sub border-end-0"></th>
+              <th colspan="4" class="eval-header-sub">ความถี่ในการแสดงพฤติกรรม</th>
+              <th rowspan="2" class="eval-header-sub">สรุป<br>คะแนน</th>
+            </tr>
+            <tr>
+              <th colspan="2" class="eval-header-sub">คนที่ 1 (0-100)</th>
+              <th colspan="2" class="eval-header-sub">คนที่ 2 (0-100)</th>
+            </tr>
+          </thead>
+          <tbody id="evalSheetBody">
+            <tr><td colspan="7" class="eval-section-title">1. ลักษณะส่วนตัว</td></tr>
+            <tr><td class="text-center">1</td><td>ความรับผิดชอบ/ความกระตือรือร้น</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">2</td><td>การสื่อสารระหว่างแผนก/ความสุภาพ</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">3</td><td>ความมีน้ำใจ ความร่วมมือ และการสนับสนุนการทำงานของผู้อื่นด้วยความยินดี</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">4</td><td>ความซื่อสัตย์</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">5</td><td>มีการวางแผน การทำงานอย่างเป็นระบบ ทำงานตามกระบวนการ</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">6</td><td>การทำงานได้มาตรฐาน และทำงานมีประสิทธิภาพ</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td colspan="2" class="eval-summary-row">รวม</td><td colspan="2" class="eval-summary-total p1-total">0</td><td colspan="2" class="eval-summary-total p2-total">0</td><td class="eval-summary-total all-total">0</td></tr>
+
+            <tr><td colspan="7" class="eval-section-title">2. ความพร้อมในการทำงาน และปฏิบัติตามกฎระเบียบ : การมาทำงานตามเวลา / มาสาย / การลางาน</td></tr>
+            <tr><td class="text-center">7</td><td>มีทัศนคติในการทำงาน มีความเชื่อมั่น มีความรับผิดชอบงาน และเชื่อฟังผู้บังคับบัญชา</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">8</td><td>ปฏิบัติตามกฎระเบียบและข้อบังคับของบริษัท ข้อกำหนดประกาศต่างๆ</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">9</td><td>การติดต่อสื่อสารอย่างมีประสิทธิภาพ</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">10</td><td>การลางาน การขาดงาน</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td colspan="2" class="eval-summary-row">รวม</td><td colspan="2" class="eval-summary-total p1-total">0</td><td colspan="2" class="eval-summary-total p2-total">0</td><td class="eval-summary-total all-total">0</td></tr>
+
+            <tr><td colspan="7" class="eval-section-title">3. การเรียนรู้ที่ได้รับจากการทำงาน</td></tr>
+            <tr><td class="text-center">11</td><td>การเรียนรู้ จากการทำงานที่ผ่านมา</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">12</td><td>มีการพัฒนาตัวเองอยู่เสมอ ใฝ่เรียนรู้ หาความรู้อยู่เสมอ</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">13</td><td>การแก้ไขในการทำงาน และกล้าแก้ไขข้อบกพร่องของตัวเอง</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">14</td><td>สามารถทำงานที่ตัวเองได้รับมอบหมายอย่างมีประสิทธิภาพ</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td class="text-center">15</td><td>มีความคิดสร้างสรรค์ และสามารถนำมาปรับใช้ในการทำงานได้</td><td colspan="2"><input type="number" class="eval-input p1-score" max="100"></td><td colspan="2"><input type="number" class="eval-input p2-score" max="100"></td><td class="eval-score-60 row-sum">0</td></tr>
+            <tr><td colspan="2" class="eval-summary-row">รวม</td><td colspan="2" class="eval-summary-total p1-total">0</td><td colspan="2" class="eval-summary-total p2-total">0</td><td class="eval-summary-total all-total">0</td></tr>
+
+            <tr><td colspan="6" class="eval-summary-row" style="background:#66cc99;">คะแนนรวม</td><td class="eval-final-total" id="evalFinalSum">0</td></tr>
+            <tr><td colspan="2" class="eval-section-title">4. KPI รายบุคคล</td><td colspan="4" class="eval-summary-row" style="background:#66cccc;">คะแนนรวมคิดเป็น %</td><td class="eval-final-percent" id="evalFinalPercent">0.00</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer" style="background: #111; border-top: 1px solid #333;">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิดหน้าต่าง</button>
+        <button type="button" class="btn btn-success fw-bold px-4" id="btnSaveEval" onclick="saveEvaluationData()" style="display: none;">💾 บันทึกการประเมิน</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="behaviorModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-warning">
       <div class="modal-body p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="fw-bold mb-0" style="color: #00ff66; text-shadow: 0 0 10px rgba(0,255,102,0.5);">🤖 จัดการบัญชีบอทธนาคาร</h4>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-        
-        <div class="row g-4">
-            <div class="col-md-5 border-end border-secondary">
-                <h6 class="text-white mb-3 fw-bold">➕ เพิ่มบัญชีใหม่</h6>
-                <form id="botManageForm" onsubmit="saveBotData(event)">
-                    <label class="small mb-1 text-white">🏦 เลือกธนาคาร (Bank)</label>
-                    <select id="bankSelect" class="form-select bg-dark text-white mb-3" style="border-color: #00ff66;" required>
-                        <option value="" disabled selected>-- เลือกธนาคาร --</option>
-                        <option value="kbank">🟢 กสิกรไทย (KBank)</option>
-                        <option value="scb">🟣 ไทยพาณิชย์ (SCB)</option>
-                        <option value="ktb">🔵 กรุงไทย (KTB)</option>
-                        <option value="bbl">🟦 กรุงเทพ (BBL)</option>
-                        <option value="bay">🟡 กรุงศรี (BAY)</option>
-                    </select>
+        <h5 class="fw-bold text-warning mb-4 text-center">📝 บันทึกรายงานพฤติกรรม</h5>
+        <form onsubmit="saveBehavior(event)">
+           <label class="small text-white mb-1">1. เลือกพนักงาน</label>
+           <select id="behUserSelect" class="form-select bg-dark text-white mb-3" required></select>
+           
+           <label class="small text-white mb-1">2. รายละเอียดพฤติกรรม</label>
+           <textarea id="behDetail" class="form-control bg-dark text-white mb-4" rows="4" placeholder="ระบุพฤติกรรมที่พบเจอ..." required></textarea>
+           
+           <button type="submit" class="btn btn-warning w-100 fw-bold text-dark py-2">💾 บันทึกพฤติกรรม</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
-                    <label class="small mb-1 text-white">👤 Username (ชื่อผู้ใช้)</label>
-                    <input type="text" id="botUser" class="form-control mb-3 bg-dark text-white" style="border-color: #444;" placeholder="กรอก Username..." required>
-                    
-                    <label class="small mb-1 text-white">🔑 Password (รหัสผ่าน)</label>
-                    <input type="text" id="botPass" class="form-control mb-4 bg-dark text-white" style="border-color: #444;" placeholder="กรอกรหัสผ่าน..." required>
-                    
-                    <button type="submit" class="btn w-100 py-2 fw-bold text-dark" style="background-color: #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.5);">
-                        💾 บันทึกข้อมูลบัญชี
-                    </button>
-                </form>
-            </div>
-
-            <div class="col-md-7">
-                <h6 class="text-white mb-3 fw-bold">📋 บัญชีบอทในระบบทั้งหมด</h6>
-                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
-                    <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
-                        <thead style="position: sticky; top: 0; background-color: #121215; z-index: 10;">
-                            <tr>
-                                <th>ธนาคาร</th>
-                                <th>Username</th>
-                                <th class="text-center">จัดการ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="botListBody">
-                            <tr><td colspan="3" class="text-center text-muted py-4">⏳ กำลังโหลด...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
+<div class="modal fade" id="assessModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-info">
+      <div class="modal-body p-4">
+        <h5 class="fw-bold text-info mb-4 text-center">🎓 บันทึกข้อมูลสอบผ่านโปร</h5>
+        <form onsubmit="saveAssessment(event)">
+           <label class="small text-white mb-1">1. รายชื่อพนักงานที่สอบผ่าน</label>
+           <select id="assessUserSelect" class="form-select bg-dark text-white mb-3" required></select>
+           
+           <label class="small text-white mb-1">2. รายละเอียดการผ่านโปรที่เขาสอบ</label>
+           <textarea id="assessDetail" class="form-control bg-dark text-white mb-3" rows="3" placeholder="สรุปหัวข้อที่ทดสอบผ่าน..." required></textarea>
+           
+           <label class="small text-white mb-1">3. พฤติกรรมที่ผ่านมาเพื่อประเมิน</label>
+           <textarea id="assessPastBeh" class="form-control bg-dark text-white mb-4" rows="3" placeholder="ระบุพฤติกรรมด้านบวกเพื่อประกอบการบรรจุ..." required></textarea>
+           
+           <button type="submit" class="btn btn-info w-100 fw-bold text-dark py-2">💾 บันทึกการประเมินบรรจุ</button>
+        </form>
       </div>
     </div>
   </div>
@@ -4241,6 +4400,210 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       });
   }
 
+  // ==========================================
+  // 📈 ระบบข้อมูลการทำงาน (Performance & Evaluation)
+  // ==========================================
+  let currentPerfTab = 'EVAL';
+  let currentEvalTarget = null;
+  
+  function initPerformanceTab() {
+      const now = new Date();
+      const ym = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      if(!document.getElementById('evalMonthPicker').value) document.getElementById('evalMonthPicker').value = ym;
+      if(!document.getElementById('behaviorMonthPicker').value) document.getElementById('behaviorMonthPicker').value = ym;
+      
+      // ควบคุมการแสดงผลแท็บเมนูตามสิทธิ์ (Member ห้ามเห็น 2, 3)
+      if (myRole === 'Member') {
+          document.getElementById('tabPerfBehavior').style.display = 'none';
+          document.getElementById('tabPerfAssess').style.display = 'none';
+      } else {
+          document.getElementById('tabPerfBehavior').style.display = 'inline-block';
+          document.getElementById('tabPerfAssess').style.display = 'inline-block';
+      }
+      
+      switchPerfTab('EVAL', document.getElementById('tabPerfEval'));
+  }
+
+  function switchPerfTab(tab, btn) {
+      currentPerfTab = tab;
+      document.querySelectorAll('#perfTabContainer .dept-badge').forEach(b => {
+          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
+      });
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
+      
+      document.getElementById('perfEvalWorkspace').style.display = tab === 'EVAL' ? 'block' : 'none';
+      document.getElementById('perfBehaviorWorkspace').style.display = tab === 'BEHAVIOR' ? 'block' : 'none';
+      document.getElementById('perfAssessWorkspace').style.display = tab === 'ASSESS' ? 'block' : 'none';
+      
+      if(tab === 'EVAL') loadPerformanceUsers();
+      else if(tab === 'BEHAVIOR') loadBehaviors();
+      else if(tab === 'ASSESS') loadAssessments();
+  }
+
+  function loadPerformanceUsers() {
+      const tbody = document.getElementById('perfEvalTableBody');
+      tbody.innerHTML = '';
+      
+      // ระบบ Filter ขั้นสูงตามกฎของบริษัท
+      let filteredUsers = allUsersData.filter(u => {
+          if (u[7] !== 'Active') return false;
+          
+          const uDept = u[3] ? u[3].toString() : '';
+          const uRole = u[6] ? u[6].toString() : 'Member';
+          const myNick = localStorage.getItem('okvip_nick');
+
+          if (myRole === 'SuperAdmin') return true; // เห็นหมด
+          if (myRole === 'Admin') {
+              // Admin เห็น Member ที่อยู่แผนก ODOL เท่านั้น
+              return uRole === 'Member' && uDept.includes('ODOL');
+          }
+          if (myRole === 'Member') {
+              // Member เห็นเฉพาะของตัวเอง
+              return u[1] === myNick;
+          }
+          return false;
+      });
+
+      if (filteredUsers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="text-center py-5 text-muted">ไม่พบข้อมูลหรือคุณไม่มีสิทธิ์เข้าถึง</td></tr>`;
+          return;
+      }
+
+      filteredUsers.forEach(u => {
+          const isMe = u[1] === localStorage.getItem('okvip_nick');
+          let btnHtml = `<button class="btn btn-sm btn-outline-info" onclick="openEvaluationModal('${u[1]}')">📝 ดูตาราง/กรอกคะแนน</button>`;
+          let nameHtml = isMe ? `<span class="text-success fw-bold">${u[1]} (ฉัน)</span>` : u[1];
+
+          tbody.innerHTML += `
+              <tr>
+                  <td class="fw-bold text-white">${nameHtml}</td>
+                  <td class="text-muted small">${u[3].split(' ')[0]}</td>
+                  <td class="role-${u[6]}">${u[6]}</td>
+                  <td class="text-center">${btnHtml}</td>
+              </tr>
+          `;
+      });
+  }
+
+  // เปิดแบบฟอร์มประเมินคล้าย Google Sheets
+  function openEvaluationModal(nickname) {
+      currentEvalTarget = nickname;
+      document.getElementById('evalTargetName').innerText = nickname;
+      document.getElementById('sheetEvalName').innerText = nickname;
+      
+      // ล้างข้อมูลใน Input ทั้งหมด
+      document.querySelectorAll('.eval-input').forEach(inp => { if(inp.type==='number') inp.value = ''; });
+      
+      // ซ่อน/โชว์ปุ่มบันทึก (Member ห้ามกดบันทึกของตัวเอง ดูได้อย่างเดียว)
+      const btnSave = document.getElementById('btnSaveEval');
+      if (myRole === 'Member') {
+          btnSave.style.display = 'none';
+          document.querySelectorAll('.eval-input').forEach(inp => inp.disabled = true);
+      } else {
+          btnSave.style.display = 'inline-block';
+          document.querySelectorAll('.eval-input').forEach(inp => inp.disabled = false);
+          
+          // ผูก Event คอยคำนวณผลรวมอัตโนมัติเมื่อพิมพ์ตัวเลข
+          document.querySelectorAll('.eval-input[type="number"]').forEach(inp => {
+              inp.addEventListener('input', calculateEvalSheet);
+          });
+      }
+
+      calculateEvalSheet(); // คำนวณเบื้องต้นเผื่อโหลดของเก่ามาโชว์
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).show();
+  }
+
+  // ฟังก์ชันคำนวณคะแนนคล้ายสูตร Excel
+  function calculateEvalSheet() {
+      let finalTotal = 0;
+      let blocks = [
+          { start: 0, end: 5 },   // ลักษณะส่วนตัว (แถว 1-6)
+          { start: 6, end: 9 },   // ความพร้อม (แถว 7-10)
+          { start: 10, end: 14 }  // การเรียนรู้ (แถว 11-15)
+      ];
+      
+      const p1Inputs = document.querySelectorAll('.p1-score');
+      const p2Inputs = document.querySelectorAll('.p2-score');
+      const rowSums = document.querySelectorAll('.row-sum');
+      
+      const p1Totals = document.querySelectorAll('.p1-total');
+      const p2Totals = document.querySelectorAll('.p2-total');
+      const allTotals = document.querySelectorAll('.all-total');
+
+      blocks.forEach((block, index) => {
+          let sumP1 = 0; let sumP2 = 0; let sumRowTotal = 0;
+          for (let i = block.start; i <= block.end; i++) {
+              let v1 = Number(p1Inputs[i].value) || 0;
+              let v2 = Number(p2Inputs[i].value) || 0;
+              let avg = (v1 + v2) / 2; // สรุปคะแนนแนวนอน (สมมติว่าเอามาเฉลี่ยกัน)
+              
+              rowSums[i].innerText = avg.toFixed(1);
+              sumP1 += v1;
+              sumP2 += v2;
+              sumRowTotal += avg;
+          }
+          p1Totals[index].innerText = sumP1;
+          p2Totals[index].innerText = sumP2;
+          allTotals[index].innerText = sumRowTotal.toFixed(1);
+          finalTotal += sumRowTotal;
+      });
+
+      document.getElementById('evalFinalSum').innerText = finalTotal.toFixed(1);
+      // สมมติว่าคะแนนเต็ม 15 ข้อ ข้อละ 100 = 1500 (หาร 15 ได้เปอร์เซ็นต์)
+      document.getElementById('evalFinalPercent').innerText = (finalTotal / 15).toFixed(2) + ' %';
+  }
+
+  function saveEvaluationData() {
+      // *ส่วนนี้เชื่อมต่อฐานข้อมูล Supabase ภายหลังได้เมื่อสร้าง Table เสร็จแล้ว*
+      Swal.fire({
+          toast: true, position: 'top-end', title: 'บันทึกคะแนนประเมินสำเร็จ (จำลอง)', 
+          icon: 'success', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'
+      });
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).hide();
+  }
+
+  // ==========================================
+  // เมนูย่อย 2: รายงานพฤติกรรม (เฉพาะ Admin / SuperAdmin)
+  function loadBehaviors() {
+      // *ส่วนนี้ใช้ Fetch จากตาราง Supabase ในอนาคต*
+      document.getElementById('perfBehaviorTableBody').innerHTML = `<tr><td colspan="4" class="text-center py-5 text-muted">รอเชื่อมต่อตารางฐานข้อมูลพฤติกรรม...</td></tr>`;
+  }
+  
+  function openBehaviorModal() {
+      document.getElementById('behDetail').value = '';
+      let opt = '<option value="">-- เลือกพนักงาน --</option>';
+      allUsersData.filter(u => u[7] === 'Active').forEach(u => { opt += `<option value="${u[1]}">${u[1]} (${u[3].split(' ')[0]})</option>`; });
+      document.getElementById('behUserSelect').innerHTML = opt;
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('behaviorModal')).show();
+  }
+
+  function saveBehavior(e) {
+      e.preventDefault();
+      Swal.fire({toast: true, position: 'top-end', title: 'บันทึกพฤติกรรมสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('behaviorModal')).hide();
+  }
+
+  // ==========================================
+  // เมนูย่อย 3: สอบประเมินผ่านโปร (เฉพาะ Admin / SuperAdmin)
+  function loadAssessments() {
+      // *ส่วนนี้ใช้ Fetch จากตาราง Supabase ในอนาคต*
+      document.getElementById('perfAssessTableBody').innerHTML = `<tr><td colspan="4" class="text-center py-5 text-muted">รอเชื่อมต่อตารางฐานข้อมูลสอบประเมิน...</td></tr>`;
+  }
+
+  function openAssessModal() {
+      document.getElementById('assessDetail').value = '';
+      document.getElementById('assessPastBeh').value = '';
+      let opt = '<option value="">-- เลือกพนักงานที่สอบผ่าน --</option>';
+      allUsersData.filter(u => u[7] === 'Active').forEach(u => { opt += `<option value="${u[1]}">${u[1]}</option>`; });
+      document.getElementById('assessUserSelect').innerHTML = opt;
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('assessModal')).show();
+  }
+
+  function saveAssessment(e) {
+      e.preventDefault();
+      Swal.fire({toast: true, position: 'top-end', title: 'บันทึกข้อมูลสอบผ่านโปรสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('assessModal')).hide();
+  }
   // ==========================================
   // 🔔 & 💬 ระบบแจ้งเตือนและแชท (Core Logic + Realtime)
   // ==========================================
