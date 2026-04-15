@@ -2061,6 +2061,51 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       loadScheduleTable();
   }
 
+  function filterScheduleDept(dept, btn) { 
+      if(Object.keys(unsavedChanges).length > 0){ 
+          Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); 
+          return; 
+      } 
+      currentSchDept = dept; 
+      
+      document.querySelectorAll('#schDeptFilterBar .dept-badge').forEach(b => { 
+          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; 
+      }); 
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)"; 
+      
+      const shiftBar = document.getElementById('schShiftFilterBar');
+      if (dept === 'ออดิท (OD)' || dept === 'ออดิทออนไลน์ (ODOL)') {
+          shiftBar.style.display = 'flex';
+      } else {
+          shiftBar.style.display = 'none';
+          currentSchShift = 'ALL'; 
+          document.querySelectorAll('#schShiftFilterBar .dept-badge').forEach(b => { 
+              b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc"; b.style.boxShadow = "none"; 
+          });
+          document.querySelector('#schShiftFilterBar .dept-badge').classList.add('active');
+          document.querySelector('#schShiftFilterBar .dept-badge').style.borderColor = "#fff";
+          document.querySelector('#schShiftFilterBar .dept-badge').style.color = "#fff";
+      }
+      loadScheduleTable(); 
+  }
+
+  function filterScheduleShift(shift, btn) {
+      if(Object.keys(unsavedChanges).length > 0){ 
+          Swal.fire({title:'มีการเปลี่ยนแปลงยังไม่ได้บันทึก!', text:'กรุณากดบันทึกตารางก่อนเปลี่ยนกลุ่ม', icon:'warning', background:'#111', color:'#fff'}); 
+          return; 
+      }
+      currentSchShift = shift;
+      document.querySelectorAll('#schShiftFilterBar .dept-badge').forEach(b => { 
+          b.classList.remove('active'); b.style.borderColor = "#444"; 
+          b.style.color = b.innerText.includes('A') ? '#00f0ff' : (b.innerText.includes('B') ? '#ffcc00' : '#ccc'); 
+          b.style.boxShadow = "none";
+      }); 
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; btn.style.boxShadow = "0 0 10px rgba(255,255,255,0.3)";
+      loadScheduleTable();
+  }
+
+  function handleScheduleSearch(term) { scheduleSearchTerm = term.toLowerCase().trim(); loadScheduleTable(); }
+
   async function loadScheduleTable() {
     try {
         unsavedChanges = {}; 
