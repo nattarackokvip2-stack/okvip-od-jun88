@@ -1740,10 +1740,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       document.getElementById('user').value = ''; 
       document.getElementById('pass').value = ''; 
       const loginBtn = document.getElementById('loginBtn'); 
-      if(loginBtn) { 
-          loginBtn.disabled = false; 
-          loginBtn.innerText = 'เข้าสู่ระบบ'; 
-      } 
+      if(loginBtn) { loginBtn.disabled = false; loginBtn.innerText = 'เข้าสู่ระบบ'; } 
   }
 
   function switchMainTab(sectionId) { 
@@ -1751,9 +1748,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if (unsavedChanges && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); return; } 
           document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); const target = document.getElementById(sectionId); if (target) target.classList.add('active'); 
           const nav = document.getElementById('topNavBar'); if (nav) nav.style.display = (sectionId === 'hubSection') ? 'none' : 'flex'; 
-          
           localStorage.setItem('okvip_current_tab', sectionId);
-          
       } catch(e) { console.error(e); }
   }
   
@@ -2233,11 +2228,36 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             const nameClass = isMyRow ? 'name-col highlight-me' : 'name-col'; 
             const rowBg = currentScheduleMode === 'SANDBOX' ? 'background-color: rgba(255, 153, 0, 0.05);' : (isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : '');
             
+            // 🌟 สร้าง Dropdown ให้ SuperAdmin แก้ไขได้ทันที
             let shiftBadge = '-';
-            if(shiftChar === 'A') shiftBadge = '<span class="text-warning fw-bold">☀️ A</span>';
-            else if(shiftChar === 'B') shiftBadge = '<span class="text-info fw-bold">🌙 B</span>';
-            
-            tb += `<tr data-nick="${nick}" data-dept="${dept}" data-shift="${shiftChar}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-center" style="background: #111;">${shiftBadge}</td><td class="dept-col text-muted small">${dept.split(' ')[0]}</td>`;
+            let deptBadge = `<span class="text-muted small">${dept.split(' ')[0]}</span>`;
+
+            if (isSuperAdmin) {
+                let optA = shiftSet.includes('(A)') ? 'selected' : '';
+                let optB = shiftSet.includes('(B)') ? 'selected' : '';
+                let sPrefix = dept.includes('ODOL') ? 'ODOL' : 'OD';
+
+                shiftBadge = `<select class="form-select form-select-sm bg-dark border-secondary p-1" style="width: 65px; font-size: 0.75rem; color: ${shiftChar==='A'?'#00f0ff':'#ffcc00'}; text-align: center; cursor: pointer;" onchange="updateInlineUser(this, '${nick}', 'shiftSet')">
+                    <option value="">-</option>
+                    <option value="${sPrefix} (A)" ${optA}>☀️ A</option>
+                    <option value="${sPrefix} (B)" ${optB}>🌙 B</option>
+                </select>`;
+
+                let dOptOD = dept === 'ออดิท (OD)' ? 'selected' : '';
+                let dOptODOL = dept === 'ออดิทออนไลน์ (ODOL)' ? 'selected' : '';
+                let dOptOther = dept === 'อื่นๆ (OTHER)' ? 'selected' : '';
+
+                deptBadge = `<select class="form-select form-select-sm bg-dark text-muted border-secondary p-1" style="width: 70px; font-size: 0.7rem; cursor: pointer;" onchange="updateInlineUser(this, '${nick}', 'department')">
+                    <option value="ออดิท (OD)" ${dOptOD}>OD</option>
+                    <option value="ออดิทออนไลน์ (ODOL)" ${dOptODOL}>ODOL</option>
+                    <option value="อื่นๆ (OTHER)" ${dOptOther}>อื่นๆ</option>
+                </select>`;
+            } else {
+                if(shiftChar === 'A') shiftBadge = '<span class="text-warning fw-bold">☀️ A</span>';
+                else if(shiftChar === 'B') shiftBadge = '<span class="text-info fw-bold">🌙 B</span>';
+            }
+
+            tb += `<tr data-nick="${nick}" data-dept="${dept}" data-shift="${shiftChar}" style="${rowBg}"><td class="${nameClass}">${nick}</td><td class="dept-col text-center" style="background: #111; z-index: 10; position: relative;">${shiftBadge}</td><td class="dept-col text-center" style="background: #0a0a0c; z-index: 10; position: relative;">${deptBadge}</td>`;
             
             for(let d=1; d<=daysInMonth; d++) { 
                 const val = userDays[d] || ''; 
@@ -4307,6 +4327,42 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               } catch(e) { console.error(e); }
           }
       });
+  }
+
+  // 🌟 ฟังก์ชันสำหรับเซฟ กะ/แผนก เมื่อมีการกดเปลี่ยนในตาราง
+  async function updateInlineUser(selectEl, nickname, field) {
+      const newVal = selectEl.value;
+      Swal.fire({title: 'กำลังอัปเดตระบบ...', didOpen: () => Swal.showLoading()});
+      try {
+          const { data: user } = await supabaseClient.from('users').select('id').eq('nickname', nickname).single();
+          if (user) {
+              let updatePayload = {};
+              updatePayload[field] = newVal;
+              
+              // หากเปลี่ยนแผนก ต้องเคลียร์กะให้ตรงกันด้วยเพื่อป้องกันบั๊ก
+              if (field === 'department') {
+                  updatePayload['shiftSet'] = ''; 
+              }
+
+              await supabaseClient.from('users').update(updatePayload).eq('id', user.id);
+              
+              // อัปเดตข้อมูลในหน่วยความจำและรีโหลด
+              const userIdx = allUsersData.findIndex(u => u[1] === nickname);
+              if (userIdx > -1) {
+                  if (field === 'department') {
+                      allUsersData[userIdx][3] = newVal;
+                      allUsersData[userIdx][9] = ''; // ล้างกะเดิมออก
+                  }
+                  if (field === 'shiftSet') allUsersData[userIdx][9] = newVal;
+              }
+              
+              Swal.fire({toast: true, position: 'top-end', title: 'อัปเดตข้อมูลสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
+              setTimeout(() => loadScheduleTable(), 600); // โหลดตารางใหม่
+          }
+      } catch (error) {
+          console.error(error);
+          Swal.fire('Error', 'เกิดข้อผิดพลาดในการอัปเดต', 'error');
+      }
   }
 
 </script>
