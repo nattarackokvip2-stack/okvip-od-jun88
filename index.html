@@ -1400,6 +1400,12 @@
   let currentPage = 1; 
   const itemsPerPage = 10;
 
+  let currentScheduleMode = 'REAL'; 
+  let currentSchDept = 'ALL';       
+  let currentSchShift = 'ALL';      
+  let sandboxDataCache = {};        
+  let sandboxUserShiftCache = {};
+
   let allVaultData = [];
   let vaultSearchTerm = '';
   let currentVaultCategory = 'ALL';
