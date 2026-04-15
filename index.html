@@ -3238,7 +3238,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
 
       let workingUsers = [];
       allUsersData.forEach(u => {
-          if(!u || u[7] !== 'Active') return; 
+          if(!u || u[7] !== 'Active') return false; 
           const nick = u[1]; 
           const dept = u[3] ? u[3].toString() : ''; 
           const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
