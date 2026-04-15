@@ -358,7 +358,12 @@
         <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
            <div class="d-flex align-items-center gap-2">
                <span class="text-white small">📅 เดือน:</span>
-               <input type="month" id="hrEvalMonth" class="form-control bg-dark text-white border-secondary" style="width: auto;">
+               <div class="d-flex align-items-center gap-2">
+                   <button type="button" class="btn btn-outline-info btn-sm" onclick="changeHrEvalMonth(-1)" style="border-radius: 8px; padding: 6px 12px;">◀</button>
+                   <input type="month" id="hrEvalMonth" class="form-control text-center text-info shadow-none fw-bold bg-dark border-info" style="width: 140px; padding: 5px;" onchange="renderHrEvalList()">
+                   <button type="button" class="btn btn-outline-info btn-sm" onclick="changeHrEvalMonth(1)" style="border-radius: 8px; padding: 6px 12px;">▶</button>
+               </div>
+               
                <div class="filter-bar ms-3" id="hrEvalDeptFilter">
                  <div class="dept-badge active" onclick="filterHrEvalDept('ALL', this)">ทั้งหมด</div>
                  <div class="dept-badge" onclick="filterHrEvalDept('OD', this)">OD</div>
@@ -1312,14 +1317,33 @@
                </tr>
             </thead>
             <tbody id="evalFormBody">
-               <tr><td colspan="8" class="eval-bg-teal">1.ลักษณะส่วนตัว</td></tr>
-               <tr><td class="text-center fw-bold">1</td><td>ความรับผิดชอบ/ความกระตือรือร้น</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" max="100"><input type="number" class="eval-input sc2" max="100"></div></td><td><input type="text" class="eval-input eval-sum" disabled></td></tr>
-               <tr><td class="text-center fw-bold">2</td><td>การสื่อสารระหว่างแผนก/ความสุภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" max="100"><input type="number" class="eval-input sc2" max="100"></div></td><td><input type="text" class="eval-input eval-sum" disabled></td></tr>
-               <tr><td colspan="2" class="eval-row-sum py-2 pe-3">รวม</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><div class="eval-sum-box w-100" id="sumSec1_1">0</div><div class="eval-sum-box w-100" id="sumSec1_2">0</div></div></td><td class="eval-sum-box" id="sumSec1_total">0</td></tr>
+               <tr><td colspan="8" class="eval-bg-teal" style="font-size: 1rem;">1.ลักษณะส่วนตัว</td></tr>
+               <tr><td class="text-center fw-bold">1</td><td>ความรับผิดชอบ/ความกระตือรือร้น</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q1_1" max="100"><input type="number" class="eval-input sc2" id="q1_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q1_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">2</td><td>การสื่อสารระหว่างแผนก/ความสุภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q2_1" max="100"><input type="number" class="eval-input sc2" id="q2_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q2_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">3</td><td>ความมีน้ำใจ ความร่วมมือ และการสนับสนุนการทำงานของผู้อื่นด้วยความยินดีโดยไม่ต้องร้องขอ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q3_1" max="100"><input type="number" class="eval-input sc2" id="q3_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q3_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">4</td><td>ความซื่อสัตย์</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q4_1" max="100"><input type="number" class="eval-input sc2" id="q4_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q4_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">5</td><td>มีการวางแผน การทำงานอย่างเป็นระบบ ทำงานตามกระบวนการ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q5_1" max="100"><input type="number" class="eval-input sc2" id="q5_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q5_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">6</td><td>การทำงานได้มาตรฐาน และ ทำงานมีประสิทธิภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q6_1" max="100"><input type="number" class="eval-input sc2" id="q6_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q6_avg" disabled></td></tr>
+               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><div class="eval-sum-box w-100" id="sumSec1_1">0</div><div class="eval-sum-box w-100" id="sumSec1_2">0</div></div></td><td class="eval-sum-box fs-6" id="sumSec1_total">0</td></tr>
 
-               <tr><td colspan="8" class="eval-bg-teal mt-3">2.ความพร้อมในการทำงาน และ ปฏิบัติตามกฎระเบียบ : การมาทำงานตามเวลา / การขาดงาน / การลางาน / มาสาย</td></tr>
-               <tr><td class="text-center fw-bold">7</td><td>มีทัศนคติในการทำงาน มีความเชื่อมั่น...</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" max="100"><input type="number" class="eval-input sc2" max="100"></div></td><td><input type="text" class="eval-input eval-sum" disabled></td></tr>
-               </tbody>
+               <tr><td colspan="8" class="eval-bg-teal mt-3" style="font-size: 1rem;">2.ความพร้อมในการทำงาน และ ปฏิบัติตามกฎระเบียบ : การมาทำงานตามเวลา / การขาดงาน / การลางาน / มาสาย / การปฏิบัติตามระเบียบ</td></tr>
+               <tr><td class="text-center fw-bold">7</td><td>มีทัศนคติในการทำงาน มีความเชื่อมั่น มีความรับผิดชอบงาน และ เชื่อฟังผู้บังคับบัญชา</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q7_1" max="100"><input type="number" class="eval-input sc2" id="q7_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q7_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">8</td><td>ปฏิบัติตามกฎระเบียบและข้อบังคับของบริษัท ข้อกำหนดประกาศต่างๆ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q8_1" max="100"><input type="number" class="eval-input sc2" id="q8_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q8_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">9</td><td>การติดต่อสื่อสารอย่างมีประสิทธิภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q9_1" max="100"><input type="number" class="eval-input sc2" id="q9_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q9_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">10</td><td>การลางาน การขาดงาน</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q10_1" max="100"><input type="number" class="eval-input sc2" id="q10_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q10_avg" disabled></td></tr>
+               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><div class="eval-sum-box w-100" id="sumSec2_1">0</div><div class="eval-sum-box w-100" id="sumSec2_2">0</div></div></td><td class="eval-sum-box fs-6" id="sumSec2_total">0</td></tr>
+
+               <tr><td colspan="8" class="eval-bg-teal mt-3" style="font-size: 1rem;">3.การเรียนรู้ที่ได้รับจากการทำงาน</td></tr>
+               <tr><td class="text-center fw-bold">11</td><td>การเรียนรู้ จากการทำงานที่ผ่านมา</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q11_1" max="100"><input type="number" class="eval-input sc2" id="q11_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q11_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">12</td><td>มีการพัฒนาตัวเองอยู่เสมอ ใฝ่เรียนรู้ หาความรู้อยู่เสมอ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q12_1" max="100"><input type="number" class="eval-input sc2" id="q12_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q12_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">13</td><td>การแก้ไขในการทำงาน และ กล้าแก้ไขข้อบกพร่องของตัวเอง</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q13_1" max="100"><input type="number" class="eval-input sc2" id="q13_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q13_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">14</td><td>สามารถทำงานที่ตัวเองได้รับมอบหมายอย่างมีประสิทธิภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q14_1" max="100"><input type="number" class="eval-input sc2" id="q14_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q14_avg" disabled></td></tr>
+               <tr><td class="text-center fw-bold">15</td><td>มีความคิดสร้างสรรค์ และ สามารถนำมาปรับใช้ในการทำงานได้</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" id="q15_1" max="100"><input type="number" class="eval-input sc2" id="q15_2" max="100"></div></td><td><input type="text" class="eval-input eval-sum fw-bold" id="q15_avg" disabled></td></tr>
+               <tr style="background-color: #f2f2f2;"><td colspan="2" class="fw-bold text-end py-2 pe-3">รวม</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><div class="eval-sum-box w-100" id="sumSec3_1">0</div><div class="eval-sum-box w-100" id="sumSec3_2">0</div></div></td><td class="eval-sum-box fs-6" id="sumSec3_total">0</td></tr>
+
+               <tr><td colspan="2" rowspan="2" class="eval-bg-teal fw-bold">4.KPI รายบุคคล</td><td colspan="5" class="eval-bg-dgreen text-end pe-3 fw-bold fs-6">คะแนนรวม (เต็ม 1500)</td><td class="eval-bg-dgreen fw-bold fs-5" id="grandTotalScore">0</td></tr>
+               <tr><td colspan="5" class="eval-bg-teal text-end pe-3 fw-bold fs-6">คะแนนรวมคิดเป็น %</td><td class="eval-bg-teal fw-bold fs-5" id="grandTotalPercent">0%</td></tr>
+            </tbody>
          </table>
        </div>
     </div>
@@ -1672,6 +1696,7 @@
     const thisMonthStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0'); 
     
     document.getElementById('monthPicker').value = thisMonthStr;
+    document.getElementById('hrEvalMonth').value = thisMonthStr;
     if(document.getElementById('penaltyMonthFilter')) document.getElementById('penaltyMonthFilter').value = thisMonthStr; 
     if(document.getElementById('jobDatePicker')) document.getElementById('jobDatePicker').value = todayStr;
     if(document.getElementById('mealDatePicker')) document.getElementById('mealDatePicker').value = todayStr; 
@@ -4577,7 +4602,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       renderHrEvalList();
   }
 
-  // เรียกใช้ฟังก์ชันนี้ใน verifyUserStatus() เพื่อซ่อนเมนูที่ Admin เท่านั้นถึงจะเห็น
   function applyHrPermissions() {
       const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
       document.querySelectorAll('.admin-only-ui').forEach(el => {
@@ -4586,7 +4610,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   function renderHrEvalList() {
-      applyHrPermissions(); // เช็คสิทธิ์ก่อน
+      applyHrPermissions(); 
       const tbody = document.getElementById('hrEvalTableBody');
       tbody.innerHTML = '';
       
@@ -4600,21 +4624,13 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           const nick = u[1];
           const dept = u[3] ? u[3].toString() : '';
           
-          // 🛑 กฎการมองเห็น:
-          // 1. Member: เห็นเฉพาะชื่อตัวเองเท่านั้น
           if (isMember && nick !== myNick) return false;
+          if (isAdmin) { if (nick !== myNick && !dept.includes('ODOL')) return false; }
           
-          // 2. Admin: เห็นเฉพาะ ODOL และชื่อตัวเอง
-          if (isAdmin) {
-             if (nick !== myNick && !dept.includes('ODOL')) return false;
-          }
-          
-          // 3. การกดปุ่ม Filter แผนก
           if (currentHrEvalDept !== 'ALL') {
              if (currentHrEvalDept === 'OD' && (!dept.includes('OD') || dept.includes('ODOL'))) return false;
              if (currentHrEvalDept === 'ODOL' && !dept.includes('ODOL')) return false;
           }
-          
           return true;
       });
 
@@ -4627,9 +4643,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           const nick = u[1];
           const dept = u[3].split(' ')[0];
           
-          // เช็คสิทธิ์การ "แก้ไข"
           let canEdit = isSuperAdmin || (isAdmin && dept.includes('ODOL')) || (isAdmin && nick === myNick);
-          // Member ไม่มีสิทธิ์แก้เลย ดูได้อย่างเดียว
           if (isMember) canEdit = false;
 
           let btnText = canEdit ? '📝 ประเมินผล' : '🔍 ดูผลประเมิน';
@@ -4639,22 +4653,116 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             <tr>
               <td class="fw-bold text-white">${nick} ${nick === myNick ? '(คุณ)' : ''}</td>
               <td class="text-muted small">${dept}</td>
-              <td><span class="badge bg-secondary border">ยังไม่ประเมิน</span></td>
+              <td><span class="badge bg-secondary border" id="evalStatus_${nick}">ยังไม่ประเมิน</span></td>
               <td class="text-center">
                   <button class="btn btn-sm ${btnClass} fw-bold" onclick="openEvaluationForm('${nick}', ${canEdit})">${btnText}</button>
               </td>
             </tr>
           `;
+          
+          // สั่งให้เช็คสถานะการประเมินว่าทำไปแล้วหรือยัง
+          checkEvalStatus(nick);
       });
   }
 
-  function openEvaluationForm(targetNick, canEdit) {
+  // ------------------ ระบบคำนวณและบันทึกข้อมูล ------------------ //
+
+  // ฟังก์ชันเลื่อนลูกศรเปลี่ยนเดือนประเมิน
+  function changeHrEvalMonth(offset) {
+      const p = document.getElementById('hrEvalMonth');
+      if(!p.value) return;
+      let [y, m] = p.value.split('-').map(Number);
+      m += offset;
+      if (m > 12) { m = 1; y++; } else if (m < 1) { m = 12; y--; }
+      p.value = `${y}-${String(m).padStart(2, '0')}`;
+      renderHrEvalList();
+  }
+
+  // ฟังก์ชันคำนวณคะแนนใน Modal แบบแยก Section (อิงจาก 15 ข้อ)
+  function initEvalAutoCalculate() {
+      const tableBody = document.getElementById('evalFormBody');
+      if(!tableBody) return;
+      
+      tableBody.addEventListener('input', () => {
+          let grandTotalAvg = 0;
+
+          // ฟังก์ชันย่อยสำหรับบวกเลขในแต่ละ Section
+          const calcSection = (startRow, endRow, secId) => {
+              let sum1 = 0, sum2 = 0, sumAvg = 0;
+              for(let i = startRow; i <= endRow; i++) {
+                  const input1 = document.getElementById(`q${i}_1`);
+                  const input2 = document.getElementById(`q${i}_2`);
+                  const inputAvg = document.getElementById(`q${i}_avg`);
+
+                  let sc1 = input1 && input1.value ? parseFloat(input1.value) : 0;
+                  let sc2 = input2 && input2.value ? parseFloat(input2.value) : 0;
+                  
+                  // กันกรอกเกิน 100
+                  if(sc1 > 100) { sc1 = 100; input1.value = 100; }
+                  if(sc2 > 100) { sc2 = 100; input2.value = 100; }
+
+                  let avg = (sc1 + sc2) / 2;
+                  if(inputAvg) inputAvg.value = avg;
+
+                  sum1 += sc1;
+                  sum2 += sc2;
+                  sumAvg += avg;
+              }
+              document.getElementById(`sumSec${secId}_1`).innerText = sum1;
+              document.getElementById(`sumSec${secId}_2`).innerText = sum2;
+              document.getElementById(`sumSec${secId}_total`).innerText = sumAvg;
+              
+              grandTotalAvg += sumAvg;
+          };
+
+          // สั่งคำนวณแยกตาม Section
+          calcSection(1, 6, 1);   // ข้อ 1-6
+          calcSection(7, 10, 2);  // ข้อ 7-10
+          calcSection(11, 15, 3); // ข้อ 11-15
+
+          // คำนวณสรุปผลด้านล่างสุด (เต็ม 1500)
+          document.getElementById('grandTotalScore').innerText = grandTotalAvg;
+          
+          // คิดเป็น % (สมมติคะแนนเต็ม 15 ข้อ ข้อละ 100 = 1500)
+          let percent = (grandTotalAvg / 1500) * 100;
+          document.getElementById('grandTotalPercent').innerText = percent.toFixed(2) + '%';
+      });
+  }
+
+  // เช็คสถานะโชว์ที่ตารางว่าประเมินแล้วหรือยัง
+  async function checkEvalStatus(nick) {
+      const month = document.getElementById('hrEvalMonth').value;
+      if (!month) return;
+      
+      const { data } = await supabaseClient.from('hr_evaluations').select('id').eq('nickname', nick).eq('month', month).maybeSingle();
+      const badge = document.getElementById(`evalStatus_${nick}`);
+      if (badge) {
+          if (data) {
+              badge.className = 'badge bg-success border border-success px-3 py-1';
+              badge.innerText = '✅ ประเมินแล้ว';
+          } else {
+              badge.className = 'badge bg-secondary border px-3 py-1';
+              badge.innerText = 'รอประเมิน';
+          }
+      }
+  }
+
+  // ดึงข้อมูลการประเมินเก่ามาใส่ใน Modal
+  async function openEvaluationForm(targetNick, canEdit) {
       document.getElementById('evalTargetName').innerText = targetNick;
+      const month = document.getElementById('hrEvalMonth').value;
       
       const alertBox = document.getElementById('evalPermissionAlert');
       const saveBtn = document.getElementById('btnSaveEval');
       const inputs = document.querySelectorAll('.eval-input:not(.eval-sum)');
       
+      // ล้างค่าเก่าในฟอร์มก่อน
+      inputs.forEach(inp => { inp.value = ''; });
+      document.querySelectorAll('.eval-sum, .eval-sum-box').forEach(el => {
+          if(el.tagName === 'INPUT') el.value = ''; else el.innerText = '0';
+      });
+      document.getElementById('grandTotalPercent').innerText = '0%';
+
       if (!canEdit) {
           alertBox.classList.remove('d-none');
           saveBtn.style.display = 'none';
@@ -4665,104 +4773,98 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           inputs.forEach(inp => { inp.disabled = false; });
       }
 
-      // TODO: ใส่โค้ดดึงข้อมูลเก่าจาก Supabase มาเติมในช่อง input ที่นี่
+      // ดึงข้อมูลจาก Supabase
+      Swal.fire({title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading()});
+      const { data } = await supabaseClient.from('hr_evaluations').select('*').eq('nickname', targetNick).eq('month', month).maybeSingle();
+      Swal.close();
+
+      if (data && data.scores) {
+          // ถ้ามีข้อมูลเก่า ให้หยอดลงฟอร์ม
+          for (let i = 1; i <= 15; i++) {
+              if (data.scores[`q${i}`]) {
+                  const [sc1, sc2] = data.scores[`q${i}`];
+                  const in1 = document.getElementById(`q${i}_1`);
+                  const in2 = document.getElementById(`q${i}_2`);
+                  if (in1) in1.value = sc1;
+                  if (in2) in2.value = sc2;
+              }
+          }
+          // กระตุ้น Event Input เพื่อให้ระบบคำนวณค่าผลรวมใหม่
+          const event = new Event('input', { bubbles: true });
+          document.getElementById('evalFormBody').dispatchEvent(event);
+      }
 
       bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).show();
   }
 
-  // ฟังก์ชันคำนวณคะแนนใน Modal อัตโนมัติขณะพิมพ์
-function initEvalAutoCalculate() {
-    const tableBody = document.getElementById('evalFormBody');
-    tableBody.addEventListener('input', () => {
-        let totalAll = 0;
-        let sumSec1_1 = 0, sumSec1_2 = 0;
+  // ฟังก์ชันบันทึกข้อมูลลงฐานข้อมูล
+  async function saveEvaluation() {
+      const nick = document.getElementById('evalTargetName').innerText;
+      const month = document.getElementById('hrEvalMonth').value;
+      const myNick = localStorage.getItem('okvip_nick');
+      
+      if(!month) return Swal.fire('เตือน', 'กรุณาเลือกเดือนที่ประเมินด้วยครับ', 'warning');
 
-        // วนลูปคำนวณแต่ละแถว (สมมติว่ามี 15 แถวที่เก็บคะแนน)
-        const rows = document.querySelectorAll('#evalFormBody tr:not(.eval-bg-teal)');
-        rows.forEach(row => {
-            const sc1 = parseFloat(row.querySelector('.sc1')?.value) || 0;
-            const sc2 = parseFloat(row.querySelector('.sc2')?.value) || 0;
-            const rowAvg = (sc1 + sc2) / 2;
-            
-            const sumInput = row.querySelector('.eval-sum');
-            if(sumInput) sumInput.value = rowAvg;
-            
-            totalAll += rowAvg;
-            
-            // แยกนับคะแนนรวมรายบุคคล (ถ้าเป็น Section 1)
-            if(row.contains(document.querySelector('.sc1'))) {
-                sumSec1_1 += sc1;
-                sumSec1_2 += sc2;
-            }
-        });
+      Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
-        // อัปเดตตัวเลขแสดงผลใน UI
-        if(document.getElementById('sumSec1_1')) document.getElementById('sumSec1_1').innerText = sumSec1_1;
-        if(document.getElementById('sumSec1_2')) document.getElementById('sumSec1_2').innerText = sumSec1_2;
-        if(document.getElementById('sumSec1_total')) document.getElementById('sumSec1_total').innerText = (sumSec1_1 + sumSec1_2) / 2;
-    });
-}
+      let scoresData = {};
+      const rows = document.querySelectorAll('#evalFormBody tr:not(.eval-bg-teal)');
+      rows.forEach((row, index) => {
+          // เนื่องจากมีแถวที่เป็น "รวม" คั่นอยู่ เราต้องเลี่ยงไม่ดึงแถวนั้น
+          if (row.classList.contains('eval-row-sum') || row.querySelector('th')) return;
+          
+          // ดึง ID ข้อคำถามมาจาก Input
+          const sc1Input = row.querySelector('.sc1');
+          const sc2Input = row.querySelector('.sc2');
+          
+          if (sc1Input && sc2Input) {
+              const qIdMatch = sc1Input.id.match(/\d+/); // ดึงตัวเลขจาก ID (เช่น q1_1 ได้เลข 1)
+              if (qIdMatch) {
+                  const qNum = parseInt(qIdMatch[0]);
+                  const sc1 = sc1Input.value || 0;
+                  const sc2 = sc2Input.value || 0;
+                  scoresData[`q${qNum}`] = [parseFloat(sc1), parseFloat(sc2)];
+              }
+          }
+      });
 
-// ฟังก์ชันดึงข้อมูลเดิมจาก Supabase มาโชว์ (ถ้าเคยประเมินแล้ว)
-async function fetchExistingEvaluation(nick, month) {
-    const { data, error } = await supabaseClient
-        .from('hr_evaluations')
-        .select('*')
-        .eq('nickname', nick)
-        .eq('month', month)
-        .maybeSingle();
+      const rawTotal = document.getElementById('grandTotalScore').innerText;
+      const rawPercent = document.getElementById('grandTotalPercent').innerText.replace('%', '');
 
-    if (data) {
-        const scores = data.scores;
-        // นำค่า scores มาวนลูปเติมใน input ตามลำดับหัวข้อ
-        // (คุณต้องกำหนด ID หรือ Index ให้แน่นอนสำหรับหัวข้อ 1-15)
-        console.log("พบบันทึกเก่า:", data);
-    }
-}
+      const payload = {
+          nickname: nick,
+          month: month,
+          department: allUsersData.find(u => u[1] === nick)[3], 
+          scores: scoresData,
+          total_score: parseFloat(rawTotal),
+          kpi_percent: parseFloat(rawPercent),
+          evaluator_nick: myNick
+      };
 
-// ฟังก์ชันบันทึกข้อมูลประเมิน
-async function saveEvaluation() {
-    const nick = document.getElementById('evalTargetName').innerText;
-    const month = document.getElementById('hrEvalMonth').value;
-    const myNick = localStorage.getItem('okvip_nick');
-    
-    if(!month) return Swal.fire('เตือน', 'กรุณาเลือกเดือนที่ประเมินด้วยครับ', 'warning');
+      try {
+          // ใช้ Upsert (มีแล้วให้อัปเดต / ยังไม่มีให้เพิ่มใหม่)
+          const { error } = await supabaseClient.from('hr_evaluations').upsert(payload, { onConflict: 'id' }).eq('nickname', nick).eq('month', month);
 
-    Swal.fire({ title: 'กำลังบันทึกข้อมูล...', didOpen: () => Swal.showLoading() });
+          if (error) {
+              // กรณีบางครั้ง Upsert ด้วย Custom Condition อาจจะมีบั๊ก ให้ใช้วิธีเช็คแล้วค่อยสั่ง Insert / Update แยกกัน
+              const { data: existCheck } = await supabaseClient.from('hr_evaluations').select('id').eq('nickname', nick).eq('month', month).maybeSingle();
+              if (existCheck) {
+                  await supabaseClient.from('hr_evaluations').update(payload).eq('id', existCheck.id);
+              } else {
+                  await supabaseClient.from('hr_evaluations').insert([payload]);
+              }
+          }
 
-    // เก็บข้อมูลคะแนน 15 ข้อลงใน Object
-    let scoresData = {};
-    const rows = document.querySelectorAll('#evalFormBody tr:not(.eval-bg-teal)');
-    rows.forEach((row, index) => {
-        const sc1 = row.querySelector('.sc1')?.value || 0;
-        const sc2 = row.querySelector('.sc2')?.value || 0;
-        if(sc1 || sc2) scoresData[`q${index+1}`] = [sc1, sc2];
-    });
-
-    const payload = {
-        nickname: nick,
-        month: month,
-        department: myRole === 'Admin' ? 'ODOL' : 'UNKNOWN', // หรือดึงจาก Data พนักงาน
-        scores: scoresData,
-        evaluator_nick: myNick
-    };
-
-    try {
-        // บันทึกแบบ Upsert (ถ้ามีข้อมูลเดือนนั้นอยู่แล้วจะทับให้เลย)
-        const { error } = await supabaseClient
-            .from('hr_evaluations')
-            .upsert(payload, { onConflict: 'nickname, month' });
-
-        if (error) throw error;
-
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).hide();
-        Swal.fire({ icon: 'success', title: 'บันทึกคะแนนเรียบร้อย', timer: 2000 });
-        renderHrEvalList(); // รีเฟรชตาราง
-    } catch (err) {
-        console.error(err);
-        Swal.fire('Error', 'ไม่สามารถบันทึกได้: ' + err.message, 'error');
-    }
-}
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).hide();
+          Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'บันทึกคะแนนเรียบร้อย', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff' });
+          
+          // สั่งให้เช็คสถานะเขียว ✅ ที่ตารางหน้าบ้าน
+          checkEvalStatus(nick); 
+      } catch (err) {
+          console.error(err);
+          Swal.fire('Error', 'ไม่สามารถบันทึกได้: ' + err.message, 'error');
+      }
+  }
 </script>
 </body>
 </html>
