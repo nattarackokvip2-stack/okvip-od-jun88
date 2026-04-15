@@ -229,6 +229,25 @@
   .msg-bubble { max-width: 75%; padding: 8px 15px; border-radius: 15px; font-size: 0.9rem; clear: both; word-break: break-word; }
   .msg-me { background: var(--neon-blue); color: #000; align-self: flex-end; border-bottom-right-radius: 2px; }
   .msg-them { background: #222; color: #fff; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #444; }
+
+  .hub-hr { border: 1px solid #00ffcc; box-shadow: 0 0 10px rgba(0, 255, 204, 0.1); } 
+  .hub-hr .hub-title { color: #00ffcc; text-shadow: 0 0 5px rgba(0, 255, 204, 0.3); } 
+  .hub-hr:hover { box-shadow: 0 0 25px rgba(0, 255, 204, 0.4); background: rgba(0, 255, 204, 0.05); }
+
+  .eval-table-wrapper { overflow-x: auto; background: #fff; color: #000; border-radius: 8px; font-size: 0.85rem; }
+  .eval-table { width: 100%; min-width: 900px; border-collapse: collapse; }
+  .eval-table th, .eval-table td { border: 1px solid #000; padding: 6px; vertical-align: middle; }
+  .eval-bg-teal { background-color: #33cccc !important; color: #000 !important; font-weight: bold; }
+  .eval-bg-red { background-color: #ff3300 !important; color: #fff !important; text-align: center; }
+  .eval-bg-orange { background-color: #ff9900 !important; color: #000 !important; text-align: center; }
+  .eval-bg-blue { background-color: #3366ff !important; color: #fff !important; text-align: center; }
+  .eval-bg-lgreen { background-color: #cceeb5 !important; color: #000 !important; text-align: center; }
+  .eval-bg-dgreen { background-color: #33cc33 !important; color: #fff !important; text-align: center; }
+  .eval-input { width: 100%; border: 1px solid #ccc; background: #fff; color: #000; text-align: center; padding: 4px; outline: none; }
+  .eval-input:focus { border: 2px solid #000; }
+  .eval-input:disabled { background: #eee; cursor: not-allowed; }
+  .eval-row-sum { background-color: #e6e6e6; font-weight: bold; text-align: right; }
+  .eval-sum-box { background-color: #ff9900; font-weight: bold; text-align: center; }
   </style>
 </head>
 <body>
@@ -310,8 +329,11 @@
         <div class="hub-card hub-penalty" onclick="switchMainTab('penaltySection')"><div class="hub-icon">⚠️</div><div class="hub-title">ตารางลงโทษพนักงาน</div></div>
         <div class="hub-card hub-portal" onclick="switchMainTab('portalSection')"><div class="hub-icon">🌐</div><div class="hub-title">จัดการเว็บไซต์</div></div>
         <div class="hub-card" style="border: 1px solid #5865F2; box-shadow: 0 0 10px rgba(88, 101, 242, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(88, 101, 242, 0.4)'; this.style.background='rgba(88, 101, 242, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(88, 101, 242, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('discordSection')">
-           <div class="hub-icon" style="text-shadow: none;">🎧</div>
-           <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
+        <div class="hub-icon" style="text-shadow: none;">🎧</div>
+        <div class="hub-title" style="color: #5865F2; text-shadow: 0 0 5px rgba(88, 101, 242, 0.3);"> (Discord)</div>
+        <div class="hub-card hub-hr" onclick="switchMainTab('hrSection')">
+           <div class="hub-icon">📊</div>
+           <div class="hub-title">ข้อมูลการทำงาน</div>
         </div>
 
         <div class="hub-card" style="border: 1px solid #ff00ff; box-shadow: 0 0 10px rgba(255, 0, 255, 0.1);" onmouseover="this.style.boxShadow='0 0 25px rgba(255, 0, 255, 0.4)'; this.style.background='rgba(255, 0, 255, 0.05)';" onmouseout="this.style.boxShadow='0 0 10px rgba(255, 0, 255, 0.1)'; this.style.background='var(--bg-card)';" onclick="switchMainTab('vaultSection'); renderVaultGrid();">
@@ -321,6 +343,72 @@
       </div>
     </div>
 
+    <div id="hrSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0" style="color: #00ffcc;">📊 ข้อมูลการทำงานพนักงาน</h4>
+      </div>
+      
+      <div class="filter-bar mb-4 pb-3" style="border-bottom: 1px solid #333;">
+        <div id="tabHrEval" class="dept-badge active" onclick="switchHrTab('eval')">📋 1. ประเมินการทำงานรายเดือน</div>
+        <div id="tabHrBehavior" class="dept-badge admin-only-ui" onclick="switchHrTab('behavior')" style="display: none;">⚠️ 2. รายงานพฤติกรรมพนักงาน</div>
+        <div id="tabHrProbation" class="dept-badge admin-only-ui" onclick="switchHrTab('probation')" style="display: none;">🎓 3. ข้อมูลการสอบประเมิน</div>
+      </div>
+
+      <div id="hrEvalArea">
+        <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+           <div class="d-flex align-items-center gap-2">
+               <span class="text-white small">📅 เดือน:</span>
+               <input type="month" id="hrEvalMonth" class="form-control bg-dark text-white border-secondary" style="width: auto;">
+               <div class="filter-bar ms-3" id="hrEvalDeptFilter">
+                 <div class="dept-badge active" onclick="filterHrEvalDept('ALL', this)">ทั้งหมด</div>
+                 <div class="dept-badge" onclick="filterHrEvalDept('OD', this)">OD</div>
+                 <div class="dept-badge" onclick="filterHrEvalDept('ODOL', this)">ODOL</div>
+               </div>
+           </div>
+           <input type="text" id="searchHrEval" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." style="width: 200px;">
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>ชื่อพนักงาน</th><th>แผนก</th><th>สถานะประเมินเดือนนี้</th><th class="text-center">ประเมิน/ดูผล</th></tr></thead>
+            <tbody id="hrEvalTableBody">
+               </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="hrBehaviorArea" style="display: none;">
+        <div class="d-flex justify-content-between mb-3">
+            <input type="month" id="hrBehaviorMonth" class="form-control bg-dark text-warning border-warning" style="width: auto;">
+            <button class="btn btn-outline-warning fw-bold" onclick="openBehaviorModal()">➕ บันทึกพฤติกรรมใหม่</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>วันที่บันทึก</th><th>พนักงาน</th><th>รายละเอียดพฤติกรรม</th><th>ผู้บันทึก</th></tr></thead>
+            <tbody id="hrBehaviorTableBody"><tr><td colspan="4" class="text-center text-muted py-4">รอการเชื่อมต่อฐานข้อมูล...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="hrProbationArea" style="display: none;">
+        <div class="alert alert-dark border-success text-success small mb-3" style="background: rgba(0, 255, 102, 0.05);">
+            <b>🎓 ขั้นตอนและเงื่อนไขการสอบประเมินผ่านโปร:</b><br>
+            1. พนักงานต้องมีอายุงานตามที่กำหนดและไม่มีประวัติพฤติกรรมร้ายแรง<br>
+            2. ผู้สอบ (Admin/SuperAdmin) เป็นผู้บันทึกผลการทดสอบและข้อเสนอแนะ<br>
+            3. ข้อมูลนี้ใช้พิจารณาปรับฐานเงินเดือน
+        </div>
+        <div class="d-flex justify-content-end mb-3">
+            <button class="btn btn-outline-success fw-bold" onclick="openProbationModal()">➕ บันทึกผลสอบประเมิน</button>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead><tr><th>วันที่ประเมิน</th><th>พนักงาน</th><th>รายละเอียดการผ่านโปร</th><th>พฤติกรรมที่ผ่านมา (สรุป)</th><th>สถานะ</th></tr></thead>
+            <tbody id="hrProbationTableBody"><tr><td colspan="5" class="text-center text-muted py-4">รอการเชื่อมต่อฐานข้อมูล...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+      
     <div id="announceSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
@@ -1195,6 +1283,52 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="evalFormModal" tabindex="-1" data-bs-theme="light">
+  <div class="modal-dialog modal-fullscreen"><div class="modal-content" style="background: #e6f2f2;">
+    <div class="modal-header bg-dark text-white border-0">
+      <h5 class="modal-title fw-bold" style="color: #00ffcc;">📋 แบบประเมินผลการปฏิบัติงาน: <span id="evalTargetName" class="text-warning"></span></h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body p-4">
+       <div id="evalPermissionAlert" class="alert alert-warning d-none">คุณกำลังดูผลประเมินของตนเอง (ไม่สามารถแก้ไขได้)</div>
+       
+       <div class="eval-table-wrapper">
+         <table class="eval-table">
+            <thead>
+               <tr>
+                 <th colspan="2" class="eval-bg-teal text-center fs-5">ส่วนที่ 1 แบบประเมินผลการปฏิบัติงาน</th>
+                 <th class="eval-bg-red">0-60 คะแนน</th>
+                 <th class="eval-bg-orange">60-70 คะแนน</th>
+                 <th class="eval-bg-blue">70-80 คะแนน</th>
+                 <th class="eval-bg-lgreen">80-90 คะแนน</th>
+                 <th class="eval-bg-dgreen">90-100 คะแนน</th>
+                 <th class="eval-bg-red text-center">เกรด</th>
+               </tr>
+               <tr class="text-center fw-bold" style="background: #f2f2f2;">
+                 <th style="width: 80px;">ระดับ<br>ความชำนาญ</th>
+                 <th style="min-width: 300px;">พฤติกรรมที่กำหนดสำหรับสมรรถนะ</th>
+                 <th colspan="5" class="align-bottom pb-2">ความถี่ในการแสดงพฤติกรรม<br><div class="d-flex justify-content-end gap-3 mt-2"><span style="width: 70px;">คนที่ 1 (0-100)</span><span style="width: 70px;">คนที่ 2 (0-100)</span></div></th>
+                 <th style="width: 80px;">สรุป<br>คะแนน</th>
+               </tr>
+            </thead>
+            <tbody id="evalFormBody">
+               <tr><td colspan="8" class="eval-bg-teal">1.ลักษณะส่วนตัว</td></tr>
+               <tr><td class="text-center fw-bold">1</td><td>ความรับผิดชอบ/ความกระตือรือร้น</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" max="100"><input type="number" class="eval-input sc2" max="100"></div></td><td><input type="text" class="eval-input eval-sum" disabled></td></tr>
+               <tr><td class="text-center fw-bold">2</td><td>การสื่อสารระหว่างแผนก/ความสุภาพ</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" max="100"><input type="number" class="eval-input sc2" max="100"></div></td><td><input type="text" class="eval-input eval-sum" disabled></td></tr>
+               <tr><td colspan="2" class="eval-row-sum py-2 pe-3">รวม</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><div class="eval-sum-box w-100" id="sumSec1_1">0</div><div class="eval-sum-box w-100" id="sumSec1_2">0</div></div></td><td class="eval-sum-box" id="sumSec1_total">0</td></tr>
+
+               <tr><td colspan="8" class="eval-bg-teal mt-3">2.ความพร้อมในการทำงาน และ ปฏิบัติตามกฎระเบียบ : การมาทำงานตามเวลา / การขาดงาน / การลางาน / มาสาย</td></tr>
+               <tr><td class="text-center fw-bold">7</td><td>มีทัศนคติในการทำงาน มีความเชื่อมั่น...</td><td colspan="5"><div class="d-flex justify-content-end gap-2"><input type="number" class="eval-input sc1" max="100"><input type="number" class="eval-input sc2" max="100"></div></td><td><input type="text" class="eval-input eval-sum" disabled></td></tr>
+               </tbody>
+         </table>
+       </div>
+    </div>
+    <div class="modal-footer bg-dark border-0">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">ปิด</button>
+      <button type="button" class="btn btn-success fw-bold" id="btnSaveEval" onclick="saveEvaluation()">💾 บันทึกผลประเมิน</button>
+    </div>
+  </div></div>
+</div> 
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 <script>
@@ -4409,6 +4543,135 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       }
   }
 
+  // ==========================================
+  // 📊 ระบบข้อมูลการทำงาน (HR & Performance)
+  // ==========================================
+  let currentHrTab = 'eval';
+  let currentHrEvalDept = 'ALL';
+
+  function switchHrTab(tab) {
+      currentHrTab = tab;
+      document.querySelectorAll('#hrSection .dept-badge').forEach(b => {
+          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
+      });
+      
+      let btnId = tab === 'eval' ? 'tabHrEval' : (tab === 'behavior' ? 'tabHrBehavior' : 'tabHrProbation');
+      let btn = document.getElementById(btnId);
+      if(btn) { btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; }
+
+      document.getElementById('hrEvalArea').style.display = tab === 'eval' ? 'block' : 'none';
+      document.getElementById('hrBehaviorArea').style.display = tab === 'behavior' ? 'block' : 'none';
+      document.getElementById('hrProbationArea').style.display = tab === 'probation' ? 'block' : 'none';
+      
+      if(tab === 'eval') renderHrEvalList();
+  }
+
+  function filterHrEvalDept(dept, btn) {
+      currentHrEvalDept = dept;
+      document.querySelectorAll('#hrEvalDeptFilter .dept-badge').forEach(b => {
+          b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
+      });
+      btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
+      renderHrEvalList();
+  }
+
+  // เรียกใช้ฟังก์ชันนี้ใน verifyUserStatus() เพื่อซ่อนเมนูที่ Admin เท่านั้นถึงจะเห็น
+  function applyHrPermissions() {
+      const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
+      document.querySelectorAll('.admin-only-ui').forEach(el => {
+          el.style.display = isAdmin ? 'block' : 'none';
+      });
+  }
+
+  function renderHrEvalList() {
+      applyHrPermissions(); // เช็คสิทธิ์ก่อน
+      const tbody = document.getElementById('hrEvalTableBody');
+      tbody.innerHTML = '';
+      
+      const myNick = localStorage.getItem('okvip_nick');
+      const isSuperAdmin = myRole === 'SuperAdmin';
+      const isAdmin = myRole === 'Admin';
+      const isMember = myRole === 'Member';
+
+      let filteredUsers = allUsersData.filter(u => {
+          if (!u || u[7] !== 'Active') return false;
+          const nick = u[1];
+          const dept = u[3] ? u[3].toString() : '';
+          
+          // 🛑 กฎการมองเห็น:
+          // 1. Member: เห็นเฉพาะชื่อตัวเองเท่านั้น
+          if (isMember && nick !== myNick) return false;
+          
+          // 2. Admin: เห็นเฉพาะ ODOL และชื่อตัวเอง
+          if (isAdmin) {
+             if (nick !== myNick && !dept.includes('ODOL')) return false;
+          }
+          
+          // 3. การกดปุ่ม Filter แผนก
+          if (currentHrEvalDept !== 'ALL') {
+             if (currentHrEvalDept === 'OD' && (!dept.includes('OD') || dept.includes('ODOL'))) return false;
+             if (currentHrEvalDept === 'ODOL' && !dept.includes('ODOL')) return false;
+          }
+          
+          return true;
+      });
+
+      if (filteredUsers.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">ไม่พบรายชื่อที่เข้าถึงได้</td></tr>`;
+          return;
+      }
+
+      filteredUsers.forEach(u => {
+          const nick = u[1];
+          const dept = u[3].split(' ')[0];
+          
+          // เช็คสิทธิ์การ "แก้ไข"
+          let canEdit = isSuperAdmin || (isAdmin && dept.includes('ODOL')) || (isAdmin && nick === myNick);
+          // Member ไม่มีสิทธิ์แก้เลย ดูได้อย่างเดียว
+          if (isMember) canEdit = false;
+
+          let btnText = canEdit ? '📝 ประเมินผล' : '🔍 ดูผลประเมิน';
+          let btnClass = canEdit ? 'btn-outline-warning' : 'btn-outline-info';
+
+          tbody.innerHTML += `
+            <tr>
+              <td class="fw-bold text-white">${nick} ${nick === myNick ? '(คุณ)' : ''}</td>
+              <td class="text-muted small">${dept}</td>
+              <td><span class="badge bg-secondary border">ยังไม่ประเมิน</span></td>
+              <td class="text-center">
+                  <button class="btn btn-sm ${btnClass} fw-bold" onclick="openEvaluationForm('${nick}', ${canEdit})">${btnText}</button>
+              </td>
+            </tr>
+          `;
+      });
+  }
+
+  function openEvaluationForm(targetNick, canEdit) {
+      document.getElementById('evalTargetName').innerText = targetNick;
+      
+      const alertBox = document.getElementById('evalPermissionAlert');
+      const saveBtn = document.getElementById('btnSaveEval');
+      const inputs = document.querySelectorAll('.eval-input:not(.eval-sum)');
+      
+      if (!canEdit) {
+          alertBox.classList.remove('d-none');
+          saveBtn.style.display = 'none';
+          inputs.forEach(inp => { inp.disabled = true; });
+      } else {
+          alertBox.classList.add('d-none');
+          saveBtn.style.display = 'block';
+          inputs.forEach(inp => { inp.disabled = false; });
+      }
+
+      // TODO: ใส่โค้ดดึงข้อมูลเก่าจาก Supabase มาเติมในช่อง input ที่นี่
+
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).show();
+  }
+
+  function saveEvaluation() {
+      // TODO: ดึงค่าจากช่อง Input ตาม Class หรือ ID เพื่อส่งไปบันทึกบน Supabase
+      Swal.fire({title: 'ฟีเจอร์นี้อยู่ระหว่างการเชื่อมต่อฐานข้อมูล', icon: 'info'});
+  }
 </script>
 </body>
 </html>
