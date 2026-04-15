@@ -1662,6 +1662,7 @@
   }
 
   window.onload = function() {
+    initEvalAutoCalculate();
     setupPasteArea('stepPasteArea', 'stepMediaFile', processStepImage, true); 
     setupPasteArea('portalPasteArea', 'portalMediaFile', processPortalImage, false);
     setupPasteArea('backendPasteArea', 'backendMediaFile', processBackendImage, false);
@@ -4669,10 +4670,99 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).show();
   }
 
-  function saveEvaluation() {
-      // TODO: ดึงค่าจากช่อง Input ตาม Class หรือ ID เพื่อส่งไปบันทึกบน Supabase
-      Swal.fire({title: 'ฟีเจอร์นี้อยู่ระหว่างการเชื่อมต่อฐานข้อมูล', icon: 'info'});
-  }
+  // ฟังก์ชันคำนวณคะแนนใน Modal อัตโนมัติขณะพิมพ์
+function initEvalAutoCalculate() {
+    const tableBody = document.getElementById('evalFormBody');
+    tableBody.addEventListener('input', () => {
+        let totalAll = 0;
+        let sumSec1_1 = 0, sumSec1_2 = 0;
+
+        // วนลูปคำนวณแต่ละแถว (สมมติว่ามี 15 แถวที่เก็บคะแนน)
+        const rows = document.querySelectorAll('#evalFormBody tr:not(.eval-bg-teal)');
+        rows.forEach(row => {
+            const sc1 = parseFloat(row.querySelector('.sc1')?.value) || 0;
+            const sc2 = parseFloat(row.querySelector('.sc2')?.value) || 0;
+            const rowAvg = (sc1 + sc2) / 2;
+            
+            const sumInput = row.querySelector('.eval-sum');
+            if(sumInput) sumInput.value = rowAvg;
+            
+            totalAll += rowAvg;
+            
+            // แยกนับคะแนนรวมรายบุคคล (ถ้าเป็น Section 1)
+            if(row.contains(document.querySelector('.sc1'))) {
+                sumSec1_1 += sc1;
+                sumSec1_2 += sc2;
+            }
+        });
+
+        // อัปเดตตัวเลขแสดงผลใน UI
+        if(document.getElementById('sumSec1_1')) document.getElementById('sumSec1_1').innerText = sumSec1_1;
+        if(document.getElementById('sumSec1_2')) document.getElementById('sumSec1_2').innerText = sumSec1_2;
+        if(document.getElementById('sumSec1_total')) document.getElementById('sumSec1_total').innerText = (sumSec1_1 + sumSec1_2) / 2;
+    });
+}
+
+// ฟังก์ชันดึงข้อมูลเดิมจาก Supabase มาโชว์ (ถ้าเคยประเมินแล้ว)
+async function fetchExistingEvaluation(nick, month) {
+    const { data, error } = await supabaseClient
+        .from('hr_evaluations')
+        .select('*')
+        .eq('nickname', nick)
+        .eq('month', month)
+        .maybeSingle();
+
+    if (data) {
+        const scores = data.scores;
+        // นำค่า scores มาวนลูปเติมใน input ตามลำดับหัวข้อ
+        // (คุณต้องกำหนด ID หรือ Index ให้แน่นอนสำหรับหัวข้อ 1-15)
+        console.log("พบบันทึกเก่า:", data);
+    }
+}
+
+// ฟังก์ชันบันทึกข้อมูลประเมิน
+async function saveEvaluation() {
+    const nick = document.getElementById('evalTargetName').innerText;
+    const month = document.getElementById('hrEvalMonth').value;
+    const myNick = localStorage.getItem('okvip_nick');
+    
+    if(!month) return Swal.fire('เตือน', 'กรุณาเลือกเดือนที่ประเมินด้วยครับ', 'warning');
+
+    Swal.fire({ title: 'กำลังบันทึกข้อมูล...', didOpen: () => Swal.showLoading() });
+
+    // เก็บข้อมูลคะแนน 15 ข้อลงใน Object
+    let scoresData = {};
+    const rows = document.querySelectorAll('#evalFormBody tr:not(.eval-bg-teal)');
+    rows.forEach((row, index) => {
+        const sc1 = row.querySelector('.sc1')?.value || 0;
+        const sc2 = row.querySelector('.sc2')?.value || 0;
+        if(sc1 || sc2) scoresData[`q${index+1}`] = [sc1, sc2];
+    });
+
+    const payload = {
+        nickname: nick,
+        month: month,
+        department: myRole === 'Admin' ? 'ODOL' : 'UNKNOWN', // หรือดึงจาก Data พนักงาน
+        scores: scoresData,
+        evaluator_nick: myNick
+    };
+
+    try {
+        // บันทึกแบบ Upsert (ถ้ามีข้อมูลเดือนนั้นอยู่แล้วจะทับให้เลย)
+        const { error } = await supabaseClient
+            .from('hr_evaluations')
+            .upsert(payload, { onConflict: 'nickname, month' });
+
+        if (error) throw error;
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).hide();
+        Swal.fire({ icon: 'success', title: 'บันทึกคะแนนเรียบร้อย', timer: 2000 });
+        renderHrEvalList(); // รีเฟรชตาราง
+    } catch (err) {
+        console.error(err);
+        Swal.fire('Error', 'ไม่สามารถบันทึกได้: ' + err.message, 'error');
+    }
+}
 </script>
 </body>
 </html>
