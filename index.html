@@ -1080,6 +1080,64 @@
     </div>
   </div>
 </div>
+<div class="modal fade" id="botManageModal" tabindex="-1" data-bs-theme="dark" style="z-index: 1060;">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="background-color: var(--bg-card); border: 1px solid #00ff66;">
+      <div class="modal-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h4 class="fw-bold mb-0" style="color: #00ff66; text-shadow: 0 0 10px rgba(0,255,102,0.5);">🤖 จัดการบัญชีบอทธนาคาร</h4>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-5 border-end border-secondary">
+                <h6 class="text-white mb-3 fw-bold">➕ เพิ่มบัญชีใหม่</h6>
+                <form id="botManageForm" onsubmit="saveBotData(event)">
+                    <label class="small mb-1 text-white">🏦 เลือกธนาคาร (Bank)</label>
+                    <select id="bankSelect" class="form-select bg-dark text-white mb-3" style="border-color: #00ff66;" required>
+                        <option value="" disabled selected>-- เลือกธนาคาร --</option>
+                        <option value="kbank">🟢 กสิกรไทย (KBank)</option>
+                        <option value="scb">🟣 ไทยพาณิชย์ (SCB)</option>
+                        <option value="ktb">🔵 กรุงไทย (KTB)</option>
+                        <option value="bbl">🟦 กรุงเทพ (BBL)</option>
+                        <option value="bay">🟡 กรุงศรี (BAY)</option>
+                    </select>
+
+                    <label class="small mb-1 text-white">👤 Username (ชื่อผู้ใช้)</label>
+                    <input type="text" id="botUser" class="form-control mb-3 bg-dark text-white" style="border-color: #444;" placeholder="กรอก Username..." required>
+                    
+                    <label class="small mb-1 text-white">🔑 Password (รหัสผ่าน)</label>
+                    <input type="text" id="botPass" class="form-control mb-4 bg-dark text-white" style="border-color: #444;" placeholder="กรอกรหัสผ่าน..." required>
+                    
+                    <button type="submit" class="btn w-100 py-2 fw-bold text-dark" style="background-color: #00ff66; box-shadow: 0 0 10px rgba(0,255,102,0.5);">
+                        💾 บันทึกข้อมูลบัญชี
+                    </button>
+                </form>
+            </div>
+
+            <div class="col-md-7">
+                <h6 class="text-white mb-3 fw-bold">📋 บัญชีบอทในระบบทั้งหมด</h6>
+                <div class="table-responsive" style="max-height: 350px; overflow-y: auto;">
+                    <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                        <thead style="position: sticky; top: 0; background-color: #121215; z-index: 10;">
+                            <tr>
+                                <th>ธนาคาร</th>
+                                <th>Username</th>
+                                <th class="text-center">จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="botListBody">
+                            <tr><td colspan="3" class="text-center text-muted py-4">⏳ กำลังโหลด...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
 
 <div class="modal fade" id="vaultModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered modal-xl"> <div class="modal-content" style="border: 1px solid #ff00ff; box-shadow: 0 0 30px rgba(255,0,255,0.3);">
@@ -1198,7 +1256,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 <script>
-// ==========================================
+  // ==========================================
   // ⚡ เริ่มต้นระบบ JavaScript
   // ==========================================
   let myRole = ""; 
@@ -1223,7 +1281,6 @@
   let manualSearchTerm = '';
   
   let isDraggingStamp = false; 
-  let currentStamp = null;    // 👈 ตัวแปรที่หายไป ถูกเติมไว้ที่นี่แล้วครับ
   let unsavedChanges = {}; 
   let scheduleSearchTerm = ''; 
   let currentScheduleFilter = 'ALL';
@@ -1245,7 +1302,7 @@
   let tempSetupNick = "";
 
   // ==========================================
-  // 🛠️ ฟังก์ชันหลักของระบบ
+  // 🛠️ คืนชีพฟังก์ชันหลักที่หายไป (ห้ามลบ)
   // ==========================================
   function handleLogout() { 
       localStorage.clear(); 
@@ -1296,7 +1353,7 @@
       const myNick = localStorage.getItem('okvip_nick');
       const me = allUsersData.find(u => u[1] === myNick);
       if (me) {
-          document.getElementById('myProfileTelegram').value = me[8] || '';
+          document.getElementById('myProfileTelegram').value = me[8] || ''; // ดึง Telegram เดิมมาโชว์
       }
       bootstrap.Modal.getOrCreateInstance(document.getElementById('myProfileModal')).show();
   }
@@ -1313,6 +1370,7 @@
       btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
 
       try {
+          // ตรวจสอบรหัสผ่านเก่าเพื่อความปลอดภัย
           const { data: userData, error: fetchErr } = await supabaseClient.from('users').select('id, password').eq('username', myUser).single();
           if (fetchErr || !userData) throw new Error('ดึงข้อมูลผู้ใช้ไม่สำเร็จ');
 
@@ -1321,6 +1379,7 @@
           if (finalTg && !finalTg.startsWith('@')) finalTg = '@' + finalTg;
           updatePayload.telegram = finalTg;
 
+          // เช็คเงื่อนไขถ้ามีการกรอกรหัสผ่านเพื่อจะเปลี่ยน
           if (oldPass || newPass || confirmPass) {
               if (!oldPass) throw new Error('กรุณากรอก "รหัสผ่านเก่า" เพื่อยืนยันตัวตน');
               if (userData.password !== oldPass) throw new Error('รหัสผ่านเก่าไม่ถูกต้อง!');
@@ -1341,7 +1400,6 @@
           btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูล';
       }
   }
-
   // ==========================================
   // 🌟 ฟังก์ชันแจ้งเตือน Telegram
   // ==========================================
@@ -1357,6 +1415,13 @@
           });
       } catch (e) { console.error("Telegram Error:", e); }
   }
+  
+  // ตัวแปรคุมโหมดตารางและ Sandbox
+  let currentSchDept = 'ALL';
+  let currentSchShift = 'ALL';
+  let currentScheduleMode = 'REAL'; 
+  let sandboxDataCache = {}; 
+  let sandboxUserShiftCache = {}; 
 
   // ==========================================
   // 🚀 1. ตั้งค่า Supabase และคอนฟิกต่างๆ
@@ -1801,6 +1866,27 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       refreshData(document.getElementById('refreshBtn'), isLoginEvent);
       initChatAndNoti();
   }
+
+  function handleLogout() { 
+      localStorage.clear(); 
+      document.getElementById('mainDashboard').style.display = 'none'; 
+      document.getElementById('loginPage').style.display = 'flex'; 
+      document.getElementById('user').value = ''; 
+      document.getElementById('pass').value = ''; 
+      const loginBtn = document.getElementById('loginBtn'); 
+      if(loginBtn) { loginBtn.disabled = false; loginBtn.innerText = 'เข้าสู่ระบบ'; } 
+  }
+
+  function switchMainTab(sectionId) { 
+      try {
+          if (unsavedChanges && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { Swal.fire({title:'ลืมบันทึกตาราง!', text:"กรุณากดปุ่มบันทึกข้อมูลตารางก่อนเปลี่ยนหน้าครับ", icon:'warning', background:'#111', color:'#fff'}); return; } 
+          document.querySelectorAll('.content-section').forEach(sec => sec.classList.remove('active')); const target = document.getElementById(sectionId); if (target) target.classList.add('active'); 
+          const nav = document.getElementById('topNavBar'); if (nav) nav.style.display = (sectionId === 'hubSection') ? 'none' : 'flex'; 
+          localStorage.setItem('okvip_current_tab', sectionId);
+      } catch(e) { console.error(e); }
+  }
+  
+  function goToHub() { switchMainTab('hubSection'); }
 
   function getRoleWeight(roleStr) { if (!roleStr) return 3; const r = roleStr.toString().trim(); if (r === 'SuperAdmin') return 1; if (r === 'Admin') return 2; return 3; }
   
@@ -3086,6 +3172,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       btn.innerText = '💾 บันทึกสถิติทั้งหมด'; btn.disabled=false; 
       await loadDailyJobData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกสถิติสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
   }
+
   // ==========================================
   // 🍽️ 6.5 ระบบตารางทานข้าว (Meal Schedule)
   // ==========================================
@@ -3878,7 +3965,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           loadDiscordAttendance(); 
       })
       .subscribe();
-
   // ==========================================
   // 🎯 ฟังก์ชันสะกิดเรียกพนักงาน (เวอร์ชันใหม่ ยิง API ตรงเข้าบอท)
   // ==========================================
@@ -3886,6 +3972,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       Swal.fire({title: 'กำลังส่งสัญญาณเรียก...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
 
       try {
+          // 🌟 ใช้ fetch() ยิงข้อมูลตรงไปที่เซิร์ฟเวอร์ของบอท (พอร์ต 3000)
           const response = await fetch('https://okvip-bot.onrender.com/api/poke', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -3904,14 +3991,16 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           Swal.fire('Error', 'ไม่สามารถเชื่อมต่อกับบอทได้ (บอทอาจจะปิดอยู่)', 'error');
       }
   }
-
   async function openShiftLog() {
+      // ดึงข้อความย้อนหลังมา 15 อันเลยครับ จะได้ดูได้เยอะๆ
       const { data } = await supabaseClient.from('shift_logs').select('*').order('created_at', {ascending: false}).limit(15);
 
+      // 🌟 ขยายความสูงของกล่องข้อความให้ใหญ่สะใจ (ปรับ height เป็น 500px)
       let historyHtml = '<div class="text-start mb-3 p-4 rounded" style="max-height: 60vh; height: 500px; overflow-y: auto; background: #222; border: 1px solid #444;">';
 
       if(data && data.length > 0) {
           data.forEach(log => {
+              // 🌟 จัด Layout ใหม่ แบ่งซ้าย(ข้อความ) ขวา(ปุ่มลบ) เป็นสัดส่วนชัดเจน
               historyHtml += `
                   <div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom border-secondary">
                       <div class="pe-4" style="word-break: break-word; width: 100%;">
@@ -3936,17 +4025,17 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           input: 'textarea',
           inputPlaceholder: 'พิมพ์ข้อความฝากถึงกะต่อไป...',
           inputAttributes: {
-              style: 'height: 150px; font-size: 1.1rem; line-height: 1.5;' 
+              style: 'height: 150px; font-size: 1.1rem; line-height: 1.5;' // 🌟 ทำให้ช่องสำหรับพิมพ์กว้างและสูงขึ้น
           },
           background: '#111', 
           color: '#fff',
-          width: '1080px',
+          width: '1080px', // 🌟 ขยายความกว้างแบบจัดเต็ม 1080px ตามคำขอ!
           showCancelButton: true,
           confirmButtonText: 'บันทึกส่งกะ',
           cancelButtonText: 'ปิดหน้าต่าง',
           confirmButtonColor: '#00f0ff',
           customClass: {
-              popup: 'p-4' 
+              popup: 'p-4' // เพิ่มขอบหน้าต่างให้ดูหรูหราขึ้น
           }
       });
 
@@ -3961,8 +4050,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           setTimeout(openShiftLog, 1000);
       }
   }
-
+  // 🌟 ฟังก์ชันจัดการการลบข้อความ
   async function deleteShiftLog(logId) {
+      // เด้งถามเพื่อความชัวร์ก่อนลบ
       const confirmDelete = await Swal.fire({
           title: 'ต้องการลบข้อความนี้?',
           icon: 'warning',
@@ -3975,8 +4065,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       });
 
       if (confirmDelete.isConfirmed) {
+          // สั่งลบข้อมูลออกจาก Supabase ตาม ID
           await supabaseClient.from('shift_logs').delete().eq('id', logId);
+          
           Swal.fire({toast:true, position:'top-end', title:'ลบข้อความเรียบร้อย', icon:'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
+          
+          // โหลดหน้าต่างขึ้นมาใหม่เพื่ออัปเดตข้อมูล
           openShiftLog();
       }
   }
@@ -3989,6 +4083,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           
           allVaultData = data || [];
           
+          // ถ้าผู้ใช้กำลังเปิดหน้าฐานลับอยู่ ให้โชว์ข้อมูลขึ้นมาแบบเนียนๆ เลย
           if (document.getElementById('vaultSection').classList.contains('active')) {
               renderVaultGrid();
           }
@@ -4023,6 +4118,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           const catSelect = document.getElementById('vaultCategory');
           if(catSelect) catSelect.value = '📌 โน้ตทั่วไป';
           
+          // 🌟 ลบคำสั่งเบลอทิ้งไปแล้ว เด้ง Pop-up ได้เลย
           bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
       } catch(e) {
           console.error("Error opening modal:", e);
@@ -4039,10 +4135,12 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       document.getElementById('vaultTitle').value = v.title; 
       document.getElementById('vaultContent').value = v.content; 
       
+      // 🌟 ลบคำสั่งเช็คเบลอทิ้ง โชว์ข้อความได้ทันที
       bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
   }
   
-  function renderVaultGrid() {
+  function renderVaultGrid() {
+      // 🌟 เพิ่มบรรทัดนี้: ให้แสดงชื่อเล่นของเจ้าของตู้เซฟทันที
       document.getElementById('vaultOwnerName').innerText = localStorage.getItem('okvip_nick') || currentUsername;
       
       const area = document.getElementById('vaultGridArea');
@@ -4088,6 +4186,20 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       });
   }
   
+  // 🌟 2. ฟังก์ชันเปิดหน้าต่างแก้ไข (เคลียร์บั๊กเบลอ)
+  function openEditVault(id) { 
+      const v = allVaultData.find(x => x.id.toString() === id.toString()); 
+      if (!v) return; 
+      
+      document.getElementById('editVaultId').value = v.id; 
+      document.getElementById('vaultCategory').value = v.category || '📌 โน้ตทั่วไป';
+      document.getElementById('vaultTitle').value = v.title; 
+      document.getElementById('vaultContent').value = v.content; 
+      
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).show(); 
+  }
+
+  // 🌟 3. ฟังก์ชันบันทึกข้อมูล (เช็คให้ชัวร์ว่าอัปเดตของเดิม ไม่สร้างใหม่)
   async function saveVaultData(e) {
       e.preventDefault(); 
       const title = document.getElementById('vaultTitle').value; 
@@ -4102,14 +4214,16 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           const payload = { owner_user: currentUsername, title: title, content: content, category: cat };
           
           if (id && id !== "") {
+              // ถ้ามี ID คือการแก้ไขอัปเดตข้อมูลเดิม
               await supabaseClient.from('private_vault').update(payload).eq('id', id); 
           } else {
+              // ถ้าไม่มี ID คือสร้างใหม่
               await supabaseClient.from('private_vault').insert([payload]);
           }
           
           bootstrap.Modal.getOrCreateInstance(document.getElementById('vaultModal')).hide();
           Swal.fire({toast:true, position:'top-end', title:'บันทึกข้อมูลสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-          loadPrivateVault(); 
+          loadPrivateVault(); // รีโหลดตู้เซฟใหม่
       } catch (err) { 
           Swal.fire('Error', err.message, 'error'); 
       } finally { 
@@ -4118,16 +4232,16 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
   
   function deleteVaultData(id) {
-      Swal.fire({title: 'ทำลายความลับนี้?', text: 'ข้อมูลนี้จะหายไปตลอดกาล', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'}).then(async r => {
-          if (r.isConfirmed) {
-              Swal.fire({title:'กำลังทำลาย...', didOpen:()=>Swal.showLoading()});
-              await supabaseClient.from('private_vault').delete().eq('id', id); loadPrivateVault();
-              Swal.fire({toast:true, position:'top-end', title:'ทำลายสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-          }
-      });
-  }
+      Swal.fire({title: 'ทำลายความลับนี้?', text: 'ข้อมูลนี้จะหายไปตลอดกาล', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'}).then(async r => {
+          if (r.isConfirmed) {
+              Swal.fire({title:'กำลังทำลาย...', didOpen:()=>Swal.showLoading()});
+              await supabaseClient.from('private_vault').delete().eq('id', id); loadPrivateVault();
+              Swal.fire({toast:true, position:'top-end', title:'ทำลายสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+      });
+  }
 
-  // ==========================================
+  // ==========================================
   // 🔔 & 💬 ระบบแจ้งเตือนและแชท (Core Logic + Realtime)
   // ==========================================
   let currentChatTarget = null;
@@ -4409,5 +4523,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
 </script>
+
 </body>
 </html>
