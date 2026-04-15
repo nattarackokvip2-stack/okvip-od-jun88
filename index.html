@@ -420,12 +420,22 @@
         <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
       </div>
       <div class="table-responsive">
-        <table class="table table-hover align-middle">
-          <thead><tr><th>สถานะ</th><th>หัวข้อประกาศ</th><th>เนื้อหา</th><th class="text-center" id="thAnnounceManage">จัดการ</th></tr></thead>
-          <tbody id="announceTableBody"></tbody>
-        </table>
-      </div>
-    </div>
+          <table class="table table-hover align-middle">
+            <thead>
+              <tr>
+                <th>ชื่อพนักงาน</th>
+                <th>แผนก</th>
+                <th class="text-center">การปฏิบัติงาน</th>
+                <th class="text-center">คะแนน</th>
+                <th class="text-center">ผู้ประเมิน</th>
+                <th class="text-center">สถานะประเมินเดือนนี้</th>
+                <th class="text-center">ผลการประเมิน</th>
+              </tr>
+            </thead>
+            <tbody id="hrEvalTableBody">
+               </tbody>
+          </table>
+        </div>
 
     <div id="staffSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
@@ -1310,10 +1320,22 @@
                  <th class="eval-bg-red text-center">เกรด</th>
                </tr>
                <tr class="text-center fw-bold" style="background: #f2f2f2;">
-                 <th style="width: 80px;">ระดับ<br>ความชำนาญ</th>
-                 <th style="min-width: 300px;">พฤติกรรมที่กำหนดสำหรับสมรรถนะ</th>
-                 <th colspan="5" class="align-bottom pb-2">ความถี่ในการแสดงพฤติกรรม<br><div class="d-flex justify-content-end gap-3 mt-2"><span style="width: 70px;">คนที่ 1 (0-100)</span><span style="width: 70px;">คนที่ 2 (0-100)</span></div></th>
-                 <th style="width: 80px;">สรุป<br>คะแนน</th>
+                 <th style="width: 80px; vertical-align: middle;">ระดับ<br>ความชำนาญ</th>
+                 <th style="min-width: 300px; vertical-align: middle;">พฤติกรรมที่กำหนดสำหรับสมรรถนะ</th>
+                 <th colspan="5" class="align-bottom pb-2">
+                    ความถี่ในการแสดงพฤติกรรม<br>
+                    <div class="d-flex justify-content-between gap-3 mt-2 px-2" style="width: 100%;">
+                        <div style="flex: 1; text-align: center;">
+                            <span class="text-dark">คนที่ 1 (0-100)</span>
+                            <input type="text" id="evaluatorName1" class="form-control form-control-sm mt-1 text-center border-secondary fw-bold" style="background: #fff; color: #000;" placeholder="ลงชื่อผู้ประเมิน 1">
+                        </div>
+                        <div style="flex: 1; text-align: center;">
+                            <span class="text-dark">คนที่ 2 (0-100)</span>
+                            <input type="text" id="evaluatorName2" class="form-control form-control-sm mt-1 text-center border-secondary fw-bold" style="background: #fff; color: #000;" placeholder="ลงชื่อผู้ประเมิน 2">
+                        </div>
+                    </div>
+                 </th>
+                 <th style="width: 80px; vertical-align: middle;">สรุป<br>คะแนน</th>
                </tr>
             </thead>
             <tbody id="evalFormBody">
@@ -4609,18 +4631,27 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       });
   }
 
-  function renderHrEvalList() {
+  async function renderHrEvalList() {
       applyHrPermissions(); 
       const tbody = document.getElementById('hrEvalTableBody');
-      tbody.innerHTML = '';
+      tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-warning">⏳ กำลังดึงข้อมูล...</td></tr>';
       
       const myNick = localStorage.getItem('okvip_nick');
       const isSuperAdmin = myRole === 'SuperAdmin';
       const isAdmin = myRole === 'Admin';
       const isMember = myRole === 'Member';
+      const month = document.getElementById('hrEvalMonth').value;
 
+      // โหลดข้อมูลคะแนนของเดือนนี้ทั้งหมดมาเตรียมไว้
+      const { data: evals } = await supabaseClient.from('hr_evaluations').select('*').eq('month', month);
+      const evalMap = {};
+      if(evals) evals.forEach(e => evalMap[e.nickname] = e);
+
+      // กรองพนักงาน
       let filteredUsers = allUsersData.filter(u => {
           if (!u || u[7] !== 'Active') return false;
+          if (u[6] === 'SuperAdmin') return false; // 🛑 1. ตัดรายชื่อ SuperAdmin ออก
+          
           const nick = u[1];
           const dept = u[3] ? u[3].toString() : '';
           
@@ -4631,11 +4662,16 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
              if (currentHrEvalDept === 'OD' && (!dept.includes('OD') || dept.includes('ODOL'))) return false;
              if (currentHrEvalDept === 'ODOL' && !dept.includes('ODOL')) return false;
           }
+          
+          const searchT = document.getElementById('searchHrEval') ? document.getElementById('searchHrEval').value.toLowerCase().trim() : '';
+          if (searchT && !nick.toLowerCase().includes(searchT)) return false;
+
           return true;
       });
 
+      tbody.innerHTML = '';
       if (filteredUsers.length === 0) {
-          tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted">ไม่พบรายชื่อที่เข้าถึงได้</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">ไม่พบรายชื่อที่เข้าถึงได้</td></tr>`;
           return;
       }
 
@@ -4646,28 +4682,53 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           let canEdit = isSuperAdmin || (isAdmin && dept.includes('ODOL')) || (isAdmin && nick === myNick);
           if (isMember) canEdit = false;
 
-          let btnText = canEdit ? '📝 ประเมินผล' : '🔍 ดูผลประเมิน';
+          const evData = evalMap[nick];
+          let statusBadge = `<span class="badge" style="background:#ff9900; color:#000; font-size:0.85rem;">⏳ รอประเมิน</span>`;
+          let starHtml = '<span class="text-muted small">-</span>';
+          let scoreText = '<span class="text-muted small">-</span>';
+          let evaluatorText = '<span class="text-muted small">-</span>';
+          
+          // 🛑 3. จัดการระบบดาว สี และสถานะ ถ้ามีประเมินแล้ว
+          if (evData) {
+              statusBadge = `<span class="badge bg-success border border-success" style="font-size:0.85rem;">✅ ประเมินแล้ว</span>`;
+              let pct = evData.kpi_percent || 0;
+              scoreText = `<span class="text-info">${pct.toFixed(2)} %</span>`;
+              
+              let starCount = 1; let colorStyle = 'color:#ff3333;'; // แดง (0-60)
+              if(pct > 90) { starCount = 5; colorStyle = 'color:#00ff66; text-shadow: 0 0 8px #00ff66;'; } // เขียวเข้ม
+              else if(pct > 80) { starCount = 4; colorStyle = 'color:#aaffaa; text-shadow: 0 0 8px #aaffaa;'; } // เขียวอ่อน
+              else if(pct > 70) { starCount = 3; colorStyle = 'color:#00f0ff; text-shadow: 0 0 8px #00f0ff;'; } // ฟ้า
+              else if(pct > 60) { starCount = 2; colorStyle = 'color:#ffcc00; text-shadow: 0 0 8px #ffcc00;'; } // ส้ม
+              
+              starHtml = `<span style="${colorStyle} font-size:1.2rem;">${'⭐'.repeat(starCount)}<span style="opacity:0.2;">${'⭐'.repeat(5-starCount)}</span></span>`;
+              
+              let evNames = evData.evaluator_nick ? evData.evaluator_nick.split('|') : [];
+              let validNames = evNames.filter(n => n.trim() !== '');
+              if(validNames.length > 0) {
+                  evaluatorText = validNames.join(' <span class="text-secondary">และ</span> ');
+              }
+          }
+
+          let btnText = canEdit ? '📝 ผลการประเมิน' : '🔍 ผลการประเมิน';
           let btnClass = canEdit ? 'btn-outline-warning' : 'btn-outline-info';
 
           tbody.innerHTML += `
             <tr>
-              <td class="fw-bold text-white">${nick} ${nick === myNick ? '(คุณ)' : ''}</td>
+              <td class="fw-bold text-white">${nick} ${nick === myNick ? '<span class="text-warning small">(คุณ)</span>' : ''}</td>
               <td class="text-muted small">${dept}</td>
-              <td><span class="badge bg-secondary border" id="evalStatus_${nick}">ยังไม่ประเมิน</span></td>
+              <td class="text-center">${starHtml}</td>
+              <td class="text-center fw-bold">${scoreText}</td>
+              <td class="text-center text-warning small fw-bold">${evaluatorText}</td>
+              <td class="text-center">${statusBadge}</td>
               <td class="text-center">
-                  <button class="btn btn-sm ${btnClass} fw-bold" onclick="openEvaluationForm('${nick}', ${canEdit})">${btnText}</button>
+                  <button class="btn btn-sm ${btnClass} fw-bold" style="border-radius:6px;" onclick="openEvaluationForm('${nick}', ${canEdit})">${btnText}</button>
               </td>
             </tr>
           `;
-          
-          // สั่งให้เช็คสถานะการประเมินว่าทำไปแล้วหรือยัง
-          checkEvalStatus(nick);
       });
   }
 
-  // ------------------ ระบบคำนวณและบันทึกข้อมูล ------------------ //
-
-  // ฟังก์ชันเลื่อนลูกศรเปลี่ยนเดือนประเมิน
+  // 🛑 ฟังก์ชันเลื่อนลูกศรเปลี่ยนเดือนประเมิน
   function changeHrEvalMonth(offset) {
       const p = document.getElementById('hrEvalMonth');
       if(!p.value) return;
@@ -4678,15 +4739,14 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       renderHrEvalList();
   }
 
-  // ฟังก์ชันคำนวณคะแนนใน Modal แบบแยก Section (อิงจาก 15 ข้อ)
+  // 🛑 ฟังก์ชันคำนวณคะแนนใน Modal 
   function initEvalAutoCalculate() {
       const tableBody = document.getElementById('evalFormBody');
       if(!tableBody) return;
       
       tableBody.addEventListener('input', () => {
-          let grandTotalAvg = 0;
+          let grandTotalSum = 0;
 
-          // ฟังก์ชันย่อยสำหรับบวกเลขในแต่ละ Section
           const calcSection = (startRow, endRow, secId) => {
               let sum1 = 0, sum2 = 0, sumAvg = 0;
               for(let i = startRow; i <= endRow; i++) {
@@ -4694,74 +4754,71 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   const input2 = document.getElementById(`q${i}_2`);
                   const inputAvg = document.getElementById(`q${i}_avg`);
 
-                  let sc1 = input1 && input1.value ? parseFloat(input1.value) : 0;
-                  let sc2 = input2 && input2.value ? parseFloat(input2.value) : 0;
+                  let val1 = input1 && input1.value !== '' ? parseFloat(input1.value) : null;
+                  let val2 = input2 && input2.value !== '' ? parseFloat(input2.value) : null;
                   
-                  // กันกรอกเกิน 100
-                  if(sc1 > 100) { sc1 = 100; input1.value = 100; }
-                  if(sc2 > 100) { sc2 = 100; input2.value = 100; }
+                  if(val1 > 100) { val1 = 100; input1.value = 100; }
+                  if(val2 > 100) { val2 = 100; input2.value = 100; }
 
-                  let avg = (sc1 + sc2) / 2;
-                  if(inputAvg) inputAvg.value = avg;
+                  let avg = 0;
+                  // เช็คเงื่อนไขประเมิน 1 คน หรือ 2 คน
+                  if (val1 !== null && val2 !== null) {
+                      avg = (val1 + val2) / 2; // ประเมิน 2 คน เอามาหารสอง
+                  } else if (val1 !== null) {
+                      avg = val1; // ประเมินคนเดียว ใช้คะแนนเต็ม
+                  } else if (val2 !== null) {
+                      avg = val2; // ประเมินคนเดียว ใช้คะแนนเต็ม
+                  }
 
-                  sum1 += sc1;
-                  sum2 += sc2;
+                  if(inputAvg) inputAvg.value = avg > 0 ? avg : '';
+
+                  sum1 += val1 || 0;
+                  sum2 += val2 || 0;
                   sumAvg += avg;
               }
               document.getElementById(`sumSec${secId}_1`).innerText = sum1;
               document.getElementById(`sumSec${secId}_2`).innerText = sum2;
               document.getElementById(`sumSec${secId}_total`).innerText = sumAvg;
               
-              grandTotalAvg += sumAvg;
+              grandTotalSum += sumAvg;
           };
 
-          // สั่งคำนวณแยกตาม Section
-          calcSection(1, 6, 1);   // ข้อ 1-6
-          calcSection(7, 10, 2);  // ข้อ 7-10
-          calcSection(11, 15, 3); // ข้อ 11-15
+          calcSection(1, 6, 1);
+          calcSection(7, 10, 2);
+          calcSection(11, 15, 3);
 
-          // คำนวณสรุปผลด้านล่างสุด (เต็ม 1500)
-          document.getElementById('grandTotalScore').innerText = grandTotalAvg;
+          document.getElementById('grandTotalScore').innerText = grandTotalSum;
           
-          // คิดเป็น % (สมมติคะแนนเต็ม 15 ข้อ ข้อละ 100 = 1500)
-          let percent = (grandTotalAvg / 1500) * 100;
-          document.getElementById('grandTotalPercent').innerText = percent.toFixed(2) + '%';
+          let percent = (grandTotalSum / 1500) * 100;
+          let percentDisplay = document.getElementById('grandTotalPercent');
+          percentDisplay.innerText = percent.toFixed(2) + ' %';
+          
+          // เปลี่ยนสีตามเกณฑ์
+          percentDisplay.style.color = "#000"; // รีเซ็ตตัวอักษร
+          if(percent > 90) { percentDisplay.style.backgroundColor = "#00ff66"; } // ดีมาก เขียวเข้ม
+          else if(percent > 80) { percentDisplay.style.backgroundColor = "#aaffaa"; } // ดี เขียวอ่อน
+          else if(percent > 70) { percentDisplay.style.backgroundColor = "#00f0ff"; } // พอใช้ ฟ้า
+          else if(percent > 60) { percentDisplay.style.backgroundColor = "#ffcc00"; } // ควรปรับปรุง ส้ม
+          else { percentDisplay.style.backgroundColor = "#ff3366"; percentDisplay.style.color = "#fff"; } // แก้ไขด่วน แดง
       });
   }
 
-  // เช็คสถานะโชว์ที่ตารางว่าประเมินแล้วหรือยัง
-  async function checkEvalStatus(nick) {
-      const month = document.getElementById('hrEvalMonth').value;
-      if (!month) return;
-      
-      const { data } = await supabaseClient.from('hr_evaluations').select('id').eq('nickname', nick).eq('month', month).maybeSingle();
-      const badge = document.getElementById(`evalStatus_${nick}`);
-      if (badge) {
-          if (data) {
-              badge.className = 'badge bg-success border border-success px-3 py-1';
-              badge.innerText = '✅ ประเมินแล้ว';
-          } else {
-              badge.className = 'badge bg-secondary border px-3 py-1';
-              badge.innerText = 'รอประเมิน';
-          }
-      }
-  }
-
-  // ดึงข้อมูลการประเมินเก่ามาใส่ใน Modal
+  // 🛑 ดึงข้อมูลการประเมินเก่ามาใส่ใน Modal
   async function openEvaluationForm(targetNick, canEdit) {
       document.getElementById('evalTargetName').innerText = targetNick;
       const month = document.getElementById('hrEvalMonth').value;
       
       const alertBox = document.getElementById('evalPermissionAlert');
       const saveBtn = document.getElementById('btnSaveEval');
-      const inputs = document.querySelectorAll('.eval-input:not(.eval-sum)');
+      const inputs = document.querySelectorAll('.eval-input:not(.eval-sum), #evaluatorName1, #evaluatorName2');
       
       // ล้างค่าเก่าในฟอร์มก่อน
       inputs.forEach(inp => { inp.value = ''; });
       document.querySelectorAll('.eval-sum, .eval-sum-box').forEach(el => {
           if(el.tagName === 'INPUT') el.value = ''; else el.innerText = '0';
       });
-      document.getElementById('grandTotalPercent').innerText = '0%';
+      const pDisplay = document.getElementById('grandTotalPercent');
+      pDisplay.innerText = '0%'; pDisplay.style.backgroundColor = "#33cccc"; pDisplay.style.color = "#000";
 
       if (!canEdit) {
           alertBox.classList.remove('d-none');
@@ -4773,23 +4830,28 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           inputs.forEach(inp => { inp.disabled = false; });
       }
 
-      // ดึงข้อมูลจาก Supabase
       Swal.fire({title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading()});
       const { data } = await supabaseClient.from('hr_evaluations').select('*').eq('nickname', targetNick).eq('month', month).maybeSingle();
       Swal.close();
 
-      if (data && data.scores) {
-          // ถ้ามีข้อมูลเก่า ให้หยอดลงฟอร์ม
-          for (let i = 1; i <= 15; i++) {
-              if (data.scores[`q${i}`]) {
-                  const [sc1, sc2] = data.scores[`q${i}`];
-                  const in1 = document.getElementById(`q${i}_1`);
-                  const in2 = document.getElementById(`q${i}_2`);
-                  if (in1) in1.value = sc1;
-                  if (in2) in2.value = sc2;
+      if (data) {
+          if (data.evaluator_nick) {
+              const evNames = data.evaluator_nick.split('|');
+              document.getElementById('evaluatorName1').value = evNames[0] || '';
+              document.getElementById('evaluatorName2').value = evNames[1] || '';
+          }
+          if (data.scores) {
+              for (let i = 1; i <= 15; i++) {
+                  if (data.scores[`q${i}`]) {
+                      const [sc1, sc2] = data.scores[`q${i}`];
+                      const in1 = document.getElementById(`q${i}_1`);
+                      const in2 = document.getElementById(`q${i}_2`);
+                      if (in1 && sc1 !== null) in1.value = sc1;
+                      if (in2 && sc2 !== null) in2.value = sc2;
+                  }
               }
           }
-          // กระตุ้น Event Input เพื่อให้ระบบคำนวณค่าผลรวมใหม่
+          // กระตุ้นให้คำนวณใหม่
           const event = new Event('input', { bubbles: true });
           document.getElementById('evalFormBody').dispatchEvent(event);
       }
@@ -4797,69 +4859,67 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).show();
   }
 
-  // ฟังก์ชันบันทึกข้อมูลลงฐานข้อมูล
+  // 🛑 ฟังก์ชันบันทึกข้อมูลลงฐานข้อมูล
   async function saveEvaluation() {
       const nick = document.getElementById('evalTargetName').innerText;
       const month = document.getElementById('hrEvalMonth').value;
-      const myNick = localStorage.getItem('okvip_nick');
+      
+      const evName1 = document.getElementById('evaluatorName1').value.trim();
+      const evName2 = document.getElementById('evaluatorName2').value.trim();
+      const combinedEvaluators = [evName1, evName2].join('|');
       
       if(!month) return Swal.fire('เตือน', 'กรุณาเลือกเดือนที่ประเมินด้วยครับ', 'warning');
+      if(!evName1 && !evName2) return Swal.fire('เตือน', 'กรุณาลงชื่อผู้ประเมินอย่างน้อย 1 คน', 'warning');
 
       Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
 
       let scoresData = {};
       const rows = document.querySelectorAll('#evalFormBody tr:not(.eval-bg-teal)');
       rows.forEach((row, index) => {
-          // เนื่องจากมีแถวที่เป็น "รวม" คั่นอยู่ เราต้องเลี่ยงไม่ดึงแถวนั้น
           if (row.classList.contains('eval-row-sum') || row.querySelector('th')) return;
           
-          // ดึง ID ข้อคำถามมาจาก Input
           const sc1Input = row.querySelector('.sc1');
           const sc2Input = row.querySelector('.sc2');
           
           if (sc1Input && sc2Input) {
-              const qIdMatch = sc1Input.id.match(/\d+/); // ดึงตัวเลขจาก ID (เช่น q1_1 ได้เลข 1)
+              const qIdMatch = sc1Input.id.match(/\d+/); 
               if (qIdMatch) {
                   const qNum = parseInt(qIdMatch[0]);
-                  const sc1 = sc1Input.value || 0;
-                  const sc2 = sc2Input.value || 0;
-                  scoresData[`q${qNum}`] = [parseFloat(sc1), parseFloat(sc2)];
+                  const sc1 = sc1Input.value !== '' ? parseFloat(sc1Input.value) : null;
+                  const sc2 = sc2Input.value !== '' ? parseFloat(sc2Input.value) : null;
+                  if (sc1 !== null || sc2 !== null) {
+                      scoresData[`q${qNum}`] = [sc1, sc2];
+                  }
               }
           }
       });
 
       const rawTotal = document.getElementById('grandTotalScore').innerText;
-      const rawPercent = document.getElementById('grandTotalPercent').innerText.replace('%', '');
+      const rawPercent = document.getElementById('grandTotalPercent').innerText.replace('%', '').trim();
 
       const payload = {
           nickname: nick,
           month: month,
-          department: allUsersData.find(u => u[1] === nick)[3], 
+          department: allUsersData.find(u => u[1] === nick)[3] || '', 
           scores: scoresData,
-          total_score: parseFloat(rawTotal),
-          kpi_percent: parseFloat(rawPercent),
-          evaluator_nick: myNick
+          total_score: parseFloat(rawTotal) || 0,
+          kpi_percent: parseFloat(rawPercent) || 0,
+          evaluator_nick: combinedEvaluators
       };
 
       try {
-          // ใช้ Upsert (มีแล้วให้อัปเดต / ยังไม่มีให้เพิ่มใหม่)
           const { error } = await supabaseClient.from('hr_evaluations').upsert(payload, { onConflict: 'id' }).eq('nickname', nick).eq('month', month);
 
           if (error) {
-              // กรณีบางครั้ง Upsert ด้วย Custom Condition อาจจะมีบั๊ก ให้ใช้วิธีเช็คแล้วค่อยสั่ง Insert / Update แยกกัน
               const { data: existCheck } = await supabaseClient.from('hr_evaluations').select('id').eq('nickname', nick).eq('month', month).maybeSingle();
-              if (existCheck) {
-                  await supabaseClient.from('hr_evaluations').update(payload).eq('id', existCheck.id);
-              } else {
-                  await supabaseClient.from('hr_evaluations').insert([payload]);
-              }
+              if (existCheck) { await supabaseClient.from('hr_evaluations').update(payload).eq('id', existCheck.id); } 
+              else { await supabaseClient.from('hr_evaluations').insert([payload]); }
           }
 
           bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).hide();
           Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'บันทึกคะแนนเรียบร้อย', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff' });
           
-          // สั่งให้เช็คสถานะเขียว ✅ ที่ตารางหน้าบ้าน
-          checkEvalStatus(nick); 
+          renderHrEvalList(); 
       } catch (err) {
           console.error(err);
           Swal.fire('Error', 'ไม่สามารถบันทึกได้: ' + err.message, 'error');
