@@ -4939,11 +4939,6 @@ async function sendSystemNoti(targetUser, title, msg) {
     await supabaseClient.from('sys_notifications').insert([{ target_user: targetUser, title: title, message: msg }]);
 }
 
-function openNotiModal() { 
-    filterNoti('ALL', document.querySelector('.noti-tab-btn')); // รีเซ็ตกลับไปหน้า All เสมอตอนเปิด
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('notiModal')).show(); 
-}
-
   // ---- ระบบแชท (Chat) ----
   function updateChatBadge() {
       const myNick = localStorage.getItem('okvip_nick');
