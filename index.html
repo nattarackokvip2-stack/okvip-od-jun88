@@ -4829,15 +4829,31 @@ function updateCategoryBadges() {
 }
 
 function openNotiModal() { 
-    showNotiCategories(); // เปิดมาให้เห็นหน้าหมวดหมู่ก่อนเสมอ
-    
-    // โชว์หรือซ่อนกล่อง พฤติกรรม ตามสิทธิ์
-    const cardBehavior = document.getElementById('cardNotiBehavior');
-    if (cardBehavior) {
-        cardBehavior.style.display = (myRole === 'SuperAdmin' || myRole === 'Admin') ? 'block' : 'none';
+    try {
+        console.log("กำลังเปิดหน้าต่างแจ้งเตือน...");
+        
+        // 1. สั่งให้โชว์หน้า "หมวดหมู่การ์ด" ก่อนเสมอ
+        showNotiCategories(); 
+        
+        // 2. เช็คสิทธิ์และโชว์/ซ่อน กล่องพฤติกรรม
+        const cardBehavior = document.getElementById('cardNotiBehavior');
+        if (cardBehavior) {
+            // ดักบั๊ก: เช็คว่ามีตัวแปร myRole หรือไม่ ถ้าไม่มีให้ถือว่าเป็น Member
+            const currentRole = (typeof myRole !== 'undefined') ? myRole : 'Member';
+            cardBehavior.style.display = (currentRole === 'SuperAdmin' || currentRole === 'Admin') ? 'block' : 'none';
+        }
+        
+        // 3. สั่งเปิด Modal
+        const notiModalEl = document.getElementById('notiModal');
+        if (notiModalEl) {
+            bootstrap.Modal.getOrCreateInstance(notiModalEl).show(); 
+            console.log("เปิด Modal สำเร็จ!");
+        } else {
+            console.error("❌ หา HTML id='notiModal' ไม่เจอ!");
+        }
+    } catch (err) {
+        console.error("❌ เกิดข้อผิดพลาดตอนเปิดแจ้งเตือน:", err);
     }
-    
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('notiModal')).show(); 
 }
 
 // 🌟 ฟังก์ชันเปลี่ยนไปหน้า "เลือกหมวดหมู่"
