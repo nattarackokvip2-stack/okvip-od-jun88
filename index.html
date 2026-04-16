@@ -2279,7 +2279,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       document.getElementById('userDisplay').innerText = nick; 
       document.getElementById('roleLabel').innerText = cleanRole; 
       document.getElementById('roleLabel').className = `role-${cleanRole}`;
-      document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
       
       const isSA = (myRole === 'SuperAdmin');
 
@@ -2621,13 +2620,11 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           document.getElementById('tabBtnSwapSandbox').style.borderColor = "#ff9900"; document.getElementById('tabBtnSwapSandbox').style.color = "#ff9900";
           document.getElementById('realScheduleActions').style.display = 'flex';
           document.getElementById('sandboxScheduleActions').style.display = 'none';
-          document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important');
       } else {
           document.getElementById('tabBtnSwapSandbox').style.borderColor = "#fff"; document.getElementById('tabBtnSwapSandbox').style.color = "#fff";
           document.getElementById('tabBtnRealSchedule').style.borderColor = "#444"; document.getElementById('tabBtnRealSchedule').style.color = "#ccc";
           document.getElementById('realScheduleActions').style.display = 'none';
           document.getElementById('sandboxScheduleActions').style.display = 'flex';
-          document.getElementById('stampToolbox').style.setProperty('display', 'flex', 'important'); 
       }
       loadScheduleTable();
   }
