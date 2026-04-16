@@ -5352,8 +5352,10 @@ function changeHrBehaviorMonth(offset) {
 function updateBehaviorUserSelect() {
     let html = '<option value="">-- เลือกพนักงาน --</option>'; 
     allUsersData.forEach(u => { 
-        if(u[7] === 'Active' && u[6] !== 'SuperAdmin') { 
-            html += `<option value="${u[1]}|${u[3]}">${u[1]} (${u[3].split(' ')[0]})</option>`;
+        // 🌟 แก้ไขตรงนี้: เพิ่มเงื่อนไขเช็คว่า department (u[3]) ต้องมีคำว่า ODOL
+        const dept = u[3] ? u[3].toString() : '';
+        if(u[7] === 'Active' && u[6] !== 'SuperAdmin' && dept.includes('ODOL')) { 
+            html += `<option value="${u[1]}|${u[3]}">${u[1]} (${dept.split(' ')[0]})</option>`;
         } 
     }); 
     document.getElementById('behNick').innerHTML = html; 
