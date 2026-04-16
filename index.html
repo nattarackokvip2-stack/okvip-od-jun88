@@ -1369,20 +1369,19 @@
   </div>
 </div>
   
-  <div class="modal fade" id="notiModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal fade" id="notiModal" tabindex="-1" data-bs-theme="dark" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
     <div class="modal-content" style="border: 1px solid #ffcc00; box-shadow: 0 0 20px rgba(255,204,0,0.2); background: #0a0a0c; min-height: 500px;">
       
       <div class="modal-header border-bottom border-secondary p-3 position-relative">
         <button id="btnNotiBack" class="btn btn-sm btn-outline-secondary position-absolute start-0 ms-3" style="display: none;" onclick="showNotiCategories()">⬅️ ย้อนกลับ</button>
         <h5 class="modal-title fw-bold text-warning w-100 text-center m-0" id="notiModalTitle">🔔 การแจ้งเตือนของฉัน</h5>
-        <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal"></button>
+        <button type="button" class="btn-close position-absolute end-0 me-3" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
 
       <div class="modal-body p-4">
         
         <div id="notiCategoryView" class="row g-3">
-            
             <div class="col-md-6">
                 <div class="card bg-dark border-warning h-100 noti-cat-card" onclick="openNotiCategory('ALL', '🔔 การแจ้งเตือนทั้งหมด')" style="cursor: pointer; transition: 0.3s;">
                     <div class="card-body text-center py-4">
@@ -1426,7 +1425,6 @@
                     </div>
                 </div>
             </div>
-
         </div>
 
         <div id="notiListView" style="display: none;">
