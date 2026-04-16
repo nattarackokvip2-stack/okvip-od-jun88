@@ -4058,6 +4058,7 @@ async function handleBackendSubmit(e) {
     } 
 }
 
+// บันทึก Biz Bank (ฉบับเพิ่มตัวดักจับ Error)
 async function handleBizBankSubmit(e) { 
     e.preventDefault(); 
     const btn = document.getElementById('btnSaveBizBank'); 
@@ -4072,17 +4073,24 @@ async function handleBizBankSubmit(e) {
         
         const payload = { bank_name, account_name, username, password, bank_link };
         
+        let dbError;
         if(id) {
-            await supabaseClient.from('biz_banks').update(payload).eq('id', id); 
+            const { error } = await supabaseClient.from('biz_banks').update(payload).eq('id', id); 
+            dbError = error;
         } else {
-            await supabaseClient.from('biz_banks').insert([payload]); 
+            const { error } = await supabaseClient.from('biz_banks').insert([payload]); 
+            dbError = error;
         }
+        
+        // 🌟 ถ้า Supabase ปฏิเสธการบันทึก ให้โยน Error ออกมาโชว์หน้าจอทันที
+        if (dbError) throw dbError;
         
         bootstrap.Modal.getOrCreateInstance(document.getElementById('bizBankModal')).hide(); 
         Swal.fire({toast:true, position:'top-end', title:'บันทึกบัญชีสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
         await loadSupabaseWebsites(); 
     } catch (err) { 
-        Swal.fire('Error', err.message, 'error'); 
+        console.error("DB Error:", err);
+        Swal.fire('ไม่สามารถบันทึกได้', err.message, 'error'); 
     } finally { 
         btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูลบัญชี'; 
     } 
