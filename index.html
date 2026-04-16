@@ -5964,28 +5964,6 @@ function deleteBehavior(id) {
         }
     });
 }
-
-// 🌟 ฟังก์ชันซ่อน/โชว์แผงตรายาง
-  function toggleStampBox() {
-      const wrapper = document.getElementById('stampToolboxWrapper');
-      const arrow = document.getElementById('stampArrow');
-      const btn = document.getElementById('btnToggleStamps');
-      
-      if (wrapper.style.display === 'none' || wrapper.style.display === '') {
-          wrapper.style.display = 'block';
-          // ใช้ setTimeout เพื่อให้ Transition CSS ทำงาน
-          setTimeout(() => wrapper.style.opacity = '1', 10);
-          arrow.innerText = '◀'; // เปลี่ยนลูกศรชี้กลับ
-          btn.style.background = 'rgba(0, 240, 255, 0.1)';
-          btn.style.boxShadow = '0 0 10px rgba(0, 240, 255, 0.3)';
-      } else {
-          wrapper.style.opacity = '0';
-          setTimeout(() => wrapper.style.display = 'none', 300); // รอ Fade out เสร็จค่อยซ่อน
-          arrow.innerText = '▶'; // เปลี่ยนลูกศรชี้ออก
-          btn.style.background = 'transparent';
-          btn.style.boxShadow = 'none';
-      }
-  }  
 </script>
 </body>
 </html>
