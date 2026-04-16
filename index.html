@@ -589,7 +589,7 @@
 
       <div class="schedule-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
         
-        <div class="d-flex align-items-center gap-2 flex-wrap" style="flex-grow: 1;">
+        <div class="d-flex align-items-center flex-wrap gap-2" style="flex-grow: 1;">
             
             <div class="filter-bar" id="schDeptFilterBar">
                 <span class="text-muted small me-2">กลุ่ม:</span>
@@ -598,14 +598,19 @@
                 <div class="dept-badge" onclick="filterScheduleDept('ออดิทออนไลน์ (ODOL)', this)">ODOL</div>
                 <div class="dept-badge" onclick="filterScheduleDept('อื่นๆ (OTHER)', this)">อื่นๆ</div>
             </div>
-            
+
             <button class="btn btn-sm d-flex align-items-center gap-1 ms-1" id="btnToggleStamps" onclick="toggleStampBox()" style="background: transparent; border: 1px solid var(--neon-blue); color: var(--neon-blue); border-radius: 50px; font-weight: bold; padding: 4px 12px; transition: 0.3s;">
                 🛠️ ตรายาง <span id="stampArrow">▶</span>
             </button>
 
             <div id="stampToolboxWrapper" style="display: none; opacity: 0; transition: opacity 0.3s ease;">
-                <div id="stampToolbox" class="stamp-inline-box" style="display: flex !important;">
-                    <div class="stamp-palette" id="stampPalette"></div>
+                <div class="d-flex align-items-center gap-1 border border-secondary px-2 py-1" style="background: rgba(0,0,0,0.5); border-radius: 10px;">
+                    <div class="d-flex align-items-center gap-1" id="stampPalette"></div>
+                    
+                    <div class="stamp-info-wrapper ms-2">
+                        <div class="stamp-info-icon">!</div>
+                        <div class="stamp-tooltip" id="stampTooltipContent"></div>
+                    </div>
                 </div>
             </div>
 
@@ -5950,7 +5955,29 @@ function deleteBehavior(id) {
             Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
         }
     });
-} 
+}
+
+// 🌟 ฟังก์ชันซ่อน/โชว์แผงตรายางมินิ
+  function toggleStampBox() {
+      const wrapper = document.getElementById('stampToolboxWrapper');
+      const arrow = document.getElementById('stampArrow');
+      const btn = document.getElementById('btnToggleStamps');
+      
+      if (wrapper.style.display === 'none' || wrapper.style.display === '') {
+          wrapper.style.display = 'block'; 
+          // ใช้ setTimeout เพื่อให้ Transition CSS ของความทึบแสง (opacity) ทำงานนุ่มๆ
+          setTimeout(() => wrapper.style.opacity = '1', 10);
+          arrow.innerText = '◀'; // เปลี่ยนลูกศรชี้กลับ
+          btn.style.background = 'rgba(0, 240, 255, 0.1)';
+          btn.style.boxShadow = '0 0 10px rgba(0, 240, 255, 0.3)';
+      } else {
+          wrapper.style.opacity = '0';
+          setTimeout(() => wrapper.style.display = 'none', 300); // รอ Fade out เสร็จค่อยซ่อน
+          arrow.innerText = '▶'; // เปลี่ยนลูกศรชี้ออก
+          btn.style.background = 'transparent';
+          btn.style.boxShadow = 'none';
+      }
+  }
 </script>
 </body>
 </html>
