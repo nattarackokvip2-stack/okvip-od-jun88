@@ -4951,9 +4951,14 @@ async function renderHrEvalList() {
         
         const nick = u[1];
         const dept = u[3] ? u[3].toString() : '';
+        const targetRole = u[6]; // 🌟 ดึงระดับสิทธิ์ (Role) มาเช็ค
         
         if (isMember && nick !== myNick) return false;
-        if (isAdmin) { if (nick !== myNick && !dept.includes('ODOL')) return false; }
+        
+        // 🌟 แก้ไขตรงนี้: ให้ Admin สามารถมองเห็นพนักงานระดับ Member ได้ทุกคน
+        if (isAdmin) { 
+            if (nick !== myNick && !dept.includes('ODOL') && targetRole !== 'Member') return false; 
+        }
         
         if (currentHrEvalDept !== 'ALL') {
            if (currentHrEvalDept === 'OD' && (!dept.includes('OD') || dept.includes('ODOL'))) return false;
@@ -4975,9 +4980,18 @@ async function renderHrEvalList() {
     filteredUsers.forEach(u => {
         const nick = u[1];
         const dept = u[3].split(' ')[0];
+        const targetRole = u[6]; // 🌟 ดึงระดับสิทธิ์ (Role)
         
-        let canEdit = isSuperAdmin || (isAdmin && dept.includes('ODOL')) || (isAdmin && nick === myNick);
-        if (isMember) canEdit = false;
+        // 🌟 แก้ไขตรงนี้: กำหนดสิทธิ์ให้ Admin สามารถ "แก้ไข/ประเมิน" Member ได้
+        let canEdit = false;
+        if (isSuperAdmin) {
+            canEdit = true;
+        } else if (isAdmin) {
+            // Admin ประเมิน Member ได้ทุกคน, ประเมินตัวเองได้, และประเมินคนใน ODOL ได้
+            if (targetRole === 'Member' || nick === myNick || dept.includes('ODOL')) {
+                canEdit = true;
+            }
+        }
 
         const evData = evalMap[nick];
         let statusBadge = `<span class="badge" style="background:#ff9900; color:#000; font-size:0.85rem;">⏳ รอประเมิน</span>`;
@@ -4985,7 +4999,6 @@ async function renderHrEvalList() {
         let scoreText = '<span class="text-muted small">-</span>';
         let evaluatorText = '<span class="text-muted small">-</span>';
         
-        // 🌟 ปุ่มลบประเมิน (กรอบสีแดง) สำหรับ SuperAdmin เท่านั้น
         let deleteBtn = '';
         
         if (evData) {
@@ -5007,7 +5020,6 @@ async function renderHrEvalList() {
                 evaluatorText = validNames.join(' <span class="text-secondary">และ</span> ');
             }
 
-            // 🌟 เช็คสิทธิ์ ถ้ามีข้อมูลประเมินแล้ว และเป็น SuperAdmin ให้โชว์ปุ่มล้าง
             if (isSuperAdmin) {
                 deleteBtn = `<button class="btn btn-sm btn-outline-danger fw-bold ms-1" style="border-radius:6px;" onclick="deleteHrEvaluation('${nick}', '${month}')">🗑️ ล้าง</button>`;
             }
