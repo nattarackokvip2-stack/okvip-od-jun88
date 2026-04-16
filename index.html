@@ -5093,15 +5093,20 @@ async function sendChatMessage() {
     if(!msg || !currentChatTarget) return;
     
     const myNick = localStorage.getItem('okvip_nick');
-    input.value = '';
+    input.value = ''; // เคลียร์ช่องพิมพ์เตรียมพิมพ์ข้อความถัดไป
+    
     try { 
-        // อัปเดต UI ทันที
-        allMyChats.push({ sender: myNick, receiver: currentChatTarget, message: msg, is_read: false, created_at: new Date().toISOString() });
-        renderChatMessages();
-        renderChatUserList();
-        
-        await supabaseClient.from('sys_chats').insert([{ sender: myNick, receiver: currentChatTarget, message: msg, is_read: false }]); 
-    } catch(e) { console.error('Send Chat Error:', e); }
+        // 🌟 แก้ไขตรงนี้: ลบการเอาข้อความยัดลง Array เองออกไป
+        // ยิงข้อมูลเข้าฐานข้อมูลโดยตรงเลย เดี๋ยวตัว Realtime จะดึงมาโชว์ให้เองแบบไม่เบิ้ล
+        await supabaseClient.from('sys_chats').insert([{ 
+            sender: myNick, 
+            receiver: currentChatTarget, 
+            message: msg, 
+            is_read: false 
+        }]); 
+    } catch(e) { 
+        console.error('Send Chat Error:', e); 
+    }
 }
 
 function handleChatImageUpload(e) {
