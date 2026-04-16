@@ -4985,7 +4985,7 @@ async function renderHrEvalList() {
         let scoreText = '<span class="text-muted small">-</span>';
         let evaluatorText = '<span class="text-muted small">-</span>';
         
-        // 🌟 ส่วนที่เพิ่มใหม่: ปุ่มลบประเมิน (กรอบสีแดง) สำหรับ SuperAdmin เท่านั้น
+        // 🌟 ปุ่มลบประเมิน (กรอบสีแดง) สำหรับ SuperAdmin เท่านั้น
         let deleteBtn = '';
         
         if (evData) {
@@ -5159,7 +5159,106 @@ function signMyName(colIndex) {
     document.getElementById('evalFormBody').dispatchEvent(event);
 }
 
-// 🛑 ฟังก์ชันบันทึกข้อมูลลงฐานข้อมูล
+// 🌟🌟 🛑 ดึงข้อมูลการประเมินเก่ามาใส่ใน Modal + ระบบล็อคสิทธิ์ช่องคะแนน (ฉบับแก้ไข JSON Load)
+async function openEvaluationForm(targetNick, canEdit) {
+    document.getElementById('evalTargetName').innerText = targetNick;
+    const month = document.getElementById('hrEvalMonth').value;
+    const myNick = localStorage.getItem('okvip_nick');
+    
+    const alertBox = document.getElementById('evalPermissionAlert');
+    const btnSave = document.getElementById('btnSaveEval');
+    
+    // ล้างค่าเก่าทั้งหมด
+    document.querySelectorAll('.eval-input:not(.eval-sum), #evaluatorName1, #evaluatorName2').forEach(inp => inp.value = '');
+    document.querySelectorAll('.eval-sum, .eval-sum-box').forEach(el => {
+        if(el.tagName === 'INPUT') el.value = ''; else el.innerText = '0';
+    });
+    const pDisplay = document.getElementById('grandTotalPercent');
+    pDisplay.innerText = '0%'; pDisplay.style.backgroundColor = "#33cccc"; pDisplay.style.color = "#000";
+    
+    // ซ่อนปุ่มลงชื่อก่อน
+    document.getElementById('btnSign1').classList.add('d-none');
+    document.getElementById('btnSign2').classList.add('d-none');
+
+    // ถ้ารูปแบบไม่ให้แก้ไข ปิดทุกอย่าง
+    if (!canEdit) {
+        alertBox.classList.remove('d-none');
+        btnSave.style.display = 'none';
+        document.querySelectorAll('.sc1, .sc2').forEach(inp => inp.disabled = true);
+    } else {
+        alertBox.classList.add('d-none');
+        btnSave.style.display = 'inline-block';
+    }
+
+    Swal.fire({title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading()});
+    const { data } = await supabaseClient.from('hr_evaluations').select('*').eq('nickname', targetNick).eq('month', month).maybeSingle();
+    Swal.close();
+
+    let ev1 = '', ev2 = '';
+
+    if (data) {
+        if (data.evaluator_nick) {
+            const evNames = data.evaluator_nick.split('|');
+            ev1 = evNames[0] || '';
+            ev2 = evNames[1] || '';
+            document.getElementById('evaluatorName1').value = ev1;
+            document.getElementById('evaluatorName2').value = ev2;
+        }
+        
+        // 🌟 แก้ไขตรงนี้: เพิ่มการแปลง JSON เพื่อแก้ปัญหาโหลดข้อมูลไม่ขึ้น
+        if (data.scores) {
+            let parsedScores = data.scores;
+            // ดักจับกรณีฐานข้อมูลส่งมาเป็น Text String
+            if (typeof parsedScores === 'string') {
+                try { parsedScores = JSON.parse(parsedScores); } catch(e) { parsedScores = {}; }
+            }
+            
+            for (let i = 1; i <= 15; i++) {
+                if (parsedScores[`q${i}`]) {
+                    const [sc1, sc2] = parsedScores[`q${i}`];
+                    const in1 = document.getElementById(`q${i}_1`);
+                    const in2 = document.getElementById(`q${i}_2`);
+                    if (in1 && sc1 !== null) in1.value = sc1;
+                    if (in2 && sc2 !== null) in2.value = sc2;
+                }
+            }
+        }
+    }
+
+    // --- ระบบจัดการสิทธิ์การลงคะแนน (Locking System) ---
+    if (canEdit) {
+        const inputs1 = document.querySelectorAll('.sc1');
+        const inputs2 = document.querySelectorAll('.sc2');
+        
+        // ล็อคไว้ก่อน ค่อยเปิดตามสิทธิ์
+        inputs1.forEach(inp => inp.disabled = true);
+        inputs2.forEach(inp => inp.disabled = true);
+
+        // เช็คคนที่ 1
+        if (ev1 === '') {
+            document.getElementById('btnSign1').classList.remove('d-none');
+        } else if (ev1 === myNick) {
+            inputs1.forEach(inp => inp.disabled = false);
+        }
+
+        // เช็คคนที่ 2
+        if (ev2 === '') {
+            if (ev1 !== '' && ev1 !== myNick) {
+                document.getElementById('btnSign2').classList.remove('d-none');
+            }
+        } else if (ev2 === myNick) {
+            inputs2.forEach(inp => inp.disabled = false);
+        }
+    }
+
+    // กระตุ้นให้คำนวณใหม่
+    const event = new Event('input', { bubbles: true });
+    document.getElementById('evalFormBody').dispatchEvent(event);
+
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).show();
+}
+
+// 🌟🌟 🛑 ฟังก์ชันบันทึกข้อมูลลงฐานข้อมูล (ฉบับแก้ไข JSON Save)
 async function saveEvaluation() {
     const nick = document.getElementById('evalTargetName').innerText;
     const month = document.getElementById('hrEvalMonth').value;
