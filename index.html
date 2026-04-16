@@ -4944,18 +4944,18 @@ async function renderHrEvalList() {
     const evalMap = {};
     if(evals) evals.forEach(e => evalMap[e.nickname] = e);
 
-    // กรองพนักงาน
+    // กรองพนักงานเพื่อแสดงผล
     let filteredUsers = allUsersData.filter(u => {
         if (!u || u[7] !== 'Active') return false;
         if (u[6] === 'SuperAdmin') return false; // ตัดรายชื่อ SuperAdmin ออก
         
         const nick = u[1];
         const dept = u[3] ? u[3].toString() : '';
-        const targetRole = u[6]; // 🌟 ดึงระดับสิทธิ์ (Role) มาเช็ค
+        const targetRole = u[6]; 
         
         if (isMember && nick !== myNick) return false;
         
-        // 🌟 แก้ไขตรงนี้: ให้ Admin สามารถมองเห็นพนักงานระดับ Member ได้ทุกคน
+        // ให้ Admin มองเห็น Member ทุกคน, เห็นตัวเอง, และเห็นคนในแผนก ODOL
         if (isAdmin) { 
             if (nick !== myNick && !dept.includes('ODOL') && targetRole !== 'Member') return false; 
         }
@@ -4980,16 +4980,23 @@ async function renderHrEvalList() {
     filteredUsers.forEach(u => {
         const nick = u[1];
         const dept = u[3].split(' ')[0];
-        const targetRole = u[6]; // 🌟 ดึงระดับสิทธิ์ (Role)
+        const targetRole = u[6]; 
         
-        // 🌟 แก้ไขตรงนี้: กำหนดสิทธิ์ให้ Admin สามารถ "แก้ไข/ประเมิน" Member ได้
+        // 🌟🌟 แก้ไขเงื่อนไขสิทธิ์การแก้ไข (canEdit) ตรงนี้ครับ 🌟🌟
         let canEdit = false;
-        if (isSuperAdmin) {
+        
+        if (nick === myNick) {
+            // 1. ห้ามประเมินตัวเองเด็ดขาด (ดูได้อย่างเดียว)
+            canEdit = false;
+        } else if (isSuperAdmin) {
+            // 2. SuperAdmin ประเมินคนอื่นได้ทุกคน
             canEdit = true;
         } else if (isAdmin) {
-            // Admin ประเมิน Member ได้ทุกคน, ประเมินตัวเองได้, และประเมินคนใน ODOL ได้
-            if (targetRole === 'Member' || nick === myNick || dept.includes('ODOL')) {
+            // 3. Admin ประเมินได้เฉพาะ Member เท่านั้น (ประเมิน Admin ด้วยกันไม่ได้)
+            if (targetRole === 'Member') {
                 canEdit = true;
+            } else {
+                canEdit = false;
             }
         }
 
@@ -5020,6 +5027,7 @@ async function renderHrEvalList() {
                 evaluatorText = validNames.join(' <span class="text-secondary">และ</span> ');
             }
 
+            // ปุ่มล้างข้อมูลสำหรับ SuperAdmin
             if (isSuperAdmin) {
                 deleteBtn = `<button class="btn btn-sm btn-outline-danger fw-bold ms-1" style="border-radius:6px;" onclick="deleteHrEvaluation('${nick}', '${month}')">🗑️ ล้าง</button>`;
             }
