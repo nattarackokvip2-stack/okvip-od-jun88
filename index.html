@@ -765,19 +765,42 @@
     </div>
     
     <div id="portalSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <h4 class="fw-bold mb-0" style="color: var(--neon-blue);">🌐 จัดการเว็บไซต์ (Websites)</h4>
-        <div>
+        <div class="d-flex gap-2">
             <button id="addPortalBtn" class="btn btn-neon-blue px-4" style="display:none;" onclick="openPortalModal()">➕ เพิ่มเว็บหน้าบ้าน</button>
-            <button id="addBackendBtn" class="btn btn-neon-yellow px-4 ms-2" style="display:none;" onclick="openBackendModal()">➕ เพิ่มเว็บหลังบ้าน</button>
+            <button id="addBackendBtn" class="btn btn-neon-yellow px-4" style="display:none;" onclick="openBackendModal()">➕ เพิ่มเว็บหลังบ้าน</button>
+            <button id="addBizBankBtn" class="btn btn-outline-success px-4 fw-bold" style="display:none;" onclick="openBizBankModal()">➕ เพิ่มบัญชี Biz</button>
         </div>
       </div>
       <div class="filter-bar mb-4 pb-3" style="border-bottom: 1px solid #333;">
         <div id="tabFrontEnd" class="dept-badge active" onclick="switchWebZone('frontend', this)">🌐 เว็บหน้าบ้าน (Front-End)</div>
         <div id="tabBackEnd" class="dept-badge" onclick="switchWebZone('backend', this)">⚙️ เว็บหลังบ้าน (Back-End)</div>
+        <div id="tabBizBank" class="dept-badge" style="display: none; border-color: #00ff66; color: #00ff66;" onclick="switchWebZone('bizbank', this)">🏦 เว็บ Biz ธนาคาร</div>
       </div>
+      
       <div id="portalGridArea" class="manual-grid"></div>
       <div id="backendGridArea" class="manual-grid" style="display:none;"></div>
+      
+      <div id="bizBankArea" style="display:none;">
+          <div class="table-responsive mt-3" style="background: #0a0a0c; border: 1px solid #333; border-radius: 12px; padding: 15px;">
+              <table class="table table-hover align-middle mb-0">
+                  <thead>
+                      <tr>
+                          <th class="text-success">ธนาคาร</th>
+                          <th>ชื่อ-สกุล</th>
+                          <th>User</th>
+                          <th>รหัสผ่าน</th>
+                          <th>ลิงก์ธนาคาร</th>
+                          <th class="text-center">จัดการ</th>
+                      </tr>
+                  </thead>
+                  <tbody id="bizBankTableBody">
+                      <tr><td colspan="6" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td></tr>
+                  </tbody>
+              </table>
+          </div>
+      </div>
     </div>
     
     <div id="vaultSection" class="content-section">
@@ -1018,6 +1041,37 @@
   </div></div></div>
 </div>
 
+<div class="modal fade" id="bizBankModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: 1px solid #00ff66; box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-4 text-center text-success" id="bizBankModalTitle">🏦 เพิ่มบัญชี Biz ธนาคาร</h4>
+        <form id="bizBankForm" onsubmit="handleBizBankSubmit(event)">
+          <input type="hidden" id="editBizBankId"> 
+          
+          <label class="small mb-1 text-white">1. ชื่อธนาคาร</label>
+          <input type="text" id="bizBankName" class="form-control mb-3 bg-dark text-white border-secondary" placeholder="เช่น: KBank, SCB, BBL..." required>
+          
+          <label class="small mb-1 text-white">2. ชื่อ-สกุล (เจ้าของบัญชี)</label>
+          <input type="text" id="bizBankAccName" class="form-control mb-3 bg-dark text-white border-secondary" placeholder="ระบุชื่อ-สกุล..." required>
+          
+          <label class="small mb-1 text-white">3. ยูสเซอร์เนม (User)</label>
+          <input type="text" id="bizBankUser" class="form-control mb-3 bg-dark text-info border-info" placeholder="Username..." required>
+          
+          <label class="small mb-1 text-white">4. รหัสผ่าน (Password)</label>
+          <input type="text" id="bizBankPass" class="form-control mb-3 bg-dark text-warning border-warning" placeholder="Password..." required>
+          
+          <label class="small mb-1 text-white">5. ลิงก์เข้าสู่ระบบ (URL)</label>
+          <input type="url" id="bizBankLink" class="form-control mb-4 bg-dark text-white border-secondary" placeholder="https://..." required>
+          
+          <button type="submit" id="btnSaveBizBank" class="btn btn-success w-100 py-2 fw-bold" style="border-radius: 8px;">💾 บันทึกข้อมูลบัญชี</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="manualModal" tabindex="-1" data-bs-theme="dark">
+  
 <div class="modal fade" id="manualModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
@@ -3730,12 +3784,37 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   function confirmDeleteManual(id) { Swal.fire({title:'ลบหมวดหมู่นี้?', text:'ข้อมูลด้านในจะหายทั้งหมด', icon:'warning', showCancelButton:true, confirmButtonColor:'#ff3366', background:'#111', color:'#fff'}).then(async r => { if(r.isConfirmed) { await supabaseClient.from('manuals').delete().eq('id', id); refreshData(document.getElementById('refreshBtn')); } }); }
 
   // ==========================================
-// 🚀 8. จัดการเว็บไซต์ (Portals/Backends)
+// 🚀 8. จัดการเว็บไซต์ (Portals/Backends & Biz Banks)
 // ==========================================
+
+let allBizBanksData = []; // ตัวแปรเก็บข้อมูลธนาคาร
+
+// 📌 ฟังก์ชันคัดลอกข้อความลง Clipboard
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        Swal.fire({toast: true, position: 'top-end', title: '📋 คัดลอกสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
+    }).catch(err => {
+        console.error('Copy failed', err);
+        Swal.fire('Error', 'ไม่สามารถคัดลอกได้', 'error');
+    });
+}
 
 // 📌 1. โหลดข้อมูลเว็บไซต์ทั้งหมด
 async function loadSupabaseWebsites() { 
     try { 
+        // 🌟 จัดการสิทธิ์การมองเห็นแท็บ Biz Bank (เฉพาะ Admin / SuperAdmin)
+        if (myRole === 'SuperAdmin' || myRole === 'Admin') {
+            const tabBizBank = document.getElementById('tabBizBank');
+            if(tabBizBank) tabBizBank.style.display = 'inline-block';
+            
+            const { data: bizData } = await supabaseClient.from('biz_banks').select('*').order('id', { ascending: false });
+            allBizBanksData = bizData || [];
+            renderBizBankTable();
+        } else {
+            const tabBizBank = document.getElementById('tabBizBank');
+            if(tabBizBank) tabBizBank.style.display = 'none';
+        }
+
         // โหลดหน้าบ้าน (Portals)
         const { data: pData } = await supabaseClient.from('portals').select('*').order('id', { ascending: false }); 
         allPortalsData = (pData || []).map(r => [r.id, r.title, r.linkUrl, r.imageUrl]); 
@@ -3768,27 +3847,37 @@ async function uploadToSupabase(base64Data, prefix) {
     return urlData.publicUrl; 
 }
 
-// 📌 3. สลับแท็บ หน้าบ้าน / หลังบ้าน
+// 📌 3. สลับแท็บ หน้าบ้าน / หลังบ้าน / Biz Bank
 function switchWebZone(zone, btn) { 
+    // เช็คความปลอดภัย ถ้าเป็น Member แอบเข้าแท็บ Biz จะโดนเด้งออก
+    if (zone === 'bizbank' && myRole === 'Member') return;
+
     document.getElementById('tabFrontEnd').classList.remove('active'); 
     document.getElementById('tabBackEnd').classList.remove('active'); 
+    if(document.getElementById('tabBizBank')) document.getElementById('tabBizBank').classList.remove('active'); 
     
     btn.classList.add('active'); 
     btn.style.borderColor = "#fff"; 
     btn.style.color = "#fff"; 
     
-    if(zone === 'frontend') {
-        document.getElementById('tabBackEnd').style.borderColor = "#444"; 
-        document.getElementById('tabBackEnd').style.color = "#ccc";
-    } else {
-        document.getElementById('tabFrontEnd').style.borderColor = "#444"; 
-        document.getElementById('tabFrontEnd').style.color = "#ccc";
-    } 
+    document.getElementById('tabFrontEnd').style.borderColor = "#444"; 
+    document.getElementById('tabFrontEnd').style.color = "#ccc";
+    document.getElementById('tabBackEnd').style.borderColor = "#444"; 
+    document.getElementById('tabBackEnd').style.color = "#ccc";
+    if(document.getElementById('tabBizBank')) {
+        document.getElementById('tabBizBank').style.borderColor = "#444"; 
+        document.getElementById('tabBizBank').style.color = "#00ff66";
+    }
     
+    // จัดการ Area การแสดงผล
     document.getElementById('portalGridArea').style.display = (zone === 'frontend') ? 'grid' : 'none'; 
     document.getElementById('backendGridArea').style.display = (zone === 'backend') ? 'grid' : 'none'; 
-    document.getElementById('addPortalBtn').style.display = (zone === 'frontend') ? 'block' : 'none'; 
-    document.getElementById('addBackendBtn').style.display = (zone === 'backend') ? 'block' : 'none'; 
+    if(document.getElementById('bizBankArea')) document.getElementById('bizBankArea').style.display = (zone === 'bizbank') ? 'block' : 'none'; 
+    
+    // จัดการปุ่มเพิ่มข้อมูล
+    document.getElementById('addPortalBtn').style.display = (zone === 'frontend' && myRole !== 'Member') ? 'block' : 'none'; 
+    document.getElementById('addBackendBtn').style.display = (zone === 'backend' && myRole !== 'Member') ? 'block' : 'none'; 
+    if(document.getElementById('addBizBankBtn')) document.getElementById('addBizBankBtn').style.display = (zone === 'bizbank' && (myRole === 'Admin' || myRole === 'SuperAdmin')) ? 'block' : 'none'; 
 }
 
 // 📌 4. ระบบจัดการรูปภาพพรีวิว (หน้าบ้าน)
@@ -3844,6 +3933,13 @@ function openBackendModal() {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).show(); 
 }
 
+function openBizBankModal() { 
+    document.getElementById('bizBankForm').reset(); 
+    document.getElementById('editBizBankId').value = ''; 
+    document.getElementById('bizBankModalTitle').innerText = '🏦 เพิ่มบัญชี Biz ธนาคาร'; 
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('bizBankModal')).show(); 
+}
+
 function openEditPortal(id) { 
     const p = allPortalsData.find(r => r[0].toString() === id.toString()); 
     if(!p) return; 
@@ -3872,7 +3968,20 @@ function openEditBackend(id) {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('backendModal')).show(); 
 }
 
-// 📌 7. บันทึกข้อมูลเว็บหน้าบ้าน
+function openEditBizBank(id) { 
+    const b = allBizBanksData.find(r => r.id.toString() === id.toString()); 
+    if(!b) return; 
+    document.getElementById('editBizBankId').value = id; 
+    document.getElementById('bizBankName').value = b.bank_name; 
+    document.getElementById('bizBankAccName').value = b.account_name; 
+    document.getElementById('bizBankUser').value = b.username; 
+    document.getElementById('bizBankPass').value = b.password; 
+    document.getElementById('bizBankLink').value = b.bank_link; 
+    document.getElementById('bizBankModalTitle').innerText = '✏️ แก้ไขบัญชี Biz ธนาคาร'; 
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('bizBankModal')).show(); 
+}
+
+// 📌 7. บันทึกข้อมูล
 async function handlePortalSubmit(e) { 
     e.preventDefault(); 
     const btn = document.getElementById('btnSavePortal'); 
@@ -3911,7 +4020,6 @@ async function handlePortalSubmit(e) {
     } 
 }
 
-// 📌 8. บันทึกข้อมูลเว็บหลังบ้าน
 async function handleBackendSubmit(e) { 
     e.preventDefault(); 
     const btn = document.getElementById('btnSaveBackend'); 
@@ -3950,7 +4058,37 @@ async function handleBackendSubmit(e) {
     } 
 }
 
-// 📌 9. Render แสดงผลตารางเว็บไซต์
+async function handleBizBankSubmit(e) { 
+    e.preventDefault(); 
+    const btn = document.getElementById('btnSaveBizBank'); 
+    btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...'; 
+    try { 
+        const bank_name = document.getElementById('bizBankName').value; 
+        const account_name = document.getElementById('bizBankAccName').value; 
+        const username = document.getElementById('bizBankUser').value; 
+        const password = document.getElementById('bizBankPass').value; 
+        const bank_link = document.getElementById('bizBankLink').value; 
+        const id = document.getElementById('editBizBankId').value; 
+        
+        const payload = { bank_name, account_name, username, password, bank_link };
+        
+        if(id) {
+            await supabaseClient.from('biz_banks').update(payload).eq('id', id); 
+        } else {
+            await supabaseClient.from('biz_banks').insert([payload]); 
+        }
+        
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('bizBankModal')).hide(); 
+        Swal.fire({toast:true, position:'top-end', title:'บันทึกบัญชีสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+        await loadSupabaseWebsites(); 
+    } catch (err) { 
+        Swal.fire('Error', err.message, 'error'); 
+    } finally { 
+        btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูลบัญชี'; 
+    } 
+}
+
+// 📌 9. Render แสดงผล
 function renderPortalGrid() { 
     const area = document.getElementById('portalGridArea'); 
     area.innerHTML = ''; 
@@ -4013,6 +4151,52 @@ function renderBackendGrid() {
     }); 
 }
 
+function renderBizBankTable() {
+    const tbody = document.getElementById('bizBankTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    if(allBizBanksData.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลบัญชีธนาคาร</td></tr>`; 
+        return;
+    }
+    
+    allBizBanksData.forEach(r => {
+        const adminBtns = (myRole === 'SuperAdmin' || myRole === 'Admin') ? `
+            <div class="d-flex justify-content-center align-items-center gap-1">
+                <button class="btn btn-sm btn-outline-info py-0 px-2" onclick="openEditBizBank('${r.id}')">✏️</button>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="confirmDeleteBizBank('${r.id}')">✖</button>
+            </div>
+        ` : '-';
+        
+        tbody.innerHTML += `
+            <tr>
+                <td class="fw-bold text-success" style="font-size: 1.05rem;">${r.bank_name}</td>
+                <td class="text-white">${r.account_name}</td>
+                <td>
+                    <div class="d-flex align-items-center justify-content-between" style="background: rgba(0,240,255,0.05); border: 1px solid #333; padding: 4px 8px; border-radius: 6px;">
+                        <span class="text-info fw-bold me-2">${r.username}</span>
+                        <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.7rem;" onclick="copyToClipboard('${r.username}')">📋</button>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center justify-content-between" style="background: rgba(255,204,0,0.05); border: 1px solid #333; padding: 4px 8px; border-radius: 6px;">
+                        <span class="text-warning fw-bold me-2">${r.password}</span>
+                        <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.7rem;" onclick="copyToClipboard('${r.password}')">📋</button>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <a href="${r.bank_link}" target="_blank" class="text-muted small text-truncate me-2" style="max-width: 150px; display: inline-block;">เข้าสู่ระบบ ↗</a>
+                        <button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.7rem;" onclick="copyToClipboard('${r.bank_link}')">📋</button>
+                    </div>
+                </td>
+                <td class="text-center">${adminBtns}</td>
+            </tr>
+        `;
+    });
+}
+
 // 📌 10. ระบบลบเว็บไซต์
 async function confirmDeletePortal(id) { 
     Swal.fire({
@@ -4044,6 +4228,24 @@ async function confirmDeleteBackend(id) {
         if(r.isConfirmed) { 
             Swal.fire({title: 'กำลังลบ...', didOpen: () => Swal.showLoading()}); 
             await supabaseClient.from('backends').delete().eq('id', id); 
+            await loadSupabaseWebsites(); 
+            Swal.fire({toast: true, position: 'top-end', title: 'ลบสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'}); 
+        } 
+    }); 
+}
+
+async function confirmDeleteBizBank(id) { 
+    Swal.fire({ 
+        title: 'ลบบัญชีธนาคารนี้?', 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#ff3366', 
+        background: '#111', 
+        color: '#fff' 
+    }).then(async r => { 
+        if(r.isConfirmed) { 
+            Swal.fire({title: 'กำลังลบ...', didOpen: () => Swal.showLoading()}); 
+            await supabaseClient.from('biz_banks').delete().eq('id', id); 
             await loadSupabaseWebsites(); 
             Swal.fire({toast: true, position: 'top-end', title: 'ลบสำเร็จ', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'}); 
         } 
