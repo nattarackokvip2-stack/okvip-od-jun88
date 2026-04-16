@@ -1383,7 +1383,7 @@
         
         <div id="notiCategoryView" class="row g-3">
             <div class="col-md-6">
-                <div class="card bg-dark border-warning h-100 noti-cat-card" onclick="openNotiCategory('ALL', '🔔 การแจ้งเตือนทั้งหมด')" style="cursor: pointer; transition: 0.3s;">
+                <div id="cardNotiALL" class="card bg-dark border-warning h-100 noti-cat-card" onclick="openNotiCategory('ALL', '🔔 การแจ้งเตือนทั้งหมด')" style="cursor: pointer; transition: 0.3s;">
                     <div class="card-body text-center py-4">
                         <h2 class="mb-3">📥</h2>
                         <h5 class="text-warning fw-bold mb-1">รวมทั้งหมด</h5>
@@ -1394,7 +1394,7 @@
             </div>
 
             <div class="col-md-6">
-                <div class="card bg-dark border-info h-100 noti-cat-card" onclick="openNotiCategory('SCHEDULE', '📅 ตารางงาน / การลา')" style="cursor: pointer; transition: 0.3s;">
+                <div id="cardNotiSCH" class="card bg-dark border-info h-100 noti-cat-card" onclick="openNotiCategory('SCHEDULE', '📅 ตารางงาน / การลา')" style="cursor: pointer; transition: 0.3s;">
                     <div class="card-body text-center py-4">
                         <h2 class="mb-3">📅</h2>
                         <h5 class="text-info fw-bold mb-1">ตารางงาน & การลา</h5>
@@ -1405,7 +1405,7 @@
             </div>
 
             <div class="col-md-6">
-                <div class="card bg-dark border-danger h-100 noti-cat-card" onclick="openNotiCategory('PENALTY', '⚠️ ใบปรับ / บทลงโทษ')" style="cursor: pointer; transition: 0.3s;">
+                <div id="cardNotiPEN" class="card bg-dark border-danger h-100 noti-cat-card" onclick="openNotiCategory('PENALTY', '⚠️ ใบปรับ / บทลงโทษ')" style="cursor: pointer; transition: 0.3s;">
                     <div class="card-body text-center py-4">
                         <h2 class="mb-3">⚠️</h2>
                         <h5 class="text-danger fw-bold mb-1">ใบปรับ / ลงโทษ</h5>
@@ -1416,7 +1416,7 @@
             </div>
 
             <div class="col-md-6" id="cardNotiBehavior" style="display: none;">
-                <div class="card bg-dark border-warning h-100 noti-cat-card" onclick="openNotiCategory('BEHAVIOR', '🚨 รายงานพฤติกรรม')" style="cursor: pointer; transition: 0.3s;">
+                <div id="cardNotiBEH" class="card bg-dark border-warning h-100 noti-cat-card" onclick="openNotiCategory('BEHAVIOR', '🚨 รายงานพฤติกรรม')" style="cursor: pointer; transition: 0.3s;">
                     <div class="card-body text-center py-4">
                         <h2 class="mb-3">🚨</h2>
                         <h5 class="text-warning fw-bold mb-1">รายงานพฤติกรรม</h5>
@@ -1438,8 +1438,18 @@
 </div>
 
 <style>
-/* CSS เพิ่มเอฟเฟกต์ตอนชี้เมาส์ที่การ์ด */
+/* เอฟเฟกต์ตอนชี้เมาส์ที่การ์ด */
 .noti-cat-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px rgba(255,255,255,0.1); }
+
+/* 🌟 เอฟเฟกต์ไฟกระพริบ (Glow Animation) สำหรับแจ้งเตือนใหม่ */
+@keyframes glowWarning { 0% { box-shadow: 0 0 5px rgba(255,193,7, 0.2); } 50% { box-shadow: 0 0 20px rgba(255,193,7, 0.8), inset 0 0 10px rgba(255,193,7, 0.3); border-color: #ffc107; } 100% { box-shadow: 0 0 5px rgba(255,193,7, 0.2); } }
+@keyframes glowInfo { 0% { box-shadow: 0 0 5px rgba(13,202,240, 0.2); } 50% { box-shadow: 0 0 20px rgba(13,202,240, 0.8), inset 0 0 10px rgba(13,202,240, 0.3); border-color: #0dcaf0; } 100% { box-shadow: 0 0 5px rgba(13,202,240, 0.2); } }
+@keyframes glowDanger { 0% { box-shadow: 0 0 5px rgba(220,53,69, 0.2); } 50% { box-shadow: 0 0 20px rgba(220,53,69, 0.8), inset 0 0 10px rgba(220,53,69, 0.3); border-color: #dc3545; } 100% { box-shadow: 0 0 5px rgba(220,53,69, 0.2); } }
+
+/* คลาสที่จะถูกเรียกใช้ผ่าน JavaScript */
+.blink-warning { animation: glowWarning 1.5s infinite; }
+.blink-info { animation: glowInfo 1.5s infinite; }
+.blink-danger { animation: glowDanger 1.5s infinite; }
 </style>
 
 <div class="modal fade" id="chatModal" tabindex="-1" data-bs-theme="dark">
@@ -4809,6 +4819,7 @@ function updateNotiUI() {
 function updateCategoryBadges() {
     let unreadAll = 0, unreadSch = 0, unreadPen = 0, unreadBeh = 0;
     
+    // 1. นับจำนวนแจ้งเตือนที่ยังไม่ได้อ่าน
     allMyNotis.forEach(n => {
         if(!n.is_read) {
             unreadAll++;
@@ -4819,15 +4830,32 @@ function updateCategoryBadges() {
         }
     });
 
-    const setBadge = (id, count) => {
-        const el = document.getElementById(id);
-        if(el) { el.style.display = count > 0 ? 'inline-block' : 'none'; el.innerText = `${count} ใหม่`; }
+    // 2. ฟังก์ชันช่วยอัปเดตทั้ง "ตัวเลข" และ "สั่งกระพริบกรอบ"
+    const setBadgeAndBlink = (badgeId, cardId, count, blinkClass) => {
+        const badgeEl = document.getElementById(badgeId);
+        const cardEl = document.getElementById(cardId);
+        
+        // อัปเดตป้ายตัวเลขสีแดง
+        if(badgeEl) { 
+            badgeEl.style.display = count > 0 ? 'inline-block' : 'none'; 
+            badgeEl.innerText = `${count} ใหม่`; 
+        }
+        
+        // สั่งกระพริบกรอบการ์ด
+        if(cardEl) {
+            if(count > 0) {
+                cardEl.classList.add(blinkClass); // เพิ่มคลาสกระพริบ
+            } else {
+                cardEl.classList.remove(blinkClass); // เอาออกเมื่ออ่านครบแล้ว
+            }
+        }
     };
 
-    setBadge('badgeNotiALL', unreadAll);
-    setBadge('badgeNotiSCH', unreadSch);
-    setBadge('badgeNotiPEN', unreadPen);
-    setBadge('badgeNotiBEH', unreadBeh);
+    // 3. ส่งคำสั่งให้แต่ละกล่อง (กำหนดสีเอฟเฟกต์กระพริบให้ตรงกับสีกรอบ)
+    setBadgeAndBlink('badgeNotiALL', 'cardNotiALL', unreadAll, 'blink-warning');
+    setBadgeAndBlink('badgeNotiSCH', 'cardNotiSCH', unreadSch, 'blink-info');
+    setBadgeAndBlink('badgeNotiPEN', 'cardNotiPEN', unreadPen, 'blink-danger');
+    setBadgeAndBlink('badgeNotiBEH', 'cardNotiBEH', unreadBeh, 'blink-warning');
 }
 
 // 🌟 ฟังก์ชันเปิด Modal
