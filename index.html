@@ -5159,100 +5159,6 @@ function signMyName(colIndex) {
     document.getElementById('evalFormBody').dispatchEvent(event);
 }
 
-// 🛑 ดึงข้อมูลการประเมินเก่ามาใส่ใน Modal + ระบบล็อคสิทธิ์ช่องคะแนน
-async function openEvaluationForm(targetNick, canEdit) {
-    document.getElementById('evalTargetName').innerText = targetNick;
-    const month = document.getElementById('hrEvalMonth').value;
-    const myNick = localStorage.getItem('okvip_nick');
-    
-    const alertBox = document.getElementById('evalPermissionAlert');
-    const btnSave = document.getElementById('btnSaveEval');
-    
-    // ล้างค่าเก่าทั้งหมด
-    document.querySelectorAll('.eval-input:not(.eval-sum), #evaluatorName1, #evaluatorName2').forEach(inp => inp.value = '');
-    document.querySelectorAll('.eval-sum, .eval-sum-box').forEach(el => {
-        if(el.tagName === 'INPUT') el.value = ''; else el.innerText = '0';
-    });
-    const pDisplay = document.getElementById('grandTotalPercent');
-    pDisplay.innerText = '0%'; pDisplay.style.backgroundColor = "#33cccc"; pDisplay.style.color = "#000";
-    
-    // ซ่อนปุ่มลงชื่อก่อน
-    document.getElementById('btnSign1').classList.add('d-none');
-    document.getElementById('btnSign2').classList.add('d-none');
-
-    // ถ้ารูปแบบไม่ให้แก้ไข ปิดทุกอย่าง
-    if (!canEdit) {
-        alertBox.classList.remove('d-none');
-        btnSave.style.display = 'none';
-        document.querySelectorAll('.sc1, .sc2').forEach(inp => inp.disabled = true);
-    } else {
-        alertBox.classList.add('d-none');
-        btnSave.style.display = 'inline-block';
-    }
-
-    Swal.fire({title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading()});
-    const { data } = await supabaseClient.from('hr_evaluations').select('*').eq('nickname', targetNick).eq('month', month).maybeSingle();
-    Swal.close();
-
-    let ev1 = '', ev2 = '';
-
-    if (data) {
-        if (data.evaluator_nick) {
-            const evNames = data.evaluator_nick.split('|');
-            ev1 = evNames[0] || '';
-            ev2 = evNames[1] || '';
-            document.getElementById('evaluatorName1').value = ev1;
-            document.getElementById('evaluatorName2').value = ev2;
-        }
-        if (data.scores) {
-            for (let i = 1; i <= 15; i++) {
-                if (data.scores[`q${i}`]) {
-                    const [sc1, sc2] = data.scores[`q${i}`];
-                    const in1 = document.getElementById(`q${i}_1`);
-                    const in2 = document.getElementById(`q${i}_2`);
-                    if (in1 && sc1 !== null) in1.value = sc1;
-                    if (in2 && sc2 !== null) in2.value = sc2;
-                }
-            }
-        }
-    }
-
-    // --- ระบบจัดการสิทธิ์การลงคะแนน (Locking System) ---
-    if (canEdit) {
-        const inputs1 = document.querySelectorAll('.sc1');
-        const inputs2 = document.querySelectorAll('.sc2');
-        
-        // ล็อคไว้ก่อน ค่อยเปิดตามสิทธิ์
-        inputs1.forEach(inp => inp.disabled = true);
-        inputs2.forEach(inp => inp.disabled = true);
-
-        // เช็คคนที่ 1
-        if (ev1 === '') {
-            // ถ้าช่อง 1 ว่าง ให้โชว์ปุ่มลงชื่อ
-            document.getElementById('btnSign1').classList.remove('d-none');
-        } else if (ev1 === myNick) {
-            // ถ้าเป็นชื่อเรา เปิดให้แก้ได้
-            inputs1.forEach(inp => inp.disabled = false);
-        }
-
-        // เช็คคนที่ 2
-        if (ev2 === '') {
-            // ถ้าช่อง 1 ไม่ว่างและไม่ใช่ชื่อเรา (แปลว่าคนอื่นเซ็นไปแล้ว) ถึงจะให้เซ็นช่อง 2 ได้
-            if (ev1 !== '' && ev1 !== myNick) {
-                document.getElementById('btnSign2').classList.remove('d-none');
-            }
-        } else if (ev2 === myNick) {
-            inputs2.forEach(inp => inp.disabled = false);
-        }
-    }
-
-    // กระตุ้นให้คำนวณใหม่
-    const event = new Event('input', { bubbles: true });
-    document.getElementById('evalFormBody').dispatchEvent(event);
-
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).show();
-}
-
 // 🛑 ฟังก์ชันบันทึกข้อมูลลงฐานข้อมูล
 async function saveEvaluation() {
     const nick = document.getElementById('evalTargetName').innerText;
@@ -5295,7 +5201,8 @@ async function saveEvaluation() {
         nickname: nick,
         month: month,
         department: allUsersData.find(u => u[1] === nick)[3] || '', 
-        scores: scoresData,
+        // 🌟 แก้ไขตรงนี้: บังคับใช้ JSON.stringify ก่อนบันทึก เพื่อป้องกันข้อมูลพัง
+        scores: JSON.stringify(scoresData), 
         total_score: parseFloat(rawTotal) || 0,
         kpi_percent: parseFloat(rawPercent) || 0,
         evaluator_nick: combinedEvaluators
