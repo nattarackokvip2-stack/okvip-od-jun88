@@ -5144,6 +5144,38 @@ async function initChatAndNoti() {
         .subscribe();
 }
 
+        // 🌟 สร้าง Channel ใหม่ สำหรับดักจับสมุดส่งกะแยกต่างหาก 🌟
+    supabaseClient.channel('shift-log-channel')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'shift_logs' }, payload => {
+            console.log("📢 [DEBUG] มีข้อความส่งกะเข้ามาใหม่!", payload.new);
+            
+            const myNick = localStorage.getItem('okvip_nick') || '';
+            const badge = document.getElementById('shiftLogBadge');
+            const btn = document.getElementById('btnShiftLog');
+            
+            // ถ้าชื่อคนส่ง ไม่ใช่ชื่อของเรา ให้กระพริบเตือน
+            if (String(payload.new.nickname).trim() !== String(myNick).trim()) { 
+                console.log("🚨 [DEBUG] ไม่ใช่ข้อความของเรา! สั่งให้ปุ่มกระพริบ!");
+                if (badge && btn) {
+                    let count = parseInt(badge.innerText) || 0;
+                    badge.innerText = count + 1;
+                    badge.style.display = 'inline-block';
+                    btn.classList.add('glow-alert-shift');
+                }
+            } else {
+                console.log("✅ [DEBUG] ข้อความนี้เราส่งเอง ไม่ต้องกระพริบ");
+            }
+        })
+        .subscribe((status) => {
+            // เช็คสถานะว่าเชื่อมต่อสำเร็จไหม
+            if (status === 'SUBSCRIBED') {
+                console.log("🟢 [DEBUG] เชื่อมต่อ Realtime สมุดส่งกะสำเร็จ!");
+            } else {
+                console.error("🔴 [DEBUG] เชื่อมต่อ Realtime สมุดส่งกะล้มเหลว สถานะ:", status);
+            }
+        });
+}
+
 function updateNotiUI() {
     if(!allMyNotis) return;
     const unreadCount = allMyNotis.filter(n => !n.is_read).length;
