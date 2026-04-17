@@ -5121,17 +5121,18 @@ async function initChatAndNoti() {
         })
         /* 🌟 เพิ่มดักจับแจ้งเตือนสมุดส่งกะตรงนี้ 🌟 */
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'shift_logs' }, payload => {
-            if (payload.new.nickname !== myNick) { // ถ้าไม่ใช่เราเป็นคนพิมพ์เอง ให้แจ้งเตือน
+            if (payload.new.nickname !== myNick) { 
                 const badge = document.getElementById('shiftLogBadge');
                 const btn = document.getElementById('btnShiftLog');
                 if (badge && btn) {
                     let count = parseInt(badge.innerText) || 0;
                     badge.innerText = count + 1;
                     badge.style.display = 'block';
-                    btn.classList.add('btn-alert-blink'); // สั่งให้ปุ่มกระพริบ
+                    btn.classList.add('glow-alert-shift'); // สั่งให้ปุ่มกระพริบเต็มที่
                 }
             }
-        }).subscribe();
+        })
+        .subscribe();
 }
 
 function updateNotiUI() {
