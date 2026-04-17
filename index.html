@@ -5119,20 +5119,28 @@ async function initChatAndNoti() {
                 renderChatMessages();
             }
         })
-        /* 🌟 โค้ดที่ต้องเพิ่ม: ดักจับ Realtime ของสมุดส่งกะ 🌟 */
+        /* 🌟 ดักจับ Realtime ของสมุดส่งกะ (เวอร์ชันมีตัวเช็คบั๊ก) 🌟 */
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'shift_logs' }, payload => {
+            
+            // 1. ลองให้มัน Print ข้อมูลออกมาดูในหน้าต่าง F12
+            console.log("📢 สัญญาณ Realtime สมุดส่งกะวิ่งเข้ามาแล้ว! ข้อมูล:", payload.new); 
+            
             const myNick = localStorage.getItem('okvip_nick') || '';
-            // ถ้าคนที่พิมพ์มา ไม่ใช่ตัวเราเอง ให้ปุ่มกระพริบ
-            if (String(payload.new.nickname).trim() !== String(myNick).trim()) { 
+            
+            // 2. ผมปิดเงื่อนไขเช็คชื่อออกชั่วคราว เพื่อให้ "พิมพ์เอง กระพริบเอง" ได้ (เอาไว้ทดสอบ)
+            // if (String(payload.new.nickname).trim() !== String(myNick).trim()) { 
                 const badge = document.getElementById('shiftLogBadge');
                 const btn = document.getElementById('btnShiftLog');
+                
                 if (badge && btn) {
                     let count = parseInt(badge.innerText) || 0;
                     badge.innerText = count + 1;
                     badge.style.display = 'inline-block';
                     btn.classList.add('glow-alert-shift');
+                } else {
+                    console.error("❌ ระบบหาไอดีปุ่ม btnShiftLog หรือ shiftLogBadge ในหน้าเว็บไม่เจอ!");
                 }
-            }
+            // }
         })
         /* ------------------------------------------- */
         .subscribe();
