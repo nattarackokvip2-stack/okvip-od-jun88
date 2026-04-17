@@ -140,13 +140,45 @@
   .schedule-table { width: max-content; border-collapse: collapse; table-layout: fixed; font-size: 0.9rem; text-shadow: none;}
   .schedule-table th, .schedule-table td { border: 1px solid #2a2a2a; text-align: center; vertical-align: middle; transition: background-color 0.1s; user-select: none;}
   
-  /* ล็อคแถบวันที่ให้อยู่ด้านบนเสมอ */
-  .schedule-table th { background: #151518; color: #aaa; font-weight: 500; position: sticky; top: 0; z-index: 20; box-shadow: 0 1px 0 #2a2a2a;}
+  /* ล็อคแถบวันที่และสรุปยอดให้อยู่ด้านบนเสมอ (สีทึบ) */
+  .schedule-table th { 
+      background-color: #121215 !important; 
+      background-clip: padding-box !important; /* ปิดรอยรั่วขอบ 1px */
+      position: sticky; 
+      top: 0; 
+      z-index: 20; 
+      box-shadow: 0 1px 0 #2a2a2a;
+      color: #aaa; 
+      font-weight: 500;
+  }
   
-  /* ล็อคชื่อและแผนกให้อยู่ซ้ายสุดเสมอ และปรับ z-index ให้ไม่จมเวลาเลื่อนลง */
-  .name-col { width: 140px; min-width: 140px; text-align: left !important; padding-left: 15px !important; font-weight: bold; background: #0f0f12 !important; position: sticky; left: 0; z-index: 15; color: #fff;}
-  .dept-col { width: 80px; min-width: 80px; background: #0a0a0c; }
-  .schedule-table thead .name-col, .schedule-table thead .dept-col { z-index: 25 !important; }
+  /* ล็อคชื่อและแผนกให้อยู่ซ้ายสุดเสมอ (สีทึบ) */
+  .name-col { 
+      background-color: #0f0f12 !important; 
+      background-clip: padding-box !important;
+      position: sticky; 
+      left: 0; 
+      z-index: 15; 
+      width: 140px; 
+      min-width: 140px; 
+      text-align: left !important; 
+      padding-left: 15px !important; 
+      font-weight: bold; 
+      color: #fff;
+  }
+  .dept-col { 
+      background-color: #0a0a0c !important; 
+      background-clip: padding-box !important;
+      width: 80px; 
+      min-width: 80px;
+  }
+
+  /* ดันมุมซ้ายบน (จุดตัด) และบรรทัดสรุปให้อยู่ชั้นสูงสุด */
+  .schedule-table thead tr th.name-col, 
+  .schedule-table thead tr th.dept-col { 
+      z-index: 60 !important; 
+      background-color: #121215 !important;
+  }
   
   .date-col, .cell-day { width: 45px !important; min-width: 45px !important; max-width: 45px !important; height: 45px !important; padding: 0 !important; }
   .cell-day { cursor: default; font-weight: bold; overflow: hidden; position: relative;}
@@ -253,7 +285,7 @@
      🌟 โครงสร้างตารางงานแบบฝังตรายางแนวนอน (Mini Inline Stamps)
   ======================================================== */
   .table-container {
-      max-height: calc(100vh - 240px) !important;
+      max-height: calc(100vh - 160px) !important; /* ขยายความสูงให้ชิดขอบล่างมากขึ้น */
       height: auto;
       margin-bottom: 0; 
   }
