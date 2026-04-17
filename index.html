@@ -2315,7 +2315,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       if(myRole !== 'Member') { 
           document.getElementById('dashboardWidgets').style.setProperty('display', 'flex', 'important');
           document.getElementById('addBtn').style.display = 'block';
-          document.getElementById('addManualBtn').style.display = 'block'; 
+          document.getElementById('addManualBtn').style.display = 'block';
+          document.getElementById('btnJobSettings').style.display = 'block';
           
           if (isSA) { 
               document.getElementById('addPenaltyBtn').style.display = 'block';
