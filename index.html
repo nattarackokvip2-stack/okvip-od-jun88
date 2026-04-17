@@ -5124,33 +5124,7 @@ async function initChatAndNoti() {
                 renderChatMessages();
             }
         })
-        /* 🌟 ดักจับ Realtime สำหรับคนอื่นที่ได้รับข้อความ 🌟 */
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'shift_logs' }, payload => {
-            const myNick = localStorage.getItem('okvip_nick') || '';
-            const badge = document.getElementById('shiftLogBadge');
-            const btn = document.getElementById('btnShiftLog');
-            
-            // เช็คว่าถ้า 'คนส่ง' ไม่ใช่ 'ตัวเรา' ให้กระพริบเตือน
-            if (String(payload.new.nickname).trim() !== String(myNick).trim()) { 
-                if (badge && btn) {
-                    let count = parseInt(badge.innerText) || 0;
-                    badge.innerText = count + 1;
-                    badge.style.display = 'inline-block';
-                    btn.classList.add('glow-alert-shift');
-                }
-            }
-        })
-        /* ------------------------------------------- */
-        .subscribe();
-
-        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'sys_chats' }, payload => {
-            allMyChats = allMyChats.filter(c => c.id !== payload.old.id);
-            if(document.getElementById('chatModal').classList.contains('show')) {
-                renderChatUserList();
-                renderChatMessages();
-            }
-        })
-        /* 🌟 ดักจับ Realtime ของสมุดส่งกะ (เอากลับมาใส่ใน Channel เดิม) 🌟 */
+        /* 🌟 ดักจับ Realtime ของสมุดส่งกะ (แบบรวมและคลีนโค้ดแล้ว) 🌟 */
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'shift_logs' }, payload => {
             const myNick = localStorage.getItem('okvip_nick'); // ดึงชื่อเราจาก LocalStorage ใหม่ทุกครั้ง
             
