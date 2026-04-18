@@ -3443,7 +3443,30 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   function handleJobSearch(term) { jobSearchTerm = term.toLowerCase().trim(); renderJobTables(); }
   function handleJobShiftSetFilter(val) { currentJobShiftSet = val; renderJobTables(); }
   function toggleShowHidden(checkbox) { isShowingHiddenUsers = checkbox.checked; renderJobTables(); }
-  function renderJobTables() { if(currentJobTab === 'duty') buildDutyTable(); else buildStatTable(); }
+  function renderJobTables() { 
+      if(currentJobTab === 'duty') buildDutyTable(); else buildStatTable(); 
+      
+      // จัดการปุ่มการกระทำต่างๆ ตามสิทธิ์
+      const btnClear = document.querySelector('button[onclick="confirmClearDuty()"]');
+      const btnRandom = document.querySelector('button[onclick="randomizeDuties()"]');
+      const btnSaveDuty = document.querySelector('button[onclick="saveDutyTable()"]');
+      const btnSaveStat = document.querySelector('button[onclick="saveStatTable()"]');
+      const btnJobSet = document.getElementById('btnJobSettings');
+
+      if (myRole === 'Member') {
+          if(btnClear) btnClear.style.display = 'none';
+          if(btnRandom) btnRandom.style.display = 'none';
+          if(btnSaveDuty) btnSaveDuty.style.display = 'none';
+          if(btnSaveStat) btnSaveStat.style.display = 'none';
+          if(btnJobSet) btnJobSet.style.display = 'none';
+      } else {
+          if(btnClear) btnClear.style.display = 'inline-block';
+          if(btnRandom) btnRandom.style.display = 'inline-block';
+          if(btnSaveDuty) btnSaveDuty.style.display = 'inline-block';
+          if(btnSaveStat) btnSaveStat.style.display = 'inline-block';
+          if(btnJobSet) btnJobSet.style.display = myRole === 'SuperAdmin' ? 'inline-block' : 'none';
+      }
+  }
 
   async function loadDailyJobData() { 
       const dateStr = document.getElementById('jobDatePicker').value; if(!dateStr) return; 
@@ -3474,7 +3497,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="6" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; document.getElementById('siteSummaryArea').style.display='none'; return;}
     
     filteredUsers.forEach(u => {
-      const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
+      const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const targetRole = u[6]; 
+      const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); 
+      const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
       const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; 
       
       let mainSite = ''; let subSite = '';
@@ -3487,31 +3512,58 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if(!mainSite && !subSite) mainSite = curData.site.trim(); 
       }
 
+      // 🌟 ระบบตรวจสอบสิทธิ์ (RBAC) สำหรับตารางหน้าที่
+      let canEditThisRow = false;
+      if (myRole === 'SuperAdmin') { canEditThisRow = true; } 
+      else if (myRole === 'Admin' && targetRole === 'Member') { canEditThisRow = true; }
+
       let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
       let availableDuties = [];
       if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
       else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
       
-      let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
-      availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
+      // สร้างช่องเลือกเว็บ
+      let siteDisplayHtml = '';
+      if (canEditThisRow) {
+          let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
+          let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
+          (sysSettings.websites || []).forEach(w => {
+              siteMainOptions += `<option value="${w}" ${mainSite===w?'selected':''}>${w}</option>`;
+              siteSubOptions += `<option value="${w}" ${subSite===w?'selected':''}>${w}</option>`;
+          });
+          siteDisplayHtml = `<div class="d-flex flex-column gap-1">
+                                <select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="updateSiteSummary()">${siteMainOptions}</select>
+                                <select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="updateSiteSummary()">${siteSubOptions}</select>
+                             </div>`;
+      } else {
+          // ถ้าไม่มีสิทธิ์แก้ ให้โชว์เป็นตัวหนังสือ และฝังค่าเดิมไว้ใน hidden input (กันค่าหายตอนเซฟ)
+          siteDisplayHtml = `<div class="d-flex flex-column gap-1 text-start">
+                                <span class="text-info small">หลัก: <b>${mainSite || '-'}</b></span>
+                                <span class="text-warning small">รอง: <b>${subSite || '-'}</b></span>
+                                <input type="hidden" class="hidden-site-main" value="${mainSite}">
+                                <input type="hidden" class="hidden-site-sub" value="${subSite}">
+                             </div>`;
+      }
 
-      let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
-      let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
-      (sysSettings.websites || []).forEach(w => {
-          siteMainOptions += `<option value="${w}" ${mainSite===w?'selected':''}>${w}</option>`;
-          siteSubOptions += `<option value="${w}" ${subSite===w?'selected':''}>${w}</option>`;
-      });
-      let siteDropdowns = `
-          <div class="d-flex flex-column gap-1">
-              <select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="updateSiteSummary()">${siteMainOptions}</select>
-              <select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="updateSiteSummary()">${siteSubOptions}</select>
-          </div>
-      `;
+      // สร้างช่องเลือกหน้าที่
+      let dutyDisplayHtml = '';
+      if (canEditThisRow) {
+          let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
+          availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
+          dutyDisplayHtml = `<select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select>`;
+      } else {
+          dutyDisplayHtml = `<span class="text-white fw-bold">${curData.duty || '-'}</span>
+                             <input type="hidden" class="hidden-duty" value="${curData.duty || ''}">`;
+      }
       
-      const adminBtn = myRole!=='Member' ? `<button class="btn btn-sm btn-outline-info" onclick="openUserSiteModal('${nick}')">⚙️</button>` : '-';
+      const adminBtn = (myRole === 'SuperAdmin' || (myRole === 'Admin' && targetRole === 'Member')) ? `<button class="btn btn-sm btn-outline-info" onclick="openUserSiteModal('${nick}')">⚙️</button>` : '-';
+      
       if (capable.includes('EXCLUDE_DUTY')) { tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="true" style="opacity: 0.4;"><td class="fw-bold text-white"><del>${nick}</del></td><td class="text-muted small">${dept.split(' ')[0]}</td><td colspan="3" class="text-center text-danger small">🚫 ถูกซ่อนจากตาราง</td><td class="text-center">${adminBtn}</td></tr>`; return; }
       if (offDutyStamps.includes(curStamp) || curStamp === '') { const sConf = stampConfig[curStamp] || stampConfig['']; tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="false"><td class="fw-bold text-white">${nick}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td colspan="2" class="text-center bg-dark" style="opacity:0.8"><span class="badge px-3 py-2" style="background-color:${sConf.bg}; color:${sConf.text}; border: 1px solid ${sConf.text};">🛏️ ${sConf.label}</span></td><td class="text-center">${adminBtn}</td></tr>`; } 
-      else { let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<span class="badge ms-2" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span>`; } tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="false" data-excluded="false"><td class="fw-bold text-white">${nick} ${stampHtml}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td>${siteDropdowns}</td><td><select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select></td><td class="text-center">${adminBtn}</td></tr>`; }
+      else { 
+          let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<span class="badge ms-2" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span>`; } 
+          tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="false" data-excluded="false"><td class="fw-bold text-white">${nick} ${stampHtml}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td>${siteDisplayHtml}</td><td>${dutyDisplayHtml}</td><td class="text-center">${adminBtn}</td></tr>`; 
+      }
     });
     updateSiteSummary();
   }
@@ -3574,8 +3626,23 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           let allAvailableSites = {}; let availableUsers = [];
           document.querySelectorAll('#dutyTableBody tr').forEach(r => {
               if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
-              const nick = r.getAttribute('data-nick'); const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
-              if(capableSites.length > 0) { availableUsers.push({ row: r, nick: nick, capableSites: capableSites }); capableSites.forEach(site => { if(!allAvailableSites[site]) allAvailableSites[site] = 0; allAvailableSites[site]++; }); }
+              
+              const nick = r.getAttribute('data-nick'); 
+              const userObj = allUsersData.find(u => u[1] === nick);
+              const targetRole = userObj ? userObj[6] : 'Member';
+              
+              // 🌟 เช็คสิทธิ์ก่อนสุ่ม
+              let canEditThisRow = false;
+              if (myRole === 'SuperAdmin') canEditThisRow = true;
+              else if (myRole === 'Admin' && targetRole === 'Member') canEditThisRow = true;
+
+              if(canEditThisRow) {
+                  const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
+                  if(capableSites.length > 0) { 
+                      availableUsers.push({ row: r, nick: nick, capableSites: capableSites }); 
+                      capableSites.forEach(site => { if(!allAvailableSites[site]) allAvailableSites[site] = 0; allAvailableSites[site]++; }); 
+                  }
+              }
           });
           let siteAssignmentCount = {}; sysSettings.websites.forEach(s => siteAssignmentCount[s] = 0);
           availableUsers.sort(() => 0.5 - Math.random());
@@ -3619,14 +3686,17 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       document.querySelectorAll('#dutyTableBody tr').forEach(r => { 
           if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; 
           const n = r.getAttribute('data-nick'); const d = r.getAttribute('data-dept'); 
-          const sMain = r.querySelector('.sel-site-main')?.value || '';
-          const sSub = r.querySelector('.sel-site-sub')?.value || '';
+          
+          // ดึงค่าจาก select ถ้ามี ถ้าไม่มีดึงจาก hidden input (กรณีถูกล็อคสิทธิ์)
+          const mSel = r.querySelector('.sel-site-main'); const sMain = mSel ? mSel.value : r.querySelector('.hidden-site-main').value;
+          const sSel = r.querySelector('.sel-site-sub'); const sSub = sSel ? sSel.value : r.querySelector('.hidden-site-sub').value;
+          const dSel = r.querySelector('.sel-duty'); const dt = dSel ? dSel.value : r.querySelector('.hidden-duty').value;
+
           let s = '';
           if (sMain && sSub) s = `${sMain} (หลัก), ${sSub} (รอง)`;
           else if (sMain) s = `${sMain} (หลัก)`;
           else if (sSub) s = `${sSub} (รอง)`;
           
-          const dt = r.querySelector('.sel-duty')?.value || ''; 
           if(s || dt) payload.push({ dateStr: dateStr, nickname: n, department: d, assignedSite: s, assignedDuty: dt }); 
       }); 
       const btn = document.querySelector('#dutyActionBtns .btn-neon-green'); btn.innerText = '⏳...'; btn.disabled=true; 
@@ -3654,10 +3724,29 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; return;}
     
     filteredUsers.forEach(u => {
-      const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; 
+      const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; const targetRole = u[6];
+      
+      // 🌟 ระบบตรวจสอบสิทธิ์ (RBAC)
+      let canEditThisRow = false;
+      if (myRole === 'SuperAdmin') { canEditThisRow = true; } 
+      else if (myRole === 'Admin' && targetRole === 'Member') { canEditThisRow = true; }
+
       if (capable.includes('EXCLUDE_DUTY')) { let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="true" style="opacity: 0.4;"><td class="col-sticky-name fw-bold text-white"><del>${nick}</del></td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => tdHtml += `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="ซ่อน"></td>`); tbody.innerHTML += tdHtml + `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="-"></td></tr>`; return; }
       let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<div class="mt-1"><span class="badge" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span></div>`; }
-      let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="false"><td class="col-sticky-name fw-bold text-white">${nick} ${stampHtml}</td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => { const val = curStats[s]||''; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-dark text-white stat-input text-center" data-site="${s}" value="${val}" oninput="calcRowTotal(this)"></td>`; }); const total = curStats['Total']||0; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-black text-warning row-total text-center fw-bold" value="${total}" readonly></td></tr>`; tbody.innerHTML += tdHtml;
+      let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="false"><td class="col-sticky-name fw-bold text-white">${nick} ${stampHtml}</td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; 
+      
+      sysSettings.websites.forEach(s => { 
+          const val = curStats[s]||''; 
+          if(canEditThisRow) {
+              tdHtml += `<td><input type="number" class="form-control form-control-sm bg-dark text-white stat-input text-center" data-site="${s}" value="${val}" oninput="calcRowTotal(this)"></td>`; 
+          } else {
+              tdHtml += `<td class="text-center text-white">${val || '-'}<input type="hidden" class="stat-input" data-site="${s}" value="${val}"></td>`;
+          }
+      }); 
+      
+      const total = curStats['Total']||0; 
+      tdHtml += `<td><input type="number" class="form-control form-control-sm bg-black text-warning row-total text-center fw-bold" value="${total}" readonly></td></tr>`; 
+      tbody.innerHTML += tdHtml;
     });
   }
 
