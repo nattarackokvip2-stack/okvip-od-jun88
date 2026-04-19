@@ -736,17 +736,14 @@
           
           <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
              <input type="text" id="searchJob" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
-             
              <div id="dutyActionBtns" style="display: flex; gap: 10px;">
-               <button id="btnJobClear" class="btn btn-outline-danger px-3" onclick="confirmClearDuty()">🗑️ ล้างข้อมูล</button>
-               <button id="btnJobRandom" class="btn btn-neon-blue px-4" onclick="randomizeDuties()">🔀 สุ่มหน้าที่</button>
-               
+               <button class="btn btn-outline-danger px-3" onclick="confirmClearDuty()">🗑️ ล้างข้อมูล</button>
+               <button class="btn btn-neon-blue px-4" onclick="randomizeDuties()">🔀 สุ่มหน้าที่</button>
                <button id="btnShiftLog" class="btn btn-outline-info px-3 position-relative" onclick="openShiftLog()">
-                  📓 สมุดส่งกะ
-                  <span id="shiftLogBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none; font-size:0.65rem; border: 1px solid #000; box-shadow: 0 0 10px #ff3366;">0</span>
-               </button>
-               
-               <button id="btnJobSave" class="btn btn-neon-green px-4" onclick="saveDutyTable()">💾 บันทึกหน้าที่</button>
+  📓 สมุดส่งกะ
+  <span id="shiftLogBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none; font-size:0.65rem; border: 1px solid #000; box-shadow: 0 0 10px #ff3366;">0</span>
+</button>
+               <button class="btn btn-neon-green px-4" onclick="saveDutyTable()">💾 บันทึกหน้าที่</button>
              </div>
           </div>
           <div class="table-responsive mt-3">
@@ -760,9 +757,8 @@
       <div id="statWorkspace" style="display: none;">
           <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
              <input type="text" id="searchStat" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
-             
-             <div id="statActionBtns" style="display: flex; gap: 10px;">
-               <button id="btnStatSave" class="btn btn-neon-yellow px-4" onclick="saveStatTable()">💾 บันทึกสถิติทั้งหมด</button>
+             <div id="statActionBtns">
+               <button class="btn btn-neon-yellow px-4" onclick="saveStatTable()">💾 บันทึกสถิติทั้งหมด</button>
              </div>
           </div>
           <div class="stat-table-wrapper mt-3">
@@ -3447,32 +3443,17 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   function handleJobSearch(term) { jobSearchTerm = term.toLowerCase().trim(); renderJobTables(); }
   function handleJobShiftSetFilter(val) { currentJobShiftSet = val; renderJobTables(); }
   function toggleShowHidden(checkbox) { isShowingHiddenUsers = checkbox.checked; renderJobTables(); }
-  function renderJobTables() { 
-      if(currentJobTab === 'duty') buildDutyTable(); else buildStatTable(); 
-      
-      // จัดการปุ่มการกระทำต่างๆ ตามสิทธิ์
-      const btnClear = document.getElementById('btnJobClear');
-      const btnRandom = document.getElementById('btnJobRandom');
-      const btnSaveDuty = document.getElementById('btnJobSave');
-      const btnSaveStat = document.getElementById('btnStatSave');
-      const btnJobSet = document.getElementById('btnJobSettings');
+  function renderJobTables() { if(currentJobTab === 'duty') buildDutyTable(); else buildStatTable(); }
 
-      if (myRole === 'Member') {
-          if(btnClear) btnClear.style.display = 'none';
-          if(btnRandom) btnRandom.style.display = 'none';
-          if(btnSaveDuty) btnSaveDuty.style.display = 'none';
-          if(btnSaveStat) btnSaveStat.style.display = 'none';
-          if(btnJobSet) btnJobSet.style.display = 'none';
-      } else {
-          // ถ้าเป็น Admin หรือ SuperAdmin ให้เห็นปุ่มพวกนี้
-          if(btnClear) btnClear.style.display = 'inline-block';
-          if(btnRandom) btnRandom.style.display = 'inline-block';
-          if(btnSaveDuty) btnSaveDuty.style.display = 'inline-block';
-          if(btnSaveStat) btnSaveStat.style.display = 'inline-block';
-          
-          // แต่ปุ่ม "ตั้งค่าหน้าที่เว็บ" (ฟันเฟือง) ให้เฉพาะ SuperAdmin
-          if(btnJobSet) btnJobSet.style.display = myRole === 'SuperAdmin' ? 'inline-block' : 'none';
-      }
+  async function loadDailyJobData() { 
+      const dateStr = document.getElementById('jobDatePicker').value; if(!dateStr) return; 
+      const { data: dData } = await supabaseClient.from('daily_duties').select('*').eq('dateStr', dateStr); dailyDutiesData = {}; if(dData) dData.forEach(r => dailyDutiesData[r.nickname] = { site: r.assignedSite, duty: r.assignedDuty });
+      const { data: sData } = await supabaseClient.from('daily_stats').select('*').eq('dateStr', dateStr); dailyStatsData = {}; if(sData) sData.forEach(r => dailyStatsData[r.nickname] = r.statsData ? JSON.parse(r.statsData) : {});
+      const [y, m, d] = dateStr.split('-'); const ym = `${y}-${m}`;
+      const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); dailyScheduleData = {}; if (schData) { schData.forEach(r => { const days = r.daysData ? JSON.parse(r.daysData) : {}; dailyScheduleData[r.nickname] = days[parseInt(d)] || ''; }); }
+      
+      if(currentJobShiftSet === 'ALL') currentJobShiftSet = '';
+      renderJobTables(); 
   }
 
   function buildDutyTable() {
@@ -3493,9 +3474,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="6" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; document.getElementById('siteSummaryArea').style.display='none'; return;}
     
     filteredUsers.forEach(u => {
-      const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const targetRole = u[6]; 
-      const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); 
-      const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
+      const nick = u[1]; const dept = u[3] ? u[3].toString() : ''; const capable = sysSettings.userSites[nick] || []; const actualSites = capable.filter(s => s !== 'EXCLUDE_DUTY'); const sitesBadge = actualSites.length > 0 ? actualSites.map(s => `<span class="badge bg-secondary me-1 border">${s}</span>`).join('') : '<span class="text-danger small">ไม่ได้ตั้งค่า</span>';
       const curData = dailyDutiesData[nick] || {site:'', duty:''}; const curStamp = dailyScheduleData[nick] || ''; 
       
       let mainSite = ''; let subSite = '';
@@ -3508,124 +3487,96 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if(!mainSite && !subSite) mainSite = curData.site.trim(); 
       }
 
-      // 🌟 ระบบตรวจสอบสิทธิ์ (RBAC) สำหรับตารางหน้าที่
-      let canEditThisRow = false;
-      if (myRole === 'SuperAdmin') { canEditThisRow = true; } 
-      else if (myRole === 'Admin' && targetRole === 'Member') { canEditThisRow = true; }
-
       let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
       let availableDuties = [];
       if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
       else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
       
-      // สร้างช่องเลือกเว็บ
-      let siteDisplayHtml = '';
-      if (canEditThisRow) {
-          let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
-          let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
-          (sysSettings.websites || []).forEach(w => {
-              siteMainOptions += `<option value="${w}" ${mainSite===w?'selected':''}>${w}</option>`;
-              siteSubOptions += `<option value="${w}" ${subSite===w?'selected':''}>${w}</option>`;
-          });
-          siteDisplayHtml = `<div class="d-flex flex-column gap-1">
-                                <select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="updateSiteSummary()">${siteMainOptions}</select>
-                                <select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="updateSiteSummary()">${siteSubOptions}</select>
-                             </div>`;
-      } else {
-          // ถ้าไม่มีสิทธิ์แก้ ให้โชว์เป็นตัวหนังสือ และฝังค่าเดิมไว้ใน hidden input (กันค่าหายตอนเซฟ)
-          siteDisplayHtml = `<div class="d-flex flex-column gap-1 text-start">
-                                <span class="text-info small">หลัก: <b style="font-size: 0.95rem;">${mainSite || '-'}</b></span>
-                                <span class="text-warning small">รอง: <b style="font-size: 0.95rem;">${subSite || '-'}</b></span>
-                                <input type="hidden" class="hidden-site-main sel-site-main" value="${mainSite}">
-                                <input type="hidden" class="hidden-site-sub sel-site-sub" value="${subSite}">
-                             </div>`;
-      }
+      let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
+      availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
 
-      // สร้างช่องเลือกหน้าที่
-      let dutyDisplayHtml = '';
-      if (canEditThisRow) {
-          let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
-          availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
-          dutyDisplayHtml = `<select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select>`;
-      } else {
-          dutyDisplayHtml = `<div class="d-flex flex-column gap-1 text-center">
-                                <span class="text-white fw-bold" style="font-size: 0.95rem; background: rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 6px;">${curData.duty || '-'}</span>
-                                <input type="hidden" class="hidden-duty sel-duty" value="${curData.duty || ''}">
-                             </div>`;
-      }
+      let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
+      let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
+      (sysSettings.websites || []).forEach(w => {
+          siteMainOptions += `<option value="${w}" ${mainSite===w?'selected':''}>${w}</option>`;
+          siteSubOptions += `<option value="${w}" ${subSite===w?'selected':''}>${w}</option>`;
+      });
+      let siteDropdowns = `
+          <div class="d-flex flex-column gap-1">
+              <select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="updateSiteSummary()">${siteMainOptions}</select>
+              <select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="updateSiteSummary()">${siteSubOptions}</select>
+          </div>
+      `;
       
-      const adminBtn = (myRole === 'SuperAdmin' || (myRole === 'Admin' && targetRole === 'Member')) ? `<button class="btn btn-sm btn-outline-info" onclick="openUserSiteModal('${nick}')">⚙️</button>` : `<span class="text-muted small">🔒</span>`;
-      
+      const adminBtn = myRole!=='Member' ? `<button class="btn btn-sm btn-outline-info" onclick="openUserSiteModal('${nick}')">⚙️</button>` : '-';
       if (capable.includes('EXCLUDE_DUTY')) { tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="true" style="opacity: 0.4;"><td class="fw-bold text-white"><del>${nick}</del></td><td class="text-muted small">${dept.split(' ')[0]}</td><td colspan="3" class="text-center text-danger small">🚫 ถูกซ่อนจากตาราง</td><td class="text-center">${adminBtn}</td></tr>`; return; }
       if (offDutyStamps.includes(curStamp) || curStamp === '') { const sConf = stampConfig[curStamp] || stampConfig['']; tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="false"><td class="fw-bold text-white">${nick}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td colspan="2" class="text-center bg-dark" style="opacity:0.8"><span class="badge px-3 py-2" style="background-color:${sConf.bg}; color:${sConf.text}; border: 1px solid ${sConf.text};">🛏️ ${sConf.label}</span></td><td class="text-center">${adminBtn}</td></tr>`; } 
-      else { 
-          let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<span class="badge ms-2" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span>`; } 
-          tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="false" data-excluded="false"><td class="fw-bold text-white">${nick} ${stampHtml}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td>${siteDisplayHtml}</td><td>${dutyDisplayHtml}</td><td class="text-center">${adminBtn}</td></tr>`; 
-      }
+      else { let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<span class="badge ms-2" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span>`; } tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="false" data-excluded="false"><td class="fw-bold text-white">${nick} ${stampHtml}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td>${siteDropdowns}</td><td><select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select></td><td class="text-center">${adminBtn}</td></tr>`; }
     });
     updateSiteSummary();
   }
 
-  async function saveDutyTable() { 
-      const dateStr = document.getElementById('jobDatePicker').value; const payload = []; 
-      document.querySelectorAll('#dutyTableBody tr').forEach(r => { 
-          if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; 
-          const n = r.getAttribute('data-nick'); const d = r.getAttribute('data-dept'); 
-          
-          // ดึงค่าจาก select หรือ hidden input
-          const sMain = r.querySelector('.sel-site-main')?.value || '';
-          const sSub = r.querySelector('.sel-site-sub')?.value || '';
-          const dt = r.querySelector('.sel-duty')?.value || '';
+  function updateSiteSummary() {
+      let counts = {};
+      (sysSettings.websites || []).forEach(w => counts[w] = { main: 0, sub: 0 });
 
-          let s = '';
-          if (sMain && sSub) s = `${sMain} (หลัก), ${sSub} (รอง)`;
-          else if (sMain) s = `${sMain} (หลัก)`;
-          else if (sSub) s = `${sSub} (รอง)`;
-          
-          if(s || dt) payload.push({ dateStr: dateStr, nickname: n, department: d, assignedSite: s, assignedDuty: dt }); 
-      }); 
+      document.querySelectorAll('#dutyTableBody tr').forEach(r => {
+          if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
+          const mainSel = r.querySelector('.sel-site-main');
+          const subSel = r.querySelector('.sel-site-sub');
+          if(mainSel && mainSel.value && counts[mainSel.value]) counts[mainSel.value].main++;
+          if(subSel && subSel.value && counts[subSel.value]) counts[subSel.value].sub++;
+      });
+
+      let html = '';
+      for(let w in counts) {
+          if(counts[w].main > 0 || counts[w].sub > 0) {
+              html += `<div class="badge" style="background: #151518; border: 1px solid #444; padding: 8px 12px; font-size: 0.85rem; font-weight: normal;">
+                  <span class="text-white fw-bold me-2">${w}</span>
+                  <span class="text-info me-1">หลัก: ${counts[w].main}</span> | 
+                  <span class="text-warning ms-1">รอง: ${counts[w].sub}</span>
+              </div>`;
+          }
+      }
+      const summaryArea = document.getElementById('siteSummaryArea');
+      if (currentJobTab !== 'duty') { summaryArea.style.display = 'none'; return; }
       
-      const btn = document.getElementById('btnJobSave'); 
-      if(btn) { btn.innerText = '⏳...'; btn.disabled=true; }
-      
-      await supabaseClient.from('daily_duties').delete().eq('dateStr', dateStr);
-      if (payload.length > 0) await supabaseClient.from('daily_duties').insert(payload);
-      
-      if(btn) { btn.innerText = '💾 บันทึกหน้าที่'; btn.disabled=false; }
-      await loadDailyJobData(); 
-      Swal.fire({toast:true, position:'top-end', title:'บันทึกหน้าที่สำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      const titleDept = currentJobFilter.split(' ')[0];
+      document.getElementById('siteSummaryTitle').innerText = `📊 สรุปกำลังคนกะปัจจุบัน (${titleDept} - ${currentJobShiftSet}):`;
+
+      if(html === '') { document.getElementById('siteSummaryBadges').innerHTML = '<span class="text-muted small mt-1">ยังไม่มีการลงงานพนักงานในกะนี้</span>'; } 
+      else { document.getElementById('siteSummaryBadges').innerHTML = html; }
+      summaryArea.style.display = 'flex';
   }
 
+  function confirmClearDuty() {
+      Swal.fire({
+          title: 'ล้างตารางหน้าที่?', text: 'ข้อมูลหน้าที่ของทุกคนในกะนี้จะถูกรีเซ็ต (หากต้องการลบออกจากระบบ ต้องกดปุ่ม "บันทึกหน้าที่" ด้วย)', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+      }).then((r) => {
+          if (r.isConfirmed) {
+              document.querySelectorAll('#dutyTableBody tr').forEach(row => {
+                  if(row.getAttribute('data-leave')==='true' || row.getAttribute('data-excluded')==='true') return;
+                  const mSel = row.querySelector('.sel-site-main'); if(mSel) mSel.value = '';
+                  const sSel = row.querySelector('.sel-site-sub'); if(sSel) sSel.value = '';
+                  const dSel = row.querySelector('.sel-duty'); if(dSel) dSel.value = '';
+                  const nick = row.getAttribute('data-nick');
+                  if(dailyDutiesData[nick]) { dailyDutiesData[nick].site = ''; dailyDutiesData[nick].duty = ''; }
+              });
+              updateSiteSummary();
+              Swal.fire({toast:true, position:'top', title:'เคลียร์เรียบร้อย! (อย่าลืมกดบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+      });
+  }
+  
   function randomizeDuties() {
       Swal.fire({title:'กำลังคำนวณสุ่มหน้าที่...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()});
       setTimeout(() => {
           let allAvailableSites = {}; let availableUsers = [];
           document.querySelectorAll('#dutyTableBody tr').forEach(r => {
               if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
-              
-              const nick = r.getAttribute('data-nick'); 
-              const userObj = allUsersData.find(u => u[1] === nick);
-              const targetRole = userObj ? userObj[6] : 'Member';
-              
-              // 🌟 เช็คสิทธิ์ก่อนสุ่ม
-              let canEditThisRow = false;
-              if (myRole === 'SuperAdmin') canEditThisRow = true;
-              else if (myRole === 'Admin' && targetRole === 'Member') canEditThisRow = true;
-
-              if(canEditThisRow) {
-                  const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
-                  if(capableSites.length > 0) { 
-                      availableUsers.push({ row: r, nick: nick, capableSites: capableSites }); 
-                      capableSites.forEach(site => { if(!allAvailableSites[site]) allAvailableSites[site] = 0; allAvailableSites[site]++; }); 
-                  }
-              }
+              const nick = r.getAttribute('data-nick'); const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
+              if(capableSites.length > 0) { availableUsers.push({ row: r, nick: nick, capableSites: capableSites }); capableSites.forEach(site => { if(!allAvailableSites[site]) allAvailableSites[site] = 0; allAvailableSites[site]++; }); }
           });
-          
-          if(availableUsers.length === 0) {
-              Swal.fire({toast:true, position:'top', title:'ไม่มีข้อมูลพนักงานที่คุณสามารถสุ่มได้', icon:'warning', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
-              return;
-          }
-
           let siteAssignmentCount = {}; sysSettings.websites.forEach(s => siteAssignmentCount[s] = 0);
           availableUsers.sort(() => 0.5 - Math.random());
 
@@ -3636,9 +3587,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               if (possiblePrimarySites.length > 1) { let remainingSites = possiblePrimarySites.slice(1).sort(() => 0.5 - Math.random()); assignedSecondary = remainingSites[0]; }
               
               const inSiteMain = u.row.querySelector('.sel-site-main'); const inSiteSub = u.row.querySelector('.sel-site-sub');
-              // เปลี่ยนค่าถ้าเป็น Select Element จริงๆ
-              if(inSiteMain && inSiteMain.tagName === 'SELECT') inSiteMain.value = assignedPrimary || "";
-              if(inSiteSub && inSiteSub.tagName === 'SELECT') inSiteSub.value = assignedSecondary || "";
+              if(inSiteMain) inSiteMain.value = assignedPrimary || "";
+              if(inSiteSub) inSiteSub.value = assignedSecondary || "";
               
               let displayStr = ""; 
               if (assignedPrimary && assignedSecondary) displayStr = `${assignedPrimary} (หลัก), ${assignedSecondary} (รอง)`; 
@@ -3652,7 +3602,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
               else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
               
-              if(inDuty && inDuty.tagName === 'SELECT' && availableDuties.length > 0) {
+              if(inDuty && availableDuties.length > 0) {
                   let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)];
                   inDuty.value = randomDuty;
                   dailyDutiesData[u.nick].duty = randomDuty;
@@ -3664,6 +3614,28 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       }, 500);
   }
   
+  async function saveDutyTable() { 
+      const dateStr = document.getElementById('jobDatePicker').value; const payload = []; 
+      document.querySelectorAll('#dutyTableBody tr').forEach(r => { 
+          if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return; 
+          const n = r.getAttribute('data-nick'); const d = r.getAttribute('data-dept'); 
+          const sMain = r.querySelector('.sel-site-main')?.value || '';
+          const sSub = r.querySelector('.sel-site-sub')?.value || '';
+          let s = '';
+          if (sMain && sSub) s = `${sMain} (หลัก), ${sSub} (รอง)`;
+          else if (sMain) s = `${sMain} (หลัก)`;
+          else if (sSub) s = `${sSub} (รอง)`;
+          
+          const dt = r.querySelector('.sel-duty')?.value || ''; 
+          if(s || dt) payload.push({ dateStr: dateStr, nickname: n, department: d, assignedSite: s, assignedDuty: dt }); 
+      }); 
+      const btn = document.querySelector('#dutyActionBtns .btn-neon-green'); btn.innerText = '⏳...'; btn.disabled=true; 
+      await supabaseClient.from('daily_duties').delete().eq('dateStr', dateStr);
+      if (payload.length > 0) await supabaseClient.from('daily_duties').insert(payload);
+      btn.innerText = '💾 บันทึกหน้าที่'; btn.disabled=false; 
+      await loadDailyJobData(); Swal.fire({toast:true, position:'top-end', title:'บันทึกหน้าที่สำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+  }
+
   function buildStatTable() {
     const thead = document.getElementById('statTableHeader'); const tbody = document.getElementById('statTableBody'); let thHtml = `<th class="col-sticky-name">ชื่อพนักงาน</th><th class="col-sticky-dept">แผนก</th>`; sysSettings.websites.forEach(s => thHtml += `<th class="stat-input-cell text-center text-muted">${s}</th>`); thHtml += `<th style="width:120px; color: var(--neon-yellow);" class="text-center">จำนวนรายการถอนจริง</th>`; thead.innerHTML = thHtml; tbody.innerHTML = '';
     
@@ -3682,31 +3654,10 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; return;}
     
     filteredUsers.forEach(u => {
-      const nick = u[1]; const dept = u[3]?u[3].toString():''; const targetRole = u[6]; 
-      const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; 
-      
-      // 🌟 ระบบตรวจสอบสิทธิ์ (RBAC) สำหรับหน้าตารางสถิติ
-      let canEditThisRow = false;
-      if (myRole === 'SuperAdmin') { canEditThisRow = true; } 
-      else if (myRole === 'Admin' && targetRole === 'Member') { canEditThisRow = true; }
-
+      const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; 
       if (capable.includes('EXCLUDE_DUTY')) { let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="true" style="opacity: 0.4;"><td class="col-sticky-name fw-bold text-white"><del>${nick}</del></td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => tdHtml += `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="ซ่อน"></td>`); tbody.innerHTML += tdHtml + `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="-"></td></tr>`; return; }
       let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<div class="mt-1"><span class="badge" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span></div>`; }
-      let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="false"><td class="col-sticky-name fw-bold text-white">${nick} ${stampHtml}</td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; 
-      
-      sysSettings.websites.forEach(s => { 
-          const val = curStats[s]||''; 
-          if(canEditThisRow) {
-              tdHtml += `<td><input type="number" class="form-control form-control-sm bg-dark text-white stat-input text-center" data-site="${s}" value="${val}" oninput="calcRowTotal(this)"></td>`; 
-          } else {
-              // ล็อคไม่ให้แก้ไข เปลี่ยนเป็นตัวอักษรธรรมดา พร้อมฝังค่าใส่ Input แบบซ่อน
-              tdHtml += `<td class="text-center text-white"><span class="fw-bold" style="font-size: 0.95rem; color: #aaa;">${val || '-'}</span><input type="hidden" class="stat-input" data-site="${s}" value="${val}"></td>`;
-          }
-      }); 
-      
-      const total = curStats['Total']||0; 
-      tdHtml += `<td><input type="number" class="form-control form-control-sm bg-black text-warning row-total text-center fw-bold" value="${total}" readonly></td></tr>`; 
-      tbody.innerHTML += tdHtml;
+      let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="false"><td class="col-sticky-name fw-bold text-white">${nick} ${stampHtml}</td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => { const val = curStats[s]||''; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-dark text-white stat-input text-center" data-site="${s}" value="${val}" oninput="calcRowTotal(this)"></td>`; }); const total = curStats['Total']||0; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-black text-warning row-total text-center fw-bold" value="${total}" readonly></td></tr>`; tbody.innerHTML += tdHtml;
     });
   }
 
