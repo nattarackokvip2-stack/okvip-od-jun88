@@ -3716,11 +3716,37 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                                  </div>`;
           }
 
+          // 🌟 สร้างช่องเลือกหน้าที่ (อัปเกรดเป็นติ๊กเลือกได้หลายข้อ)
           let dutyDisplayHtml = '';
+          let safeNick = nick.replace(/[^a-zA-Z0-9]/g, ''); // ป้องกันชื่อเว้นวรรคทำระบบพัง
+
           if (canEditThisRow) {
-              let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
-              availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
-              dutyDisplayHtml = `<select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select>`;
+              // ดึงหน้าที่เดิมมาแยกเป็น Array
+              let currentDuties = (curData.duty || '').split(',').map(d => d.trim()).filter(d => d);
+              
+              let dutyChecks = '';
+              availableDuties.forEach((d, i) => { 
+                  let isChecked = currentDuties.includes(d) ? 'checked' : '';
+                  dutyChecks += `
+                  <div class="form-check m-1">
+                      <input class="form-check-input duty-check-${safeNick}" type="checkbox" value="${d}" id="duty_${safeNick}_${i}" ${isChecked} onchange="updateMultiDuty('${safeNick}', '${nick}')" style="cursor:pointer; border-color:#00f0ff;">
+                      <label class="form-check-label text-white w-100" style="font-size:0.85rem; cursor:pointer;" for="duty_${safeNick}_${i}">${d}</label>
+                  </div>`; 
+              });
+
+              let btnText = currentDuties.length > 0 ? currentDuties.join(', ') : '- เลือกหน้าที่ -';
+              
+              dutyDisplayHtml = `
+              <div class="dropdown">
+                  <button class="btn btn-sm bg-dark border-secondary dropdown-toggle w-100 text-start text-info text-truncate" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" id="dutyBtn_${safeNick}">
+                      ${btnText}
+                  </button>
+                  <div class="dropdown-menu dropdown-menu-dark p-2 shadow" style="width: 220px; max-height: 250px; overflow-y: auto;">
+                      <div class="text-warning small fw-bold mb-2 border-bottom border-secondary pb-1">เลือกได้หลายหน้าที่</div>
+                      ${dutyChecks}
+                  </div>
+                  <input type="hidden" class="sel-duty" id="dutyHidden_${safeNick}" value="${curData.duty || ''}">
+              </div>`;
           } else {
               dutyDisplayHtml = `<span class="text-white fw-bold">${curData.duty || '-'}</span>
                                  <input type="hidden" class="hidden-duty" value="${curData.duty || ''}">`;
@@ -3736,6 +3762,26 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           }
       });
       updateSiteSummary();
+  }
+
+  // 🌟 ฟังก์ชันจัดการการเลือกหน้าที่หลายข้อ (Multi-select Duty)
+  function updateMultiDuty(safeNick, originalNick) {
+      // ค้นหา Checkbox ทั้งหมดของคนนี้ที่ถูกติ๊กอยู่
+      let checks = document.querySelectorAll(`.duty-check-${safeNick}:checked`);
+      let selectedDuties = Array.from(checks).map(c => c.value);
+      let joinedDuties = selectedDuties.join(', ');
+      
+      // อัปเดตค่าลงในช่องซ่อน (เพื่อรอการ Save)
+      let hiddenInput = document.getElementById(`dutyHidden_${safeNick}`);
+      if(hiddenInput) hiddenInput.value = joinedDuties;
+      
+      // อัปเดตข้อความบนปุ่ม
+      let btn = document.getElementById(`dutyBtn_${safeNick}`);
+      if(btn) btn.innerText = joinedDuties === '' ? '- เลือกหน้าที่ -' : joinedDuties;
+
+      // อัปเดตข้อมูลในหน่วยความจำชั่วคราว
+      if(!dailyDutiesData[originalNick]) dailyDutiesData[originalNick] = {};
+      dailyDutiesData[originalNick].duty = joinedDuties;
   }
 
   // 🌟 ฟังก์ชันแจ้งเตือนหากแอดมินเลือกเว็บซ้ำกับ 2 วันที่ผ่านมา (เด้งกลางจอ)
@@ -4017,36 +4063,51 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   dailyDutiesData[u.nick].site = displayStr;
 
                   const inDuty = u.row.querySelector('.sel-duty');
-                  let myDeptType = u.row.getAttribute('data-dept') || '';
-                  myDeptType = myDeptType.includes('ODOL') ? 'ODOL' : 'OD';
+                  // สุ่ม Duty รายวัน (เช่น ตรวจบิล, แอดมิน)
+                let myDeptType = u.row.getAttribute('data-dept') || '';
+                myDeptType = myDeptType.includes('ODOL') ? 'ODOL' : 'OD';
 
-                  let availableDuties = [];
-                  if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
-                  else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
-                  
-                  if(inDuty && availableDuties.length > 0) {
-                      let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)];
-                      inDuty.value = randomDuty;
-                      dailyDutiesData[u.nick].duty = randomDuty;
-                  }
-              });
+                let availableDuties = [];
+                if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
+                else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
+                
+                if(availableDuties.length > 0) {
+                    // AI จะสุ่มให้ 1 หน้าที่หลักเป็นพื้นฐานก่อน (แอดมินไปติ๊กเพิ่มเองได้ทีหลัง)
+                    let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)];
+                    dailyDutiesData[u.nick].duty = randomDuty;
 
-              updateSiteSummary();
-              renderMealTable(); 
-              Swal.fire({
+                    // อัปเดตหน้าจอ (ปุ่มใหม่แบบ Checkbox)
+                    let safeNick = u.nick.replace(/[^a-zA-Z0-9]/g, '');
+                    let hiddenDuty = u.row.querySelector(`#dutyHidden_${safeNick}`);
+                    if(hiddenDuty) hiddenDuty.value = randomDuty;
+                    
+                    let dutyBtn = u.row.querySelector(`#dutyBtn_${safeNick}`);
+                    if(dutyBtn) dutyBtn.innerText = randomDuty;
+
+                    // อัปเดตติ๊กถูกใน Checkbox ให้ตรงกัน
+                    u.row.querySelectorAll(`.duty-check-${safeNick}`).forEach(chk => {
+                        chk.checked = (chk.value === randomDuty);
+                    });
+                }
+            }); // 🛑 ตรงนี้สำคัญมาก! ปิดลูป forEach
+
+            updateSiteSummary();
+            renderMealTable(); 
+            Swal.fire({
                 icon: 'success',
-                title: 'จัดสรรและป้องกันงานซ้ำสำเร็จ!หลังจากดำเนินการจัดงานแล้วโปรดกดบันทึกหน้าที่ เพื่อบันทึก',
+                title: 'จัดสรรและป้องกันงานซ้ำสำเร็จ!',
+                text: 'หลังจากตรวจสอบแล้ว โปรดกดปุ่ม "บันทึกหน้าที่" ด้วยนะครับ',
                 confirmButtonText: 'ตกลง',
                 confirmButtonColor: '#00cc66',
                 background: '#151518',
                 color: '#fff'
             });
-          } catch(e) {
-              console.error(e);
-              Swal.fire('Error', 'เกิดข้อผิดพลาดในการคำนวณกำลังคน', 'error');
-          }
-      }, 500);
-  }
+        } catch(e) {
+            console.error(e);
+            Swal.fire('Error', 'เกิดข้อผิดพลาดในการคำนวณกำลังคน', 'error');
+        }
+    }, 500);
+}
   
   async function saveDutyTable() { 
       const dateStr = document.getElementById('jobDatePicker').value; const payload = []; 
