@@ -2157,6 +2157,126 @@
           if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
       }
 
+  window.onload = function() {
+    initEvalAutoCalculate();
+    setupPasteArea('stepPasteArea', 'stepMediaFile', processStepImage, true); 
+    setupPasteArea('portalPasteArea', 'portalMediaFile', processPortalImage, false);
+    setupPasteArea('backendPasteArea', 'backendMediaFile', processBackendImage, false);
+    
+    const now = new Date();
+    const todayStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0') + "-" + String(now.getDate()).padStart(2, '0');
+    const thisMonthStr = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, '0'); 
+    
+    document.getElementById('monthPicker').value = thisMonthStr;
+    document.getElementById('hrEvalMonth').value = thisMonthStr;
+    if(document.getElementById('penaltyMonthFilter')) document.getElementById('penaltyMonthFilter').value = thisMonthStr; 
+    if(document.getElementById('jobDatePicker')) document.getElementById('jobDatePicker').value = todayStr;
+    if(document.getElementById('mealDatePicker')) document.getElementById('mealDatePicker').value = todayStr; 
+    if(document.getElementById('discordDatePicker')) document.getElementById('discordDatePicker').value = todayStr;
+    
+    renderStampPalette();
+    const sUser = localStorage.getItem('okvip_user'); 
+    const sRole = localStorage.getItem('okvip_role'); 
+    const sNick = localStorage.getItem('okvip_nick'); 
+    const sTime = localStorage.getItem('okvip_time');
+    
+    if(sUser && sRole && sTime) {
+      const diffHours = (now.getTime() - parseInt(sTime)) / (1000 * 60 * 60); 
+      if (diffHours >= 12) { handleLogout(); return; }
+      document.getElementById('loginPage').style.display = 'none'; 
+      document.getElementById('mainDashboard').style.display = 'block';
+      document.getElementById('userTable').innerHTML = `<tr><td colspan="8" class="text-center text-muted py-5">⏳ กำลังโหลด...</td></tr>`;
+      verifyUserStatus(sUser, sNick, sRole, false); 
+    }
+  }
+
+  async function refreshData(btn, isLoginEvent = false) {
+      if(btn) { btn.disabled = true; btn.innerHTML = '⏳...'; }
+      try {
+          await Promise.all([
+              loadSupabaseUsers(), 
+              loadSupabaseSettings(), 
+              loadSupabaseWebsites(),
+              loadSupabasePenalties(), 
+              loadSupabaseManuals(), 
+              loadSupabaseAnnouncements(), 
+              loadSupabaseLeaves(),
+              loadSupabaseBehaviors()
+          ]);
+          await loadScheduleTable();
+          await loadDailyJobData();
+          await loadDailyMealData(); 
+          await loadDiscordAttendance();
+          if (currentUsername) {
+              await loadPrivateVault();
+          }
+          updateDashboardWidgets();
+
+          if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
+          if(isLoginEvent) showLoginAnnouncement();
+          else if(btn) Swal.fire({toast: true, position: 'top-end', title: '🚀 โหลดข้อมูลสำเร็จ', icon: 'success', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff'});
+      } catch (err) {
+          console.error("Refresh Error:", err); 
+          Swal.fire('โหลดข้อมูลล้มเหลว!', '<span class="text-warning">' + (err.message || err) + '</span><br><br><small>กด F12 ดู Console หากต้องการรายละเอียดเพิ่ม</small>', 'error');
+          if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
+      }
+  } // <--- จุดที่ผิดคือปีกกานี้หายไป ทำให้มันกลืนฟังก์ชันอื่นเข้าไปด้วยครับ
+
+  async function loadSupabaseSettings() {
+      try {
+          const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
+          sysSettings.dutyTypes = { OD: [], ODOL: [] };
+          sysSettings.leaveQuotas = { 'OD (A)': 2, 'OD (B)': 2, 'ODOL (A)': 2, 'ODOL (B)': 2 }; 
+          
+          if (jsData && jsData.length > 0) {
+              sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : [];
+              if (jsData[0].dutyTypes) {
+                  try {
+                      let parsedDuties = JSON.parse(jsData[0].dutyTypes);
+                      if (Array.isArray(parsedDuties)) {
+                          sysSettings.dutyTypes = { OD: parsedDuties, ODOL: parsedDuties };
+                      } 
+                      else if (typeof parsedDuties === 'object' && parsedDuties !== null) {
+                          sysSettings.dutyTypes = {
+                              OD: Array.isArray(parsedDuties.OD) ? parsedDuties.OD : [],
+                              ODOL: Array.isArray(parsedDuties.ODOL) ? parsedDuties.ODOL : []
+                          };
+                          if(parsedDuties.QUOTAS) {
+                              sysSettings.leaveQuotas = parsedDuties.QUOTAS;
+                          }
+                      }
+                  } catch(e) {
+                      console.warn("ข้อมูลหน้าที่พัง ระบบจะล้างค่าเริ่มต้นให้ใหม่:", e);
+                      sysSettings.dutyTypes = { OD: [], ODOL: [] };
+                  }
+              }
+          }
+          const { data: usData } = await supabaseClient.from('user_sites').select('*'); 
+          sysSettings.userSites = {};
+          if (usData) usData.forEach(r => sysSettings.userSites[r.nickname] = r.capableSites ? JSON.parse(r.capableSites) : []);
+      } catch(err) {
+          console.error("Settings Load Error:", err);
+      }
+  }
+
+  async function loadSupabaseUsers() {
+      try {
+          const { data, error } = await supabaseClient.from('users').select('*').order('id', { ascending: true });
+          if (error) throw new Error("เกิดปัญหาที่ตาราง users: " + error.message);
+          
+          allUsersData = (data || []).map(item => [ 
+              item.id || '', item.nickname || '', item.workGroup || '', item.department || '', 
+              item.username || '', item.password || '', item.role || 'Member', item.status || 'Active', 
+              item.telegram || '', item.shiftSet || '' 
+          ]);
+          loadUsers(); updatePenaltySelect(); setupJobFilters();
+          if (typeof renderHrEvalList === 'function') renderHrEvalList();
+      } catch (error) {
+          console.error(error);
+          throw error; 
+      }
+  }
+    
   async function loadSupabaseSettings() {
       try {
           const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
