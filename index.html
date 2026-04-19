@@ -3949,8 +3949,45 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           }
       });
   }
+
+  // ==========================================
+  // 🎯 ระบบตั้งเป้ากำลังคน (โควต้าเว็บไซต์ & หน้าที่)
+  // ==========================================
   
-  // 🌟 1. เปิดหน้าต่างตั้งโควต้า (เวอร์ชันป้องกัน Error 100%)
+  // 1. ฟังก์ชันคำนวณยอดโควต้ารวม (แก้บั๊ก calcTotalQuota is not defined)
+  function calcTotalQuota() {
+      let total = 0;
+      
+      document.querySelectorAll('.quota-input').forEach(inp => {
+          total += (parseInt(inp.value) || 0);
+      });
+      
+      document.querySelectorAll('.duty-quota-input').forEach(inp => {
+          total += (parseInt(inp.value) || 0);
+      });
+
+      const totalEl = document.getElementById('quotaTotalCount');
+      if (totalEl) {
+          totalEl.innerText = total;
+          
+          const presentCountEl = document.getElementById('quotaPresentCount');
+          if (presentCountEl) {
+              const present = parseInt(presentCountEl.innerText) || 0;
+              if (total > present) { 
+                  totalEl.classList.replace('text-white', 'text-danger'); 
+                  totalEl.classList.replace('text-success', 'text-danger'); 
+              } else if (total === present) { 
+                  totalEl.classList.replace('text-white', 'text-success'); 
+                  totalEl.classList.replace('text-danger', 'text-success'); 
+              } else { 
+                  totalEl.classList.replace('text-danger', 'text-white'); 
+                  totalEl.classList.replace('text-success', 'text-white'); 
+              }
+          }
+      }
+  }
+
+  // 2. ฟังก์ชันเปิดหน้าต่างตั้งโควต้า
   function openSiteQuotaModal() {
       try {
           if (!currentJobShiftSet || currentJobShiftSet === '') {
@@ -3958,7 +3995,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               return;
           }
 
-          // ตรวจสอบสิทธิ์ (Admin ห้ามยุ่งกับ OD)
           if (myRole === 'Admin' && currentJobShiftSet.includes('OD (')) {
               Swal.fire({ title: 'ปฏิเสธการเข้าถึง', text: 'ระดับ Admin ไม่มีสิทธิ์ตั้งเป้าหมายกำลังคนของกลุ่ม OD ครับ', icon: 'error', background: '#111', color: '#fff' });
               return;
@@ -3972,7 +4008,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           });
           document.getElementById('quotaPresentCount').innerText = presentCount;
 
-          // 🛡️ ป้องกัน Error จากตัวแปรที่ไม่ได้ถูกตั้งค่าไว้แต่แรก
           if (!sysSettings.dutyTypes || Array.isArray(sysSettings.dutyTypes)) {
               sysSettings.dutyTypes = { OD: [], ODOL: [], SITE_TARGETS: {}, DUTY_TARGETS: {} };
           }
@@ -3982,11 +4017,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           const currentQuotas = sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] || {};
           const currentDutyQuotas = sysSettings.dutyTypes.DUTY_TARGETS[currentJobShiftSet] || {};
 
-          // 🌐 โซนเว็บไซต์
           let html = '<div style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding-right: 10px;">';
           html += '<h6 class="text-info mt-1 mb-3 border-bottom border-secondary pb-2">🌐 โควต้าเว็บไซต์</h6><div class="row g-3 mb-4">';
           
-          // ป้องกันกรณี websites เป็น null
           const safeWebsites = Array.isArray(sysSettings.websites) ? sysSettings.websites : [];
           safeWebsites.forEach(w => {
               let val = currentQuotas[w] || 0;
@@ -3999,7 +4032,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if(safeWebsites.length === 0) html += '<div class="col-12 text-muted small">ยังไม่มีเว็บไซต์ในระบบ</div>';
           html += '</div>';
 
-          // 📋 โซนหน้าที่ประจำวัน
           html += '<h6 class="text-warning mb-3 border-bottom border-secondary pb-2">📋 โควต้าหน้าที่ประจำวัน</h6><div class="row g-3 pb-3">';
           
           let deptType = currentJobShiftSet.includes('ODOL') ? 'ODOL' : 'OD';
@@ -4011,7 +4043,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               html += `
               <div class="col-6">
                   <label class="small text-white mb-1">${d}</label>
-                  <input type="number" class="form-control bg-dark text-warning border-secondary text-center duty-quota-input" data-duty="${d}" value="${val}" min="0">
+                  <input type="number" class="form-control bg-dark text-warning border-secondary text-center duty-quota-input" data-duty="${d}" value="${val}" min="0" oninput="calcTotalQuota()">
               </div>`;
           });
           if(availableDuties.length === 0) html += '<div class="col-12 text-muted small">ยังไม่มีการตั้งค่าหน้าที่ในระบบ</div>';
@@ -4032,7 +4064,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       }
   }
 
-  // 🌟 2. บันทึกโควต้าลงฐานข้อมูล
+  // 3. บันทึกโควต้าลงฐานข้อมูล
   async function saveSiteQuota(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSaveQuota');
