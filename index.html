@@ -3631,6 +3631,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               if(!mainSite && !subSite) mainSite = curData.site.trim(); 
           }
 
+          // 🌟 ระบบตรวจสอบสิทธิ์
           let canEditThisRow = false;
           if (myRole === 'SuperAdmin') {
               canEditThisRow = true;
@@ -3691,7 +3692,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       updateSiteSummary();
   }
 
-  // 🌟 ฟังก์ชันแจ้งเตือนหากแอดมินเลือกเว็บซ้ำกับ 2 วันที่ผ่านมา (เด้งกลางจอ)
+  // 🌟 ฟังก์ชันแจ้งเตือนหากแอดมินเลือกเว็บซ้ำกับ 2 วันที่ผ่านมา (วางไว้นอกลูป)
   function checkSiteHistoryWarning(selectEl, nick) {
       const selectedSite = selectEl.value;
       if (!selectedSite || selectedSite === "") return;
@@ -3700,7 +3701,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           Swal.fire({
               icon: 'warning',
               title: '⚠️ แจ้งเตือนประวัติงานซ้ำ',
-              html: `<b>${nick}</b> เพิ่งทำเว็บ <b class="text-warning">${selectedSite}</b> ไปแล้ว<br>ในช่วง 1-2 วันที่ผ่านมาเพื่อป้องกันการทำงานจำเจของพนักงานโปรดเลือกเว็บอื่นแทน`,
+              html: `<b>${nick}</b> เพิ่งทำเว็บ <b class="text-warning">${selectedSite}</b> ไปแล้ว<br>ในช่วง 1-2 วันที่ผ่านมาครับ`,
               confirmButtonText: 'รับทราบ',
               confirmButtonColor: '#ff9900',
               background: '#151518', 
