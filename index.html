@@ -2508,7 +2508,10 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                 password: passVal
             });
             
-            if (authError) throw new Error('ระบบเซิร์ฟเวอร์ปฏิเสธการตั้งรหัสผ่าน (ลองตั้งให้ยาวขึ้น)');
+            if (authError) {
+    console.error("Supabase Auth Error:", authError);
+    throw new Error('สร้างรหัสไม่ผ่าน: ' + authError.message);
+}
 
             // 2. เมื่อสร้างรหัสผ่านเสร็จ ค่อยบันทึกข้อมูลโปรไฟล์ลงตาราง users
             await supabaseClient.from('users').insert([payload]); 
