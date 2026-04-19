@@ -2211,7 +2211,8 @@
       const shiftSelect = document.getElementById('jobShiftSetFilter');
       currentJobShiftSet = '';
 
-      if (myRole !== 'SuperAdmin') {
+      if (myRole === 'Member') {
+          // 🌟 ระดับ Member: จะเห็นปุ่มและตัวเลือกกะ เฉพาะแผนกของตัวเองเท่านั้น
           if (myDept.includes('ODOL')) {
               if(badgeOD) badgeOD.style.display = 'none'; 
               if(badgeODOL) { badgeODOL.style.display = 'inline-block'; badgeODOL.click(); }
@@ -2227,9 +2228,19 @@
               }
           }
       } else {
-          if(badgeOD) badgeOD.click();
+          // 🌟 ระดับ Admin และ SuperAdmin: จะเห็นปุ่มของทุกแผนก
+          if(badgeOD) badgeOD.style.display = 'inline-block';
+          if(badgeODOL) badgeODOL.style.display = 'inline-block';
+          if(badgeOD) badgeOD.click(); // ตั้งให้โฟกัสที่ OD ก่อนเป็นค่าเริ่มต้น
+          
           if(shiftSelect) {
-              shiftSelect.innerHTML = `<option value="ALL">-- ทุกเซ็ตกะ --</option><option value="OD (A)">เซ็ตกะ: OD (A)</option><option value="OD (B)">เซ็ตกะ: OD (B)</option><option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option><option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>`;
+              shiftSelect.innerHTML = `
+                  <option value="ALL">-- ทุกเซ็ตกะ --</option>
+                  <option value="OD (A)">เซ็ตกะ: OD (A)</option>
+                  <option value="OD (B)">เซ็ตกะ: OD (B)</option>
+                  <option value="ODOL (A)">เซ็ตกะ: ODOL (A)</option>
+                  <option value="ODOL (B)">เซ็ตกะ: ODOL (B)</option>
+              `;
           }
       }
   }
