@@ -3447,10 +3447,6 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   function handleJobSearch(term) { jobSearchTerm = term.toLowerCase().trim(); renderJobTables(); }
   function handleJobShiftSetFilter(val) { currentJobShiftSet = val; renderJobTables(); }
   function toggleShowHidden(checkbox) { isShowingHiddenUsers = checkbox.checked; renderJobTables(); }
-  // ==========================================
-// 🚀 แก้ไขโค้ดใน JavaScript ส่วนที่ต้องเปลี่ยน
-// ==========================================
-
   function renderJobTables() { 
       if(currentJobTab === 'duty') buildDutyTable(); else buildStatTable(); 
       
