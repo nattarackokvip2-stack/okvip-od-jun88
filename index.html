@@ -3538,10 +3538,14 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       finally { if(btn) { btn.disabled = false; btn.innerText = 'บันทึกโควต้าวันหยุด'; } }
   }
 
+  // 🌟 1. ฟังก์ชันเปิดหน้าต่างตั้งค่า (เพิ่มส่วนหน้าที่การทำงาน)
   function openUserSiteModal(nick) {
       tempSetupNick = nick; document.getElementById('siteNickName').innerText = nick;
-      const capable = sysSettings.userSites[nick] || []; document.getElementById('chkExcludeDuty').checked = capable.includes('EXCLUDE_DUTY');
-      let html = '';
+      const capable = sysSettings.userSites[nick] || []; 
+      document.getElementById('chkExcludeDuty').checked = capable.includes('EXCLUDE_DUTY');
+      
+      // -- ส่วนที่ 1: เลือกเว็บไซต์ --
+      let html = '<h6 class="text-info mt-2 mb-2 w-100 border-bottom border-secondary pb-1">🌐 เว็บไซต์ที่รับผิดชอบได้</h6>';
       (sysSettings.websites || []).forEach(w => {
           const isChecked = capable.includes(w) ? 'checked' : '';
           html += `<div class="form-check bg-dark p-2 rounded border border-secondary" style="min-width: 120px;">
@@ -3549,21 +3553,56 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                       <label class="form-check-label text-info small" for="chk_${w}">${w}</label>
                    </div>`;
       });
-      if(html === '') html = '<div class="text-muted small">ยังไม่ได้เพิ่มรายชื่อเว็บในระบบ</div>';
+      if((sysSettings.websites || []).length === 0) html += '<div class="text-muted small w-100">ยังไม่ได้เพิ่มรายชื่อเว็บในระบบ</div>';
+
+      // -- ส่วนที่ 2: เลือกหน้าที่ประจำวัน --
+      html += '<h6 class="text-warning mt-3 mb-2 w-100 border-bottom border-secondary pb-1">📋 หน้าที่ประจำวันที่ทำได้</h6>';
+      
+      // ดึงข้อมูลแผนกเพื่อเอาหน้าที่มาโชว์
+      const uData = allUsersData.find(u => u[1] === nick);
+      let dept = uData ? uData[3] : '';
+      let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
+      let availableDuties = [];
+      if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
+      else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
+
+      availableDuties.forEach((d, i) => {
+          // ค้นหาว่ามีคำว่า DUTY: นำหน้าอยู่ในฐานข้อมูลไหม
+          const isChecked = capable.includes('DUTY:' + d) ? 'checked' : '';
+          let safeId = d.replace(/[^a-zA-Z0-9]/g, '') + i;
+          html += `<div class="form-check bg-dark p-2 rounded border border-secondary" style="min-width: 120px;">
+                      <input class="form-check-input ms-1 me-2 duty-setting-checkbox" type="checkbox" value="${d}" id="chk_duty_${safeId}" ${isChecked}>
+                      <label class="form-check-label text-warning small" for="chk_duty_${safeId}">${d}</label>
+                   </div>`;
+      });
+      if(availableDuties.length === 0) html += '<div class="text-muted small w-100">ยังไม่มีการตั้งค่าหน้าที่ในระบบ</div>';
+
       document.getElementById('userSiteCheckboxes').innerHTML = html;
       bootstrap.Modal.getOrCreateInstance(document.getElementById('userSiteModal')).show();
   }
 
+  // 🌟 2. ปุ่มเลือกทั้งหมด / ยกเลิก (คุมทั้งเว็บและหน้าที่)
   function selectAllUserSites() {
-      const checkboxes = document.querySelectorAll('.site-checkbox'); let allChecked = true;
-      checkboxes.forEach(chk => { if(!chk.checked) allChecked = false; });
-      checkboxes.forEach(chk => chk.checked = !allChecked);
+      const siteBoxes = document.querySelectorAll('.site-checkbox'); 
+      const dutyBoxes = document.querySelectorAll('.duty-setting-checkbox');
+      const allBoxes = [...siteBoxes, ...dutyBoxes];
+
+      let allChecked = true;
+      allBoxes.forEach(chk => { if(!chk.checked) allChecked = false; });
+      allBoxes.forEach(chk => chk.checked = !allChecked);
   }
 
+  // 🌟 3. บันทึกข้อมูลเว็บและหน้าที่ลงระบบ
   async function saveUserCapableSitesBtn() {
-      const nick = tempSetupNick; let selectedSites = [];
+      const nick = tempSetupNick; 
+      let selectedSites = [];
       if (document.getElementById('chkExcludeDuty').checked) selectedSites.push('EXCLUDE_DUTY');
+      
+      // บันทึกเว็บไซต์
       document.querySelectorAll('.site-checkbox').forEach(chk => { if (chk.checked) selectedSites.push(chk.value); });
+      // บันทึกหน้าที่ (เติมคำว่า DUTY: นำหน้าเพื่อแยกแยะ)
+      document.querySelectorAll('.duty-setting-checkbox').forEach(chk => { if (chk.checked) selectedSites.push('DUTY:' + chk.value); });
+
       const btn = document.querySelector('#userSiteModal .btn-neon-blue'); btn.disabled = true; btn.innerText = '⏳...';
       try {
           const { data: existing } = await supabaseClient.from('user_sites').select('id').eq('nickname', nick).limit(1);
@@ -4063,7 +4102,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   dailyDutiesData[u.nick].site = displayStr;
 
                   const inDuty = u.row.querySelector('.sel-duty');
-                  // สุ่ม Duty รายวัน (เช่น ตรวจบิล, แอดมิน)
+                // สุ่ม Duty รายวัน (เช่น ตรวจบิล, แอดมิน)
                 let myDeptType = u.row.getAttribute('data-dept') || '';
                 myDeptType = myDeptType.includes('ODOL') ? 'ODOL' : 'OD';
 
@@ -4071,9 +4110,22 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                 if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
                 else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
                 
-                if(availableDuties.length > 0) {
-                    // AI จะสุ่มให้ 1 หน้าที่หลักเป็นพื้นฐานก่อน (แอดมินไปติ๊กเพิ่มเองได้ทีหลัง)
-                    let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)];
+                // 🌟 AI เช็คสิทธิ์หน้าที่: ดึงเฉพาะหน้าที่ที่แอดมินอนุญาต (ติ๊กไว้ในตั้งค่า)
+                const userAllowedDuties = (u.capableSites || [])
+                    .filter(item => item.startsWith('DUTY:'))
+                    .map(item => item.replace('DUTY:', ''));
+
+                // คัดกรองเอาเฉพาะหน้าที่ที่มีสิทธิ์ทำ
+                let validDutiesForUser = availableDuties.filter(d => userAllowedDuties.includes(d));
+
+                // ⚠️ สำรองข้อมูล: ถ้าแอดมินยังไม่เคยติ๊กตั้งค่าให้ใครเลย ให้ถือว่าทำได้ทุกอย่าง (กันระบบเดิมพัง)
+                if (userAllowedDuties.length === 0) {
+                    validDutiesForUser = availableDuties;
+                }
+
+                if(validDutiesForUser.length > 0) {
+                    // AI สุ่มเฉพาะจากรายชื่อหน้าที่ที่อนุญาตเท่านั้น
+                    let randomDuty = validDutiesForUser[Math.floor(Math.random() * validDutiesForUser.length)];
                     dailyDutiesData[u.nick].duty = randomDuty;
 
                     // อัปเดตหน้าจอ (ปุ่มใหม่แบบ Checkbox)
