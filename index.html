@@ -2179,41 +2179,42 @@
   }
 
   async function loadSupabaseSettings() {
-      try {
-          const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
-          sysSettings.dutyTypes = { OD: [], ODOL: [] };
-          sysSettings.leaveQuotas = { 'OD (A)': 2, 'OD (B)': 2, 'ODOL (A)': 2, 'ODOL (B)': 2 }; 
-          
-          if (jsData && jsData.length > 0) {
-              sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : [];
-              if (jsData[0].dutyTypes) {
-                  try {
-                      let parsedDuties = JSON.parse(jsData[0].dutyTypes);
-                      if (Array.isArray(parsedDuties)) {
-                          sysSettings.dutyTypes = { OD: parsedDuties, ODOL: parsedDuties };
-                      } 
-                      else if (typeof parsedDuties === 'object' && parsedDuties !== null) {
-                          sysSettings.dutyTypes = {
-                              OD: Array.isArray(parsedDuties.OD) ? parsedDuties.OD : [],
-                              ODOL: Array.isArray(parsedDuties.ODOL) ? parsedDuties.ODOL : []
-                          };
-                          if(parsedDuties.QUOTAS) {
-                              sysSettings.leaveQuotas = parsedDuties.QUOTAS;
-                          }
-                      }
-                  } catch(e) {
-                      console.warn("ข้อมูลหน้าที่พัง ระบบจะล้างค่าเริ่มต้นให้ใหม่:", e);
-                      sysSettings.dutyTypes = { OD: [], ODOL: [] };
-                  }
-              }
-          }
-          const { data: usData } = await supabaseClient.from('user_sites').select('*'); 
-          sysSettings.userSites = {};
-          if (usData) usData.forEach(r => sysSettings.userSites[r.nickname] = r.capableSites ? JSON.parse(r.capableSites) : []);
-      } catch(err) {
-          console.error("Settings Load Error:", err);
-      }
-  }
+      try {
+          const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
+          sysSettings.dutyTypes = { OD: [], ODOL: [], SITE_TARGETS: {} }; 
+          sysSettings.leaveQuotas = { 'OD (A)': 2, 'OD (B)': 2, 'ODOL (A)': 2, 'ODOL (B)': 2 }; 
+          
+          if (jsData && jsData.length > 0) {
+              sysSettings.websites = jsData[0].websites ? JSON.parse(jsData[0].websites) : [];
+              if (jsData[0].dutyTypes) {
+                  try {
+                      let parsedDuties = JSON.parse(jsData[0].dutyTypes);
+                      if (Array.isArray(parsedDuties)) {
+                          sysSettings.dutyTypes = { OD: parsedDuties, ODOL: parsedDuties, SITE_TARGETS: {} };
+                      } 
+                      else if (typeof parsedDuties === 'object' && parsedDuties !== null) {
+                          sysSettings.dutyTypes = {
+                              OD: Array.isArray(parsedDuties.OD) ? parsedDuties.OD : [],
+                              ODOL: Array.isArray(parsedDuties.ODOL) ? parsedDuties.ODOL : [],
+                              SITE_TARGETS: parsedDuties.SITE_TARGETS || {} // 🌟 ป้องกันเป้าหมายคนหาย
+                          };
+                          if(parsedDuties.QUOTAS) {
+                              sysSettings.leaveQuotas = parsedDuties.QUOTAS;
+                          }
+                      }
+                  } catch(e) {
+                      console.warn("ข้อมูลหน้าที่พัง ระบบจะล้างค่าเริ่มต้นให้ใหม่:", e);
+                      sysSettings.dutyTypes = { OD: [], ODOL: [], SITE_TARGETS: {} };
+                  }
+              }
+          }
+          const { data: usData } = await supabaseClient.from('user_sites').select('*'); 
+          sysSettings.userSites = {};
+          if (usData) usData.forEach(r => sysSettings.userSites[r.nickname] = r.capableSites ? JSON.parse(r.capableSites) : []);
+      } catch(err) {
+          console.error("Settings Load Error:", err);
+      }
+  }
 
   async function loadSupabaseUsers() {
       const { data, error } = await supabaseClient.from('users').select('*').order('id', { ascending: true });
@@ -3411,30 +3412,36 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   async function saveAdminJobSettings() {
-      const websites = document.getElementById('setWebsites').value.split('\n').map(s => s.trim()).filter(s => s !== '');
-      const dutiesOD = document.getElementById('setDutiesOD').value.split('\n').map(s => s.trim()).filter(s => s !== '');
-      const dutiesODOL = document.getElementById('setDutiesODOL').value.split('\n').map(s => s.trim()).filter(s => s !== '');
-      
-      const packedDuties = { OD: dutiesOD, ODOL: dutiesODOL, QUOTAS: sysSettings.leaveQuotas }; // 🌟 เก็บโควต้าเก่าไว้ ไม่ให้หายตอนเซฟหน้าที่
-      
-      const btn = document.querySelector('#jobSettingsModal .btn-neon-yellow');
-      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
-      try {
-          const { data: existing } = await supabaseClient.from('job_settings').select('id').limit(1);
-          if (existing && existing.length > 0) {
-              await supabaseClient.from('job_settings').update({ websites: JSON.stringify(websites), dutyTypes: JSON.stringify(packedDuties) }).eq('id', existing[0].id);
-          } else {
-              await supabaseClient.from('job_settings').insert([{ websites: JSON.stringify(websites), dutyTypes: JSON.stringify(packedDuties) }]);
-          }
-          sysSettings.websites = websites; 
-          sysSettings.dutyTypes = packedDuties;
+      const websites = document.getElementById('setWebsites').value.split('\n').map(s => s.trim()).filter(s => s !== '');
+      const dutiesOD = document.getElementById('setDutiesOD').value.split('\n').map(s => s.trim()).filter(s => s !== '');
+      const dutiesODOL = document.getElementById('setDutiesODOL').value.split('\n').map(s => s.trim()).filter(s => s !== '');
+      
+      // 🌟 เก็บโควต้าวันหยุด และ เป้าหมายกำลังคน ไว้เหมือนเดิม ห้ามหาย
+      const packedDuties = { 
+          OD: dutiesOD, 
+          ODOL: dutiesODOL, 
+          QUOTAS: sysSettings.leaveQuotas,
+          SITE_TARGETS: sysSettings.dutyTypes.SITE_TARGETS || {} 
+      }; 
+      
+      const btn = document.querySelector('#jobSettingsModal .btn-neon-yellow');
+      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
+      try {
+          const { data: existing } = await supabaseClient.from('job_settings').select('id').limit(1);
+          if (existing && existing.length > 0) {
+              await supabaseClient.from('job_settings').update({ websites: JSON.stringify(websites), dutyTypes: JSON.stringify(packedDuties) }).eq('id', existing[0].id);
+          } else {
+              await supabaseClient.from('job_settings').insert([{ websites: JSON.stringify(websites), dutyTypes: JSON.stringify(packedDuties) }]);
+          }
+          sysSettings.websites = websites; 
+          sysSettings.dutyTypes = packedDuties;
 
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).hide();
-          Swal.fire({toast: true, position: 'top-end', title: 'บันทึกการตั้งค่าสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
-          renderJobTables(); 
-      } catch (err) { Swal.fire('Error', err.message, 'error'); } 
-      finally { if(btn) { btn.disabled = false; btn.innerText = 'บันทึกการตั้งค่าระบบ'; } }
-  }
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('jobSettingsModal')).hide();
+          Swal.fire({toast: true, position: 'top-end', title: 'บันทึกการตั้งค่าสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
+          renderJobTables(); 
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } 
+      finally { if(btn) { btn.disabled = false; btn.innerText = 'บันทึกการตั้งค่าระบบ'; } }
+  }
 
   // 🌟 ฟังก์ชันเปิด-ปิด-บันทึก โควต้าวันหยุด (แยกใหม่)
   function openQuotaSettingsModal() {
@@ -3446,38 +3453,42 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   async function saveQuotaSettings() {
-      const qODA = parseInt(document.getElementById('quotaODA').value) || 2;
-      const qODB = parseInt(document.getElementById('quotaODB').value) || 2;
-      const qODOLA = parseInt(document.getElementById('quotaODOLA').value) || 2;
-      const qODOLB = parseInt(document.getElementById('quotaODOLB').value) || 2;
-      
-      const newQuotas = { 'OD (A)': qODA, 'OD (B)': qODB, 'ODOL (A)': qODOLA, 'ODOL (B)': qODOLB };
-      
-      // 🌟 ดึงข้อมูลหน้าที่เดิมมาแพ็ครวมกับโควต้าใหม่ เพื่อเซฟกลับไป
-      let oldDutiesOD = Array.isArray(sysSettings.dutyTypes.OD) ? sysSettings.dutyTypes.OD : [];
-      let oldDutiesODOL = Array.isArray(sysSettings.dutyTypes.ODOL) ? sysSettings.dutyTypes.ODOL : [];
-      const packedDuties = { OD: oldDutiesOD, ODOL: oldDutiesODOL, QUOTAS: newQuotas };
+      const qODA = parseInt(document.getElementById('quotaODA').value) || 2;
+      const qODB = parseInt(document.getElementById('quotaODB').value) || 2;
+      const qODOLA = parseInt(document.getElementById('quotaODOLA').value) || 2;
+      const qODOLB = parseInt(document.getElementById('quotaODOLB').value) || 2;
+      
+      const newQuotas = { 'OD (A)': qODA, 'OD (B)': qODB, 'ODOL (A)': qODOLA, 'ODOL (B)': qODOLB };
+      
+      let oldDutiesOD = Array.isArray(sysSettings.dutyTypes.OD) ? sysSettings.dutyTypes.OD : [];
+      let oldDutiesODOL = Array.isArray(sysSettings.dutyTypes.ODOL) ? sysSettings.dutyTypes.ODOL : [];
+      // 🌟 รักษาเป้าหมายกำลังคนเอาไว้
+      const packedDuties = { 
+          OD: oldDutiesOD, 
+          ODOL: oldDutiesODOL, 
+          QUOTAS: newQuotas,
+          SITE_TARGETS: sysSettings.dutyTypes.SITE_TARGETS || {}
+      };
 
-      const btn = document.querySelector('#quotaSettingsModal .btn-neon-red');
-      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
-      
-      try {
-          const { data: existing } = await supabaseClient.from('job_settings').select('id').limit(1);
-          if (existing && existing.length > 0) {
-              await supabaseClient.from('job_settings').update({ dutyTypes: JSON.stringify(packedDuties) }).eq('id', existing[0].id);
-          } else {
-              await supabaseClient.from('job_settings').insert([{ websites: JSON.stringify(sysSettings.websites), dutyTypes: JSON.stringify(packedDuties) }]);
-          }
-          
-          sysSettings.dutyTypes = packedDuties;
-          sysSettings.leaveQuotas = newQuotas; 
+      const btn = document.querySelector('#quotaSettingsModal .btn-neon-red');
+      if(btn) { btn.disabled = true; btn.innerText = '⏳...'; }
+      
+      try {
+          const { data: existing } = await supabaseClient.from('job_settings').select('id').limit(1);
+          if (existing && existing.length > 0) {
+              await supabaseClient.from('job_settings').update({ dutyTypes: JSON.stringify(packedDuties) }).eq('id', existing[0].id);
+          } else {
+              await supabaseClient.from('job_settings').insert([{ websites: JSON.stringify(sysSettings.websites), dutyTypes: JSON.stringify(packedDuties) }]);
+          }
+          
+          sysSettings.dutyTypes = packedDuties;
+          sysSettings.leaveQuotas = newQuotas; 
 
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('quotaSettingsModal')).hide();
-          Swal.fire({toast: true, position: 'top-end', title: 'บันทึกโควต้าวันหยุดสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
-      } catch (err) { Swal.fire('Error', err.message, 'error'); } 
-      finally { if(btn) { btn.disabled = false; btn.innerText = 'บันทึกโควต้าวันหยุด'; } }
-  }
-
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('quotaSettingsModal')).hide();
+          Swal.fire({toast: true, position: 'top-end', title: 'บันทึกโควต้าวันหยุดสำเร็จ!', icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'});
+      } catch (err) { Swal.fire('Error', err.message, 'error'); } 
+      finally { if(btn) { btn.disabled = false; btn.innerText = 'บันทึกโควต้าวันหยุด'; } }
+  }
 
   function openUserSiteModal(nick) {
       tempSetupNick = nick; document.getElementById('siteNickName').innerText = nick;
@@ -3829,25 +3840,16 @@ function randomizeDuties() {
         return;
     }
 
-    // 🛑 ดักจับสิทธิ์: Admin ห้ามสุ่มหน้าที่ OD
     if (myRole === 'Admin' && currentJobShiftSet.includes('OD (')) {
-        Swal.fire({
-            title: 'ปฏิเสธการดำเนินการ', 
-            text: 'ระดับ Admin ไม่มีสิทธิ์จัดสรรพนักงานในกลุ่ม OD ครับ', 
-            icon: 'error', 
-            background: '#111', 
-            color: '#fff'
-        });
+        Swal.fire({ title: 'ปฏิเสธการดำเนินการ', text: 'ระดับ Admin ไม่มีสิทธิ์จัดสรรพนักงานในกลุ่ม OD ครับ', icon: 'error', background: '#111', color: '#fff' });
         return;
     }
 
     Swal.fire({title:'กำลังจัดสรรคนเข้าเว็บ...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()});
     setTimeout(() => {
         try {
-            // ดึงโควต้าเป้าหมายของกะนี้
             let targets = (sysSettings.dutyTypes.SITE_TARGETS && sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet]) ? sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] : {};
             
-            // แยกตัวนับยอดระหว่าง "เว็บหลัก" กับ "เว็บรอง"
             let currentAssignedMain = {};
             let currentAssignedSub = {}; 
             sysSettings.websites.forEach(w => {
@@ -3862,7 +3864,6 @@ function randomizeDuties() {
                 const nick = r.getAttribute('data-nick'); 
                 const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
                 
-                // 🌟 ตรวจสอบสิทธิ์อีกชั้น เพื่อความชัวร์ (ดึงมาจากตาราง)
                 const targetRole = allUsersData.find(u => u[1] === nick)?.[6] || 'Member';
                 const myNick = localStorage.getItem('okvip_nick');
                 const myDeptFull = allUsersData.find(u => u[1] === myNick)?.[3] || '';
@@ -3880,22 +3881,14 @@ function randomizeDuties() {
                 }
             });
 
-            // 🛑 ถ้าไม่มีพนักงานที่พร้อมจัดสรรเลย ให้เด้งแจ้งเตือน (ป้องกันขึ้น Success ปลอม)
             if (availableUsers.length === 0) {
-                Swal.fire({
-                    title: 'ไม่สามารถจัดสรรได้', 
-                    text: 'ไม่มีพนักงานที่พร้อมรับงาน (อาจติดวันหยุดทั้งหมด หรือคุณไม่มีสิทธิ์แก้ไขพนักงานกลุ่มนี้)', 
-                    icon: 'error', 
-                    background: '#111', 
-                    color: '#fff'
-                });
+                Swal.fire({ title: 'ไม่สามารถจัดสรรได้', text: 'ไม่มีพนักงานที่พร้อมรับงาน (อาจติดวันหยุดทั้งหมด หรือคุณไม่มีสิทธิ์แก้ไข)', icon: 'error', background: '#111', color: '#fff' });
                 return;
             }
 
-            // สุ่มลำดับคนก่อนเพื่อความยุติธรรม
             availableUsers.sort(() => 0.5 - Math.random());
 
-            // 🎯 PASS 1: ยัดคนลงเว็บ "หลัก" ตามเป้าโควต้าก่อน
+            // 🎯 PASS 1: เว็บหลักตามโควต้า
             availableUsers.forEach(u => {
                 let validSites = u.capableSites.filter(s => (currentAssignedMain[s] || 0) < (targets[s] || 0));
                 if (validSites.length > 0) {
@@ -3905,24 +3898,30 @@ function randomizeDuties() {
                 }
             });
 
-            // 🎯 PASS 2: ถ้าโควต้าเต็มหมดแล้ว แต่ยังมีคนตกค้าง
+            // 🎯 PASS 2: คนตกค้างจากเว็บหลัก ยัดลงเว็บที่คนขาดที่สุด
             availableUsers.filter(u => !u.assignedMain).forEach(u => {
                 let fallbackSites = u.capableSites.sort((a,b) => (currentAssignedMain[a]||0) - (currentAssignedMain[b]||0));
                 u.assignedMain = fallbackSites[0];
                 currentAssignedMain[fallbackSites[0]]++;
             });
 
-            // 🎯 PASS 3: จัดสรรเว็บ "รอง" ให้บาลานซ์ที่สุด
+            // 🎯 PASS 3: จัดสรรเว็บ "รอง" ให้บาลานซ์ที่สุด (เช็คจากยอดคนทำเว็บนั้นรวมกันทั้งหลัก+รอง)
             availableUsers.forEach(u => {
                 let remain = u.capableSites.filter(s => s !== u.assignedMain);
                 if(remain.length > 0) {
                     remain.sort(() => 0.5 - Math.random()); 
-                    remain.sort((a, b) => (currentAssignedSub[a] || 0) - (currentAssignedSub[b] || 0));
+                    
+                    // 🌟 บาลานซ์สุดยอด: จัดให้คนที่ว่าง ไปรับเว็บที่รวม (หลัก+รอง) น้อยที่สุด
+                    remain.sort((a, b) => {
+                        let scoreA = (currentAssignedMain[a] || 0) + (currentAssignedSub[a] || 0);
+                        let scoreB = (currentAssignedMain[b] || 0) + (currentAssignedSub[b] || 0);
+                        return scoreA - scoreB;
+                    });
+                    
                     u.assignedSub = remain[0];
                     currentAssignedSub[remain[0]]++;
                 }
                 
-                // อัปเดตลงหน้าจอ
                 const inSiteMain = u.row.querySelector('.sel-site-main'); 
                 const inSiteSub = u.row.querySelector('.sel-site-sub');
                 if(inSiteMain) inSiteMain.value = u.assignedMain || "";
