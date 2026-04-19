@@ -3654,10 +3654,33 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     if(filteredUsers.length===0){tbody.innerHTML=`<tr><td colspan="${sysSettings.websites.length + 3}" class="text-center py-4">ไม่พบข้อมูลพนักงานในกะนี้</td></tr>`; return;}
     
     filteredUsers.forEach(u => {
-      const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; 
+      const nick = u[1]; const dept = u[3]?u[3].toString():''; const curStats = dailyStatsData[nick] || {}; const curStamp = dailyScheduleData[nick] || ''; const capable = sysSettings.userSites[nick] || []; const targetRole = u[6];
+      
+      // 🌟 ระบบตรวจสอบสิทธิ์ (RBAC) ใหม่
+      let canEditThisRow = false;
+      if (myRole === 'SuperAdmin') {
+          canEditThisRow = true;
+      } else if (myRole === 'Admin') {
+          if (targetRole === 'Member') canEditThisRow = true;
+      }
+
       if (capable.includes('EXCLUDE_DUTY')) { let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="true" style="opacity: 0.4;"><td class="col-sticky-name fw-bold text-white"><del>${nick}</del></td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => tdHtml += `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="ซ่อน"></td>`); tbody.innerHTML += tdHtml + `<td><input type="text" class="form-control form-control-sm bg-dark text-center" disabled value="-"></td></tr>`; return; }
       let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<div class="mt-1"><span class="badge" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span></div>`; }
-      let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="false"><td class="col-sticky-name fw-bold text-white">${nick} ${stampHtml}</td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; sysSettings.websites.forEach(s => { const val = curStats[s]||''; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-dark text-white stat-input text-center" data-site="${s}" value="${val}" oninput="calcRowTotal(this)"></td>`; }); const total = curStats['Total']||0; tdHtml += `<td><input type="number" class="form-control form-control-sm bg-black text-warning row-total text-center fw-bold" value="${total}" readonly></td></tr>`; tbody.innerHTML += tdHtml;
+      let tdHtml = `<tr data-nick="${nick}" data-dept="${dept}" data-excluded="false"><td class="col-sticky-name fw-bold text-white">${nick} ${stampHtml}</td><td class="col-sticky-dept text-muted small">${dept.split(' ')[0]}</td>`; 
+      
+      sysSettings.websites.forEach(s => { 
+          const val = curStats[s]||''; 
+          if(canEditThisRow) {
+              tdHtml += `<td><input type="number" class="form-control form-control-sm bg-dark text-white stat-input text-center" data-site="${s}" value="${val}" oninput="calcRowTotal(this)"></td>`; 
+          } else {
+              // ถูกล็อคสิทธิ์
+              tdHtml += `<td class="text-center text-white">${val || '-'}<input type="hidden" class="stat-input" data-site="${s}" value="${val}"></td>`;
+          }
+      }); 
+      
+      const total = curStats['Total']||0; 
+      tdHtml += `<td><input type="number" class="form-control form-control-sm bg-black text-warning row-total text-center fw-bold" value="${total}" readonly></td></tr>`; 
+      tbody.innerHTML += tdHtml;
     });
   }
 
