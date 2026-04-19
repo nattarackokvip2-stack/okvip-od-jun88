@@ -2291,49 +2291,46 @@
     btn.innerText = 'Checking...';
 
     try {
-        // 1. แปลง Username ให้เป็นรูปแบบ Email จำลอง
-        const authEmail = `${u}@okvip.internal`;
-
-        // 2. ให้ Supabase Auth จัดการตรวจรหัสผ่านที่ถูกเข้ารหัสไว้
-        const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
-            email: authEmail,
-            password: p
-        });
-
-        // หากรหัสผ่านผิด หรือไม่มีบัญชีใน Auth
-        if (authError) {
-            throw new Error('ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง');
-        }
-
-        // 3. เมื่อ Auth ผ่านแล้ว ค่อยไปดึงข้อมูลสิทธิ์และชื่อเล่นจากตาราง users
-        const { data: userData, error: userError } = await supabaseClient
+        // 🌟 เปลี่ยนมาใช้การเช็คข้อมูลจากตาราง users โดยตรง (ตรงกับระบบสมัคร)
+        const { data, error } = await supabaseClient
             .from('users')
             .select('*')
             .eq('username', u)
-            .single();
+            .eq('password', p)
+            .maybeSingle();
 
-        if (userError || !userData) {
-            throw new Error('ไม่พบโปรไฟล์พนักงานในระบบตารางงาน');
+        // ถ้ารหัสผ่านผิด หรือไม่มียูสเซอร์นี้ในตาราง
+        if (error || !data) { 
+            Swal.fire({title:'Error', text:'ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง', icon:'error', background:'#111', color:'#fff'}); 
+            btn.disabled = false; 
+            btn.innerText = 'เข้าสู่ระบบ'; 
+            return; 
         }
 
-        if (userData.status === 'Blocked') { 
-            throw new Error('บัญชีนี้ถูกระงับการใช้งาน');
+        // ถ้าบัญชีโดนบล็อค
+        if (data.status === 'Blocked') { 
+            Swal.fire({title:'Error', text:'บัญชีนี้ถูกระงับการใช้งาน', icon:'error', background:'#111', color:'#fff'}); 
+            btn.disabled = false; 
+            btn.innerText = 'เข้าสู่ระบบ'; 
+            return; 
         }
-
-        // 4. ล็อกอินสำเร็จ บันทึกค่าและเข้าสู่แดชบอร์ด
+        
+        // 🌟 ล็อกอินสำเร็จ! บันทึกค่าและเข้าสู่แดชบอร์ด
         localStorage.setItem('okvip_user', u); 
-        localStorage.setItem('okvip_role', userData.role); 
-        localStorage.setItem('okvip_nick', userData.nickname); 
+        localStorage.setItem('okvip_role', data.role); 
+        localStorage.setItem('okvip_nick', data.nickname); 
         localStorage.setItem('okvip_time', new Date().getTime().toString());
         currentUsername = u; 
 
         document.getElementById('loginPage').style.display = 'none'; 
         document.getElementById('mainDashboard').style.display = 'block';
-        verifyUserStatus(u, userData.nickname, userData.role, true); 
+        verifyUserStatus(u, data.nickname, data.role, true); 
 
     } catch (err) { 
-        Swal.fire({title:'Error', text: err.message, icon:'error', background:'#111', color:'#fff'}); 
+        console.error("Login Error:", err);
+        Swal.fire({title:'Error', text:'ระบบขัดข้อง: ' + err.message, icon:'error', background:'#111', color:'#fff'}); 
     } finally {
+        // คืนค่าปุ่มกลับมาเหมือนเดิม
         btn.disabled = false; 
         btn.innerText = 'เข้าสู่ระบบ'; 
     }
