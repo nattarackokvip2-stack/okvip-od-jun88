@@ -2186,26 +2186,39 @@
       if (!myNick) return;
 
       try {
-          // ดึงข้อความล่าสุดแค่ 1 ข้อความพอ เพื่อเช็คเวลา
+          // ดึงข้อความ "ทั้งหมด" ที่ส่งมาโดยคนอื่น (ไม่ใช่เราส่งเอง) เพื่อมานับจำนวน
           const { data, error } = await supabaseClient
               .from('shift_logs')
               .select('created_at, nickname')
-              .order('created_at', { ascending: false })
-              .limit(1);
+              .neq('nickname', myNick) // เอาเฉพาะข้อความที่คนอื่นพิมพ์
+              .order('created_at', { ascending: false });
 
           if (data && data.length > 0) {
-              const latestLog = data[0];
-              // ดึงเวลาล่าสุดที่ผู้ใช้คนนี้เคยกดเปิดสมุดส่งกะ
-              const lastReadTime = localStorage.getItem('okvip_last_read_shift_log');
+              const lastReadTimeStr = localStorage.getItem('okvip_last_read_shift_log');
+              let unreadCount = 0;
 
-              // ถ้าข้อความล่าสุดไม่ใช่ของเรา และ (ยังไม่เคยเปิดอ่านเลย หรือ เวลาข้อความใหม่กว่าเวลาที่เคยอ่าน)
-              if (latestLog.nickname !== myNick && (!lastReadTime || new Date(latestLog.created_at) > new Date(lastReadTime))) {
-                  const badge = document.getElementById('shiftLogBadge');
-                  const btn = document.getElementById('btnShiftLog');
+              if (!lastReadTimeStr) {
+                  // ถ้าไม่เคยเปิดอ่านเลย (เพิ่งล็อกอินครั้งแรกในคอมเครื่องนี้) ให้นับทั้งหมดที่มี
+                  unreadCount = data.length;
+              } else {
+                  // ถอยกลับไปดูว่า มีกี่ข้อความที่ถูกสร้าง "หลัง" จากเวลาที่เปิดอ่านล่าสุด
+                  const lastReadDate = new Date(lastReadTimeStr);
+                  unreadCount = data.filter(log => new Date(log.created_at) > lastReadDate).length;
+              }
+
+              const badge = document.getElementById('shiftLogBadge');
+              const btn = document.getElementById('btnShiftLog');
+              
+              if (unreadCount > 0) {
                   if (badge && btn) {
-                      badge.innerText = '!'; // ใส่สัญลักษณ์เตือน
+                      badge.innerText = unreadCount; // แสดงจำนวนข้อความใหม่จริงๆ
                       badge.style.display = 'inline-block';
-                      btn.classList.add('glow-alert-shift');
+                      btn.classList.add('glow-alert-shift'); // เปิดไฟนีออนกระพริบ
+                  }
+              } else {
+                  if (badge && btn) {
+                      badge.style.display = 'none';
+                      btn.classList.remove('glow-alert-shift');
                   }
               }
           }
@@ -2213,7 +2226,6 @@
           console.error("Check Shift Log Error:", err);
       }
   }
-
   async function loadSupabaseSettings() {
       try {
           const { data: jsData } = await supabaseClient.from('job_settings').select('*').limit(1);
