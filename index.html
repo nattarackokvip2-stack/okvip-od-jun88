@@ -1022,28 +1022,31 @@
 </div>
 
 <div class="modal fade" id="regModal" tabindex="-1" data-bs-theme="dark">
-  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
-    <h4 class="fw-bold mb-4 text-center text-warning" id="regModalTitle">➕ เพิ่มรายชื่อสมาชิก</h4>
-    <form id="adminRegForm" onsubmit="handleRegSubmit(event)">
-      <input type="hidden" id="editUserIdx">
-      <input type="text" id="nick" class="form-control mb-3" placeholder="ชื่อเล่น (ENG พิมพ์ใหญ่)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '')" required>
-      <select id="work" class="form-select mb-3" onchange="document.getElementById('otherWork').style.display = (this.value === 'OTHER') ? 'block' : 'none'" required>
-        <option value="Jun88">Jun88</option><option value="MK8">MK8</option><option value="F168">F168</option><option value="PG688">PG688</option><option value="JL69">JL69</option><option value="NM9">NM9</option><option value="Vv72">Vv72</option><option value="TH26">TH26</option><option value="BT678">BT678</option><option value="K188">K188</option><option value="OTHER">อื่นๆ</option>
-      </select>
-      <input type="text" id="otherWork" class="form-control mb-3" style="display:none;" placeholder="ระบุเว็บ...">
-      <select id="dept" class="form-select mb-3">
-        <option value="ออดิท (OD)">ออดิท (OD)</option><option value="ออดิทออนไลน์ (ODOL)">ออดิทออนไลน์ (ODOL)</option><option value="อื่นๆ (OTHER)">อื่นๆ (OTHER)</option>
-      </select>
-      <select id="uSet" class="form-select mb-3 text-info">
-        <option value="">-- ไม่ระบุเซ็ตกะ --</option>
-        <option value="OD (A)">OD (A)</option><option value="OD (B)">OD (B)</option>
-        <option value="ODOL (A)">ODOL (A)</option><option value="ODOL (B)">ODOL (B)</option>
-      </select>
-      <input type="text" id="uName" class="form-control mb-3" placeholder="USER (ENG)" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
-      <select id="uRole" class="form-select mb-4"><option value="Member">Member</option><option value="Admin">Admin</option><option value="SuperAdmin">SuperAdmin</option></select>
-      <button type="submit" id="btnSubmitReg" class="btn btn-neon-yellow w-100 py-2">บันทึกข้อมูล</button>
-    </form>
-  </div></div></div>
+  <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
+    <h4 class="fw-bold mb-4 text-center text-warning" id="regModalTitle">➕ เพิ่มรายชื่อสมาชิก</h4>
+    <form id="adminRegForm" onsubmit="handleRegSubmit(event)">
+      <input type="hidden" id="editUserIdx">
+      <input type="text" id="nick" class="form-control mb-3" placeholder="ชื่อเล่น (ENG พิมพ์ใหญ่)" oninput="this.value = this.value.toUpperCase().replace(/[^A-Z]/g, '')" required>
+      <select id="work" class="form-select mb-3" onchange="document.getElementById('otherWork').style.display = (this.value === 'OTHER') ? 'block' : 'none'" required>
+        <option value="Jun88">Jun88</option><option value="MK8">MK8</option><option value="F168">F168</option><option value="PG688">PG688</option><option value="JL69">JL69</option><option value="NM9">NM9</option><option value="Vv72">Vv72</option><option value="TH26">TH26</option><option value="BT678">BT678</option><option value="K188">K188</option><option value="OTHER">อื่นๆ</option>
+      </select>
+      <input type="text" id="otherWork" class="form-control mb-3" style="display:none;" placeholder="ระบุเว็บ...">
+      <select id="dept" class="form-select mb-3">
+        <option value="ออดิท (OD)">ออดิท (OD)</option><option value="ออดิทออนไลน์ (ODOL)">ออดิทออนไลน์ (ODOL)</option><option value="อื่นๆ (OTHER)">อื่นๆ (OTHER)</option>
+      </select>
+      <select id="uSet" class="form-select mb-3 text-info">
+        <option value="">-- ไม่ระบุเซ็ตกะ --</option>
+        <option value="OD (A)">OD (A)</option><option value="OD (B)">OD (B)</option>
+        <option value="ODOL (A)">ODOL (A)</option><option value="ODOL (B)">ODOL (B)</option>
+      </select>
+      <input type="text" id="uName" class="form-control mb-3" placeholder="USER (ENG)" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
+      
+            <input type="text" id="uPass" class="form-control mb-3" placeholder="PASS (ENG/เลข)">
+
+      <select id="uRole" class="form-select mb-4"><option value="Member">Member</option><option value="Admin">Admin</option><option value="SuperAdmin">SuperAdmin</option></select>
+      <button type="submit" id="btnSubmitReg" class="btn btn-neon-yellow w-100 py-2">บันทึกข้อมูล</button>
+    </form>
+  </div></div></div>
 </div>
 
 <div class="modal fade" id="shiftModal" tabindex="-1" data-bs-theme="dark">
@@ -1923,11 +1926,14 @@
   }
 
   // ==========================================
-  // 🚀 1. ตั้งค่า Supabase และคอนฟิกต่างๆ
-  // ==========================================
-  const supabaseUrl = 'https://codroyfpjhybvmispvzg.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvZHJveWZwamh5YnZtaXNwdnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjQ2NzIsImV4cCI6MjA5MDY0MDY3Mn0.jakTDxsIOCbdsbjXMBdO6cGKvgvj6IoWk_foXELRA84';
-  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+  // 🚀 1. ตั้งค่า Supabase และคอนฟิกต่างๆ
+  // ==========================================
+  const supabaseUrl = 'https://codroyfpjhybvmispvzg.supabase.co';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (คีย์ของคุณ) ...';
+  const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
+  const authSupabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false } 
+  });
   const stampConfig = {
     'X':  { bg: 'rgba(255, 51, 102, 0.2)', text: '#ff3366', label: 'X (หยุด)', limit: 4 },
     'XX': { bg: 'rgba(255, 204, 0, 0.2)', text: '#ffcc00', label: 'XX (หยุดพิเศษ)', limit: 2 },
@@ -2455,55 +2461,69 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   async function handleRegSubmit(e) {
-      e.preventDefault(); 
-      const btn = document.getElementById('btnSubmitReg'); 
-      btn.innerText = '⏳ กำลังบันทึก...'; 
-      const idx = document.getElementById('editUserIdx').value;
-      
-      // ดึงข้อมูลจากฟอร์ม (ตัดเรื่อง Password ออกไป)
-      const payload = { 
-          nickname: document.getElementById('nick').value, 
-          workGroup: document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value, 
-          department: document.getElementById('dept').value, 
-          username: document.getElementById('uName').value, 
-          role: document.getElementById('uRole').value, 
-          shiftSet: document.getElementById('uSet').value 
-      };
+    e.preventDefault(); 
+    const btn = document.getElementById('btnSubmitReg'); 
+    btn.innerText = '⏳ กำลังบันทึก...'; 
+    const idx = document.getElementById('editUserIdx').value;
+    
+    // ดึงข้อมูลโปรไฟล์ (ไม่เอารหัสผ่านมารวมตรงนี้แล้ว เพื่อความปลอดภัย)
+    const payload = { 
+        nickname: document.getElementById('nick').value, 
+        workGroup: document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value, 
+        department: document.getElementById('dept').value, 
+        username: document.getElementById('uName').value, 
+        role: document.getElementById('uRole').value, 
+        shiftSet: document.getElementById('uSet').value 
+    };
+    
+    const passVal = document.getElementById('uPass').value; 
 
-      try {
-          if (idx !== "") { 
-              // กรณีแก้ไขข้อมูล
-              const userId = allUsersData[idx][0]; 
-              const { data: dupCheck } = await supabaseClient.from('users').select('id').eq('username', payload.username).neq('id', userId); 
-              if (dupCheck && dupCheck.length > 0) { 
-                  Swal.fire('Error', 'ยูสเซอร์เนมนี้มีคนใช้แล้ว', 'error'); 
-                  btn.innerText = 'บันทึกข้อมูล'; 
-                  return; 
-              } 
-              await supabaseClient.from('users').update(payload).eq('id', userId); 
-          } else { 
-              // กรณีเพิ่มพนักงานใหม่
-              payload.status = 'Active'; 
-              const { data: dupCheck } = await supabaseClient.from('users').select('id, nickname, username').or(`nickname.eq.${payload.nickname},username.eq.${payload.username}`); 
-              
-              if (dupCheck && dupCheck.length > 0) { 
-                  Swal.fire('Error', 'ชื่อเล่น หรือ ยูสเซอร์เนม นี้มีในระบบแล้ว', 'error'); 
-                  btn.innerText = 'บันทึกข้อมูล'; 
-                  return; 
-              } 
-              await supabaseClient.from('users').insert([payload]); 
-          }
-          
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); 
-          btn.innerText = 'บันทึกข้อมูล'; 
-          refreshData(document.getElementById('refreshBtn')); 
-          Swal.fire({toast:true, position:'top-end', title:'บันทึกพนักงานสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
-          
-      } catch (err) { 
-          Swal.fire('Error', err.message, 'error'); 
-          btn.innerText = 'บันทึกข้อมูล'; 
-      }
-  }
+    try {
+        if (idx !== "") { 
+            // 📝 --- กรณีแก้ไขข้อมูลพนักงาน ---
+            const userId = allUsersData[idx][0]; 
+            const { data: dupCheck } = await supabaseClient.from('users').select('id').eq('username', payload.username).neq('id', userId); 
+            if (dupCheck && dupCheck.length > 0) { 
+                throw new Error('ยูสเซอร์เนมนี้มีคนใช้แล้ว'); 
+            } 
+            
+            // แจ้งเตือนแอดมินว่าแก้รหัสผ่านตรงนี้ไม่ได้
+            if (passVal) {
+                Swal.fire({toast:true, position:'top-end', title:'เปลี่ยนรหัสผ่านไม่ได้', text:'การแก้รหัสผ่านต้องทำโดยพนักงานในโปรไฟล์ตัวเอง', icon:'info', background:'#111', color:'#fff', timer:3000});
+            }
+
+            await supabaseClient.from('users').update(payload).eq('id', userId); 
+        } else { 
+            // ➕ --- กรณีเพิ่มพนักงานใหม่ ---
+            if(!passVal) throw new Error('กรุณาตั้งรหัสผ่านให้พนักงานใหม่'); 
+            
+            payload.status = 'Active'; 
+            const { data: dupCheck } = await supabaseClient.from('users').select('id').or(`nickname.eq.${payload.nickname},username.eq.${payload.username}`); 
+            if (dupCheck && dupCheck.length > 0) throw new Error('ชื่อเล่น หรือ ยูสเซอร์เนม นี้มีในระบบแล้ว'); 
+
+            // 1. ให้ authSupabase (ตัวสำรอง) ไปลงทะเบียนรหัสผ่านที่ระบบ Auth ของ Supabase
+            const authEmail = `${payload.username}@okvip.internal`;
+            const { error: authError } = await authSupabase.auth.signUp({
+                email: authEmail,
+                password: passVal
+            });
+            
+            if (authError) throw new Error('ระบบเซิร์ฟเวอร์ปฏิเสธการตั้งรหัสผ่าน (ลองตั้งให้ยาวขึ้น)');
+
+            // 2. เมื่อสร้างรหัสผ่านเสร็จ ค่อยบันทึกข้อมูลโปรไฟล์ลงตาราง users
+            await supabaseClient.from('users').insert([payload]); 
+        }
+        
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); 
+        refreshData(document.getElementById('refreshBtn')); 
+        Swal.fire({toast:true, position:'top-end', title:'บันทึกข้อมูลสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
+        
+    } catch (err) { 
+        Swal.fire('Error', err.message, 'error'); 
+    } finally {
+        btn.innerText = 'บันทึกข้อมูล'; 
+    }
+}
 
   async function loadSupabasePenalties() {
       const { data } = await supabaseClient.from('penalties').select('*').order('id', { ascending: false });
