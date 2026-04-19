@@ -3950,71 +3950,93 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       });
   }
   
+  // 🌟 1. เปิดหน้าต่างตั้งโควต้า (เวอร์ชันป้องกัน Error 100%)
   function openSiteQuotaModal() {
-      if (!currentJobShiftSet || currentJobShiftSet === '') {
-          Swal.fire({toast:true, position:'top', title:'กรุณาเลือกเซ็ตกะก่อนครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
-          return;
+      try {
+          if (!currentJobShiftSet || currentJobShiftSet === '') {
+              Swal.fire({toast:true, position:'top', title:'กรุณาเลือกเซ็ตกะก่อนครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
+              return;
+          }
+
+          // ตรวจสอบสิทธิ์ (Admin ห้ามยุ่งกับ OD)
+          if (myRole === 'Admin' && currentJobShiftSet.includes('OD (')) {
+              Swal.fire({ title: 'ปฏิเสธการเข้าถึง', text: 'ระดับ Admin ไม่มีสิทธิ์ตั้งเป้าหมายกำลังคนของกลุ่ม OD ครับ', icon: 'error', background: '#111', color: '#fff' });
+              return;
+          }
+
+          document.getElementById('quotaShiftName').innerText = currentJobShiftSet;
+          
+          let presentCount = 0;
+          document.querySelectorAll('#dutyTableBody tr').forEach(r => {
+              if (r.getAttribute('data-leave') !== 'true' && r.getAttribute('data-excluded') !== 'true') presentCount++;
+          });
+          document.getElementById('quotaPresentCount').innerText = presentCount;
+
+          // 🛡️ ป้องกัน Error จากตัวแปรที่ไม่ได้ถูกตั้งค่าไว้แต่แรก
+          if (!sysSettings.dutyTypes || Array.isArray(sysSettings.dutyTypes)) {
+              sysSettings.dutyTypes = { OD: [], ODOL: [], SITE_TARGETS: {}, DUTY_TARGETS: {} };
+          }
+          if (!sysSettings.dutyTypes.SITE_TARGETS) sysSettings.dutyTypes.SITE_TARGETS = {};
+          if (!sysSettings.dutyTypes.DUTY_TARGETS) sysSettings.dutyTypes.DUTY_TARGETS = {};
+          
+          const currentQuotas = sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] || {};
+          const currentDutyQuotas = sysSettings.dutyTypes.DUTY_TARGETS[currentJobShiftSet] || {};
+
+          // 🌐 โซนเว็บไซต์
+          let html = '<div style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding-right: 10px;">';
+          html += '<h6 class="text-info mt-1 mb-3 border-bottom border-secondary pb-2">🌐 โควต้าเว็บไซต์</h6><div class="row g-3 mb-4">';
+          
+          // ป้องกันกรณี websites เป็น null
+          const safeWebsites = Array.isArray(sysSettings.websites) ? sysSettings.websites : [];
+          safeWebsites.forEach(w => {
+              let val = currentQuotas[w] || 0;
+              html += `
+              <div class="col-6">
+                  <label class="small text-white mb-1">${w}</label>
+                  <input type="number" class="form-control bg-dark text-info border-secondary text-center quota-input" data-site="${w}" value="${val}" min="0" oninput="calcTotalQuota()">
+              </div>`;
+          });
+          if(safeWebsites.length === 0) html += '<div class="col-12 text-muted small">ยังไม่มีเว็บไซต์ในระบบ</div>';
+          html += '</div>';
+
+          // 📋 โซนหน้าที่ประจำวัน
+          html += '<h6 class="text-warning mb-3 border-bottom border-secondary pb-2">📋 โควต้าหน้าที่ประจำวัน</h6><div class="row g-3 pb-3">';
+          
+          let deptType = currentJobShiftSet.includes('ODOL') ? 'ODOL' : 'OD';
+          let availableDuties = sysSettings.dutyTypes[deptType] || [];
+          if (!Array.isArray(availableDuties)) availableDuties = [];
+          
+          availableDuties.forEach(d => {
+              let val = currentDutyQuotas[d] || 0;
+              html += `
+              <div class="col-6">
+                  <label class="small text-white mb-1">${d}</label>
+                  <input type="number" class="form-control bg-dark text-warning border-secondary text-center duty-quota-input" data-duty="${d}" value="${val}" min="0">
+              </div>`;
+          });
+          if(availableDuties.length === 0) html += '<div class="col-12 text-muted small">ยังไม่มีการตั้งค่าหน้าที่ในระบบ</div>';
+          html += '</div></div>';
+          
+          const targetArea = document.getElementById('quotaInputsArea');
+          if (targetArea) {
+              targetArea.innerHTML = html;
+              calcTotalQuota();
+              bootstrap.Modal.getOrCreateInstance(document.getElementById('siteQuotaModal')).show();
+          } else {
+              Swal.fire('Error', 'ไม่พบพื้นที่สำหรับแสดงผลในหน้าจอ HTML', 'error');
+          }
+          
+      } catch (error) {
+          console.error("Quota Modal Error: ", error);
+          Swal.fire('Error', 'ระบบขัดข้อง: ' + error.message, 'error');
       }
-
-      if (myRole === 'Admin' && currentJobShiftSet.includes('OD (')) {
-          Swal.fire({ title: 'ปฏิเสธการเข้าถึง', text: 'ระดับ Admin ไม่มีสิทธิ์ตั้งเป้าหมายกำลังคนของกลุ่ม OD ครับ', icon: 'error', background: '#111', color: '#fff' });
-          return;
-      }
-
-      document.getElementById('quotaShiftName').innerText = currentJobShiftSet;
-      
-      let presentCount = 0;
-      document.querySelectorAll('#dutyTableBody tr').forEach(r => {
-          if (r.getAttribute('data-leave') !== 'true' && r.getAttribute('data-excluded') !== 'true') presentCount++;
-      });
-      document.getElementById('quotaPresentCount').innerText = presentCount;
-
-      // ดึงข้อมูลโควต้าเดิม
-      if(!sysSettings.dutyTypes.SITE_TARGETS) sysSettings.dutyTypes.SITE_TARGETS = {};
-      if(!sysSettings.dutyTypes.DUTY_TARGETS) sysSettings.dutyTypes.DUTY_TARGETS = {};
-      
-      const currentQuotas = sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] || {};
-      const currentDutyQuotas = sysSettings.dutyTypes.DUTY_TARGETS[currentJobShiftSet] || {};
-
-      // 🌐 โซนเว็บไซต์
-      let html = '<div style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding-right: 10px;">';
-      html += '<h6 class="text-info mt-1 mb-3 border-bottom border-secondary pb-2">🌐 โควต้าเว็บไซต์</h6><div class="row g-3 mb-4">';
-      sysSettings.websites.forEach(w => {
-          let val = currentQuotas[w] || 0;
-          html += `
-          <div class="col-6">
-              <label class="small text-white mb-1">${w}</label>
-              <input type="number" class="form-control bg-dark text-info border-secondary text-center quota-input" data-site="${w}" value="${val}" min="0" oninput="calcTotalQuota()">
-          </div>`;
-      });
-      html += '</div>';
-
-      // 📋 โซนหน้าที่ประจำวัน
-      html += '<h6 class="text-warning mb-3 border-bottom border-secondary pb-2">📋 โควต้าหน้าที่ประจำวัน</h6><div class="row g-3 pb-3">';
-      
-      let deptType = currentJobShiftSet.includes('ODOL') ? 'ODOL' : 'OD';
-      let availableDuties = sysSettings.dutyTypes[deptType] || [];
-      
-      availableDuties.forEach(d => {
-          let val = currentDutyQuotas[d] || 0;
-          html += `
-          <div class="col-6">
-              <label class="small text-white mb-1">${d}</label>
-              <input type="number" class="form-control bg-dark text-warning border-secondary text-center duty-quota-input" data-duty="${d}" value="${val}" min="0">
-          </div>`;
-      });
-      html += '</div></div>';
-      
-      document.getElementById('quotaInputsArea').innerHTML = html;
-      calcTotalQuota();
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('siteQuotaModal')).show();
   }
 
   // 🌟 2. บันทึกโควต้าลงฐานข้อมูล
   async function saveSiteQuota(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSaveQuota');
-      btn.disabled = true; btn.innerText = '⏳...';
+      btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
 
       let newQuotas = {};
       document.querySelectorAll('.quota-input').forEach(inp => {
@@ -4028,10 +4050,11 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if(val > 0) newDutyQuotas[inp.getAttribute('data-duty')] = val;
       });
 
+      if(!sysSettings.dutyTypes) sysSettings.dutyTypes = {};
       if(!sysSettings.dutyTypes.SITE_TARGETS) sysSettings.dutyTypes.SITE_TARGETS = {};
-      sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] = newQuotas;
-
       if(!sysSettings.dutyTypes.DUTY_TARGETS) sysSettings.dutyTypes.DUTY_TARGETS = {};
+
+      sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] = newQuotas;
       sysSettings.dutyTypes.DUTY_TARGETS[currentJobShiftSet] = newDutyQuotas;
 
       try {
