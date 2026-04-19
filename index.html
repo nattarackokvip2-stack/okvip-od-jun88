@@ -2275,57 +2275,62 @@
   }
   
   async function handleLogin() {
-    const u = document.getElementById('user').value; 
-    const p = document.getElementById('pass').value; 
+    const u = document.getElementById('user').value.trim();
+    const p = document.getElementById('pass').value.trim();
     const btn = document.getElementById('loginBtn');
-    
+
     if(!u || !p) { 
         Swal.fire({title:'เตือน', text:'กรอกข้อมูลให้ครบ', icon:'warning', background:'#111', color:'#fff'}); 
         return; 
     }
-    
+
     btn.disabled = true; 
     btn.innerText = 'Checking...';
-    
+
     try {
-        const { data, error } = await supabaseClient
+        // 1. แปลง Username ให้เป็นรูปแบบ Email จำลอง
+        const authEmail = `${u}@okvip.internal`;
+
+        // 2. ให้ Supabase Auth จัดการตรวจรหัสผ่านที่ถูกเข้ารหัสไว้
+        const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+            email: authEmail,
+            password: p
+        });
+
+        // หากรหัสผ่านผิด หรือไม่มีบัญชีใน Auth
+        if (authError) {
+            throw new Error('ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง');
+        }
+
+        // 3. เมื่อ Auth ผ่านแล้ว ค่อยไปดึงข้อมูลสิทธิ์และชื่อเล่นจากตาราง users
+        const { data: userData, error: userError } = await supabaseClient
             .from('users')
             .select('*')
             .eq('username', u)
-            .eq('password', p)
-            .maybeSingle();
+            .single();
 
-        if (error) {
-            console.error("Supabase Error Data:", error);
+        if (userError || !userData) {
+            throw new Error('ไม่พบโปรไฟล์พนักงานในระบบตารางงาน');
         }
 
-        if (error || !data) { 
-            Swal.fire({title:'Error', text:'ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง', icon:'error', background:'#111', color:'#fff'}); 
-            btn.disabled = false; 
-            btn.innerText = 'เข้าสู่ระบบ'; 
-            return; 
+        if (userData.status === 'Blocked') { 
+            throw new Error('บัญชีนี้ถูกระงับการใช้งาน');
         }
 
-        if (data.status === 'Blocked') { 
-            Swal.fire({title:'Error', text:'บัญชีนี้ถูกระงับการใช้งาน', icon:'error', background:'#111', color:'#fff'}); 
-            btn.disabled = false; 
-            btn.innerText = 'เข้าสู่ระบบ'; 
-            return; 
-        }
-        
+        // 4. ล็อกอินสำเร็จ บันทึกค่าและเข้าสู่แดชบอร์ด
         localStorage.setItem('okvip_user', u); 
-        localStorage.setItem('okvip_role', data.role); 
-        localStorage.setItem('okvip_nick', data.nickname); 
+        localStorage.setItem('okvip_role', userData.role); 
+        localStorage.setItem('okvip_nick', userData.nickname); 
         localStorage.setItem('okvip_time', new Date().getTime().toString());
         currentUsername = u; 
-        
+
         document.getElementById('loginPage').style.display = 'none'; 
         document.getElementById('mainDashboard').style.display = 'block';
-        verifyUserStatus(u, data.nickname, data.role, true); 
-        
+        verifyUserStatus(u, userData.nickname, userData.role, true); 
+
     } catch (err) { 
-        console.error("Code Crash Error:", err);
-        Swal.fire({title:'Error', text:'ระบบขัดข้อง โปรดดูรายละเอียดใน Console (F12)', icon:'error', background:'#111', color:'#fff'}); 
+        Swal.fire({title:'Error', text: err.message, icon:'error', background:'#111', color:'#fff'}); 
+    } finally {
         btn.disabled = false; 
         btn.innerText = 'เข้าสู่ระบบ'; 
     }
