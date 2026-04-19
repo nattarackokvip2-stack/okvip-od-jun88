@@ -4019,7 +4019,10 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               document.querySelectorAll('#dutyTableBody tr').forEach(r => {
                   if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
                   const nick = r.getAttribute('data-nick'); 
-                  const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
+                  
+                  // 🌟 แก้ไขจุดที่เว็บหาย: กรองเอาเฉพาะเว็บไซต์จริงๆ (ตัดคำว่า EXCLUDE_DUTY และคำที่นำหน้าด้วย DUTY: ออกไป)
+                  const rawSites = sysSettings.userSites[nick] || [];
+                  const capableSites = rawSites.filter(s => s !== 'EXCLUDE_DUTY' && !s.startsWith('DUTY:'));
                   
                   const targetRole = allUsersData.find(u => u[1] === nick)?.[6] || 'Member';
                   const myNick = localStorage.getItem('okvip_nick');
@@ -4050,6 +4053,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   return allCapable.filter(s => !history.includes(s));
               };
 
+              // PASS 1: เว็บหลักตามเป้า
               availableUsers.forEach(u => {
                   let freshSites = getFreshSites(u.nick, u.capableSites);
                   let validSites = freshSites.filter(s => (currentAssignedMain[s] || 0) < (targets[s] || 0));
@@ -4065,6 +4069,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   }
               });
 
+              // PASS 2: คนตกค้างเว็บหลัก
               availableUsers.filter(u => !u.assignedMain).forEach(u => {
                   let freshSites = getFreshSites(u.nick, u.capableSites);
                   let fallbackSites = (freshSites.length > 0 ? freshSites : u.capableSites).sort((a,b) => (currentAssignedMain[a]||0) - (currentAssignedMain[b]||0));
@@ -4072,6 +4077,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   currentAssignedMain[fallbackSites[0]]++;
               });
 
+              // PASS 3: เว็บรอง และ หน้าที่ประจำวัน
               availableUsers.forEach(u => {
                   let remain = u.capableSites.filter(s => s !== u.assignedMain);
                   let freshRemain = getFreshSites(u.nick, remain);
@@ -4101,65 +4107,68 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   if(!dailyDutiesData[u.nick]) dailyDutiesData[u.nick] = {}; 
                   dailyDutiesData[u.nick].site = displayStr;
 
-                  const inDuty = u.row.querySelector('.sel-duty');
-                // สุ่ม Duty รายวัน (เช่น ตรวจบิล, แอดมิน)
-                let myDeptType = u.row.getAttribute('data-dept') || '';
-                myDeptType = myDeptType.includes('ODOL') ? 'ODOL' : 'OD';
+                  // 🌟 จัดการหน้าที่ (Duty) แบ่งแยกตามแผนก 🌟
+                  let myDeptType = u.row.getAttribute('data-dept') || '';
+                  myDeptType = myDeptType.includes('ODOL') ? 'ODOL' : 'OD';
 
-                let availableDuties = [];
-                if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
-                else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
-                
-                // 🌟 AI เช็คสิทธิ์หน้าที่: ดึงเฉพาะหน้าที่ที่แอดมินอนุญาต (ติ๊กไว้ในตั้งค่า)
-                const userAllowedDuties = (u.capableSites || [])
-                    .filter(item => item.startsWith('DUTY:'))
-                    .map(item => item.replace('DUTY:', ''));
+                  let finalDutyToAssign = "";
 
-                // คัดกรองเอาเฉพาะหน้าที่ที่มีสิทธิ์ทำ
-                let validDutiesForUser = availableDuties.filter(d => userAllowedDuties.includes(d));
+                  if (myDeptType === 'ODOL') {
+                      // 🛑 กฎเฉพาะ ODOL: บังคับให้เป็น "ถอนเงิน" เสมอ โดยไม่สุ่ม
+                      finalDutyToAssign = "ถอนเงิน";
+                  } else {
+                      // 🟢 กฎสำหรับแผนกอื่น: สุ่มตามหน้าที่ที่ตั้งค่าไว้ให้รายบุคคล
+                      let availableDuties = [];
+                      if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
+                      else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
 
-                // ⚠️ สำรองข้อมูล: ถ้าแอดมินยังไม่เคยติ๊กตั้งค่าให้ใครเลย ให้ถือว่าทำได้ทุกอย่าง (กันระบบเดิมพัง)
-                if (userAllowedDuties.length === 0) {
-                    validDutiesForUser = availableDuties;
-                }
+                      const rawCapable = sysSettings.userSites[u.nick] || [];
+                      const userAllowedDuties = rawCapable
+                          .filter(item => item.startsWith('DUTY:'))
+                          .map(item => item.replace('DUTY:', ''));
 
-                if(validDutiesForUser.length > 0) {
-                    // AI สุ่มเฉพาะจากรายชื่อหน้าที่ที่อนุญาตเท่านั้น
-                    let randomDuty = validDutiesForUser[Math.floor(Math.random() * validDutiesForUser.length)];
-                    dailyDutiesData[u.nick].duty = randomDuty;
+                      let validDutiesForUser = availableDuties.filter(d => userAllowedDuties.includes(d));
+                      if (userAllowedDuties.length === 0) validDutiesForUser = availableDuties;
 
-                    // อัปเดตหน้าจอ (ปุ่มใหม่แบบ Checkbox)
-                    let safeNick = u.nick.replace(/[^a-zA-Z0-9]/g, '');
-                    let hiddenDuty = u.row.querySelector(`#dutyHidden_${safeNick}`);
-                    if(hiddenDuty) hiddenDuty.value = randomDuty;
-                    
-                    let dutyBtn = u.row.querySelector(`#dutyBtn_${safeNick}`);
-                    if(dutyBtn) dutyBtn.innerText = randomDuty;
+                      if(validDutiesForUser.length > 0) {
+                          finalDutyToAssign = validDutiesForUser[Math.floor(Math.random() * validDutiesForUser.length)];
+                      }
+                  }
 
-                    // อัปเดตติ๊กถูกใน Checkbox ให้ตรงกัน
-                    u.row.querySelectorAll(`.duty-check-${safeNick}`).forEach(chk => {
-                        chk.checked = (chk.value === randomDuty);
-                    });
-                }
-            }); // 🛑 ตรงนี้สำคัญมาก! ปิดลูป forEach
+                  // อัปเดตข้อมูล Duty ลงหน้าจอ
+                  if (finalDutyToAssign !== "") {
+                      dailyDutiesData[u.nick].duty = finalDutyToAssign;
 
-            updateSiteSummary();
-            renderMealTable(); 
-            Swal.fire({
-                icon: 'success',
-                title: 'จัดสรรและป้องกันงานซ้ำสำเร็จ!',
-                text: 'หลังจากตรวจสอบแล้ว โปรดกดปุ่ม "บันทึกหน้าที่" ด้วยนะครับ',
-                confirmButtonText: 'ตกลง',
-                confirmButtonColor: '#00cc66',
-                background: '#151518',
-                color: '#fff'
-            });
-        } catch(e) {
-            console.error(e);
-            Swal.fire('Error', 'เกิดข้อผิดพลาดในการคำนวณกำลังคน', 'error');
-        }
-    }, 500);
-}
+                      let safeNick = u.nick.replace(/[^a-zA-Z0-9]/g, '');
+                      let hiddenDuty = u.row.querySelector(`#dutyHidden_${safeNick}`);
+                      if(hiddenDuty) hiddenDuty.value = finalDutyToAssign;
+                      
+                      let dutyBtn = u.row.querySelector(`#dutyBtn_${safeNick}`);
+                      if(dutyBtn) dutyBtn.innerText = finalDutyToAssign;
+
+                      // ติ๊กถูกใน Checkbox ให้ตรงกัน (ติ๊กแค่อันเดียว อันอื่นเคลียร์ทิ้ง)
+                      u.row.querySelectorAll(`.duty-check-${safeNick}`).forEach(chk => {
+                          chk.checked = (chk.value === finalDutyToAssign);
+                      });
+                  }
+              });
+
+              updateSiteSummary();
+              renderMealTable(); 
+              Swal.fire({
+                  icon: 'success',
+                  title: 'จัดสรรและป้องกันงานซ้ำสำเร็จ!',
+                  confirmButtonText: 'ตกลง',
+                  confirmButtonColor: '#00cc66',
+                  background: '#151518',
+                  color: '#fff'
+              });
+          } catch(e) {
+              console.error(e);
+              Swal.fire('Error', 'เกิดข้อผิดพลาดในการคำนวณกำลังคน', 'error');
+          }
+      }, 500);
+  }
   
   async function saveDutyTable() { 
       const dateStr = document.getElementById('jobDatePicker').value; const payload = []; 
