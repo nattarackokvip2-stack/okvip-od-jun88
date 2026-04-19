@@ -1929,11 +1929,11 @@
   // 🚀 1. ตั้งค่า Supabase และคอนฟิกต่างๆ
   // ==========================================
   const supabaseUrl = 'https://codroyfpjhybvmispvzg.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9... (คีย์ของคุณ) ...';
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNvZHJveWZwamh5YnZtaXNwdnpnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwNjQ2NzIsImV4cCI6MjA5MDY0MDY3Mn0.jakTDxsIOCbdsbjXMBdO6cGKvgvj6IoWk_foXELRA84';
   const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
-  const authSupabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false } 
-  });
+  const authSupabase = window.supabase.createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false } 
+  });
   const stampConfig = {
     'X':  { bg: 'rgba(255, 51, 102, 0.2)', text: '#ff3366', label: 'X (หยุด)', limit: 4 },
     'XX': { bg: 'rgba(255, 204, 0, 0.2)', text: '#ffcc00', label: 'XX (หยุดพิเศษ)', limit: 2 },
