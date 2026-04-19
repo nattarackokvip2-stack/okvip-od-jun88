@@ -1040,7 +1040,6 @@
         <option value="ODOL (A)">ODOL (A)</option><option value="ODOL (B)">ODOL (B)</option>
       </select>
       <input type="text" id="uName" class="form-control mb-3" placeholder="USER (ENG)" oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
-      <input type="text" id="uPass" class="form-control mb-3" placeholder="PASS (ENG/เลข)">
       <select id="uRole" class="form-select mb-4"><option value="Member">Member</option><option value="Admin">Admin</option><option value="SuperAdmin">SuperAdmin</option></select>
       <button type="submit" id="btnSubmitReg" class="btn btn-neon-yellow w-100 py-2">บันทึกข้อมูล</button>
     </form>
@@ -2456,14 +2455,54 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   async function handleRegSubmit(e) {
-      e.preventDefault(); const btn = document.getElementById('btnSubmitReg'); btn.innerText = '⏳ กำลังบันทึก...'; const idx = document.getElementById('editUserIdx').value;
-      const payload = { nickname: document.getElementById('nick').value, workGroup: document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value, department: document.getElementById('dept').value, username: document.getElementById('uName').value, role: document.getElementById('uRole').value, shiftSet: document.getElementById('uSet').value };
-      const passVal = document.getElementById('uPass').value; if(passVal) payload.password = passVal;
+      e.preventDefault(); 
+      const btn = document.getElementById('btnSubmitReg'); 
+      btn.innerText = '⏳ กำลังบันทึก...'; 
+      const idx = document.getElementById('editUserIdx').value;
+      
+      // ดึงข้อมูลจากฟอร์ม (ตัดเรื่อง Password ออกไป)
+      const payload = { 
+          nickname: document.getElementById('nick').value, 
+          workGroup: document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value, 
+          department: document.getElementById('dept').value, 
+          username: document.getElementById('uName').value, 
+          role: document.getElementById('uRole').value, 
+          shiftSet: document.getElementById('uSet').value 
+      };
+
       try {
-          if (idx !== "") { const userId = allUsersData[idx][0]; const { data: dupCheck } = await supabaseClient.from('users').select('id').eq('username', payload.username).neq('id', userId); if (dupCheck && dupCheck.length > 0) { Swal.fire('Error', 'ยูสเซอร์เนมนี้มีคนใช้แล้ว', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } await supabaseClient.from('users').update(payload).eq('id', userId); } 
-          else { if(!payload.password) { Swal.fire('Error', 'กรุณาตั้งรหัสผ่าน', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } payload.status = 'Active'; const { data: dupCheck } = await supabaseClient.from('users').select('id, nickname, username').or(`nickname.eq.${payload.nickname},username.eq.${payload.username}`); if (dupCheck && dupCheck.length > 0) { Swal.fire('Error', 'ชื่อเล่น หรือ ยูสเซอร์เนม นี้มีในระบบแล้ว', 'error'); btn.innerText = 'บันทึกข้อมูล'; return; } await supabaseClient.from('users').insert([payload]); }
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); btn.innerText = 'บันทึกข้อมูล'; refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'บันทึกพนักงานสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
-      } catch (err) { Swal.fire('Error', err.message, 'error'); btn.innerText = 'บันทึกข้อมูล'; }
+          if (idx !== "") { 
+              // กรณีแก้ไขข้อมูล
+              const userId = allUsersData[idx][0]; 
+              const { data: dupCheck } = await supabaseClient.from('users').select('id').eq('username', payload.username).neq('id', userId); 
+              if (dupCheck && dupCheck.length > 0) { 
+                  Swal.fire('Error', 'ยูสเซอร์เนมนี้มีคนใช้แล้ว', 'error'); 
+                  btn.innerText = 'บันทึกข้อมูล'; 
+                  return; 
+              } 
+              await supabaseClient.from('users').update(payload).eq('id', userId); 
+          } else { 
+              // กรณีเพิ่มพนักงานใหม่
+              payload.status = 'Active'; 
+              const { data: dupCheck } = await supabaseClient.from('users').select('id, nickname, username').or(`nickname.eq.${payload.nickname},username.eq.${payload.username}`); 
+              
+              if (dupCheck && dupCheck.length > 0) { 
+                  Swal.fire('Error', 'ชื่อเล่น หรือ ยูสเซอร์เนม นี้มีในระบบแล้ว', 'error'); 
+                  btn.innerText = 'บันทึกข้อมูล'; 
+                  return; 
+              } 
+              await supabaseClient.from('users').insert([payload]); 
+          }
+          
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); 
+          btn.innerText = 'บันทึกข้อมูล'; 
+          refreshData(document.getElementById('refreshBtn')); 
+          Swal.fire({toast:true, position:'top-end', title:'บันทึกพนักงานสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
+          
+      } catch (err) { 
+          Swal.fire('Error', err.message, 'error'); 
+          btn.innerText = 'บันทึกข้อมูล'; 
+      }
   }
 
   async function loadSupabasePenalties() {
