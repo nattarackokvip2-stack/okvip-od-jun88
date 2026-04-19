@@ -2129,8 +2129,14 @@
       if(btn) { btn.disabled = true; btn.innerHTML = '⏳...'; }
       try {
           await Promise.all([
-              loadSupabaseUsers(), loadSupabaseSettings(), loadSupabaseWebsites(),
-              loadSupabasePenalties(), loadSupabaseManuals(), loadSupabaseAnnouncements(), loadSupabaseLeaves() 
+              loadSupabaseUsers(), 
+              loadSupabaseSettings(), 
+              loadSupabaseWebsites(),
+              loadSupabasePenalties(), 
+              loadSupabaseManuals(), 
+              loadSupabaseAnnouncements(), 
+              loadSupabaseLeaves(),
+              loadSupabaseBehaviors() // 👈 ใส่ครบถ้วนแล้ว
           ]);
           await loadScheduleTable();
           await loadDailyJobData();
@@ -2145,10 +2151,12 @@
           if(isLoginEvent) showLoginAnnouncement();
           else if(btn) Swal.fire({toast: true, position: 'top-end', title: '🚀 โหลดข้อมูลสำเร็จ', icon: 'success', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff'});
       } catch (err) {
-          console.error("Refresh Error:", err); Swal.fire('Error', 'โหลดข้อมูลล้มเหลว', 'error');
+          console.error("Refresh Error:", err); 
+          // 🌟 ปรับให้เด้งข้อความ Error ชัดๆ ว่าพังที่ไหน
+          Swal.fire('โหลดข้อมูลล้มเหลว!', '<span class="text-warning">' + (err.message || err) + '</span><br><br><small>กด F12 ดู Console หากต้องการรายละเอียดเพิ่ม</small>', 'error');
           if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
       }
-  }
+  }}
 
   async function loadSupabaseSettings() {
       try {
@@ -2188,15 +2196,22 @@
   }
 
   async function loadSupabaseUsers() {
-      const { data, error } = await supabaseClient.from('users').select('*').order('id', { ascending: true });
-      if (error) throw error;
-      allUsersData = (data || []).map(item => [ 
-          item.id || '', item.nickname || '', item.workGroup || '', item.department || '', 
-          item.username || '', item.password || '', item.role || 'Member', item.status || 'Active', 
-          item.telegram || '', item.shiftSet || '' 
-      ]);
-      loadUsers(); updatePenaltySelect(); setupJobFilters();
-      if (typeof renderHrEvalList === 'function') renderHrEvalList();
+      try {
+          const { data, error } = await supabaseClient.from('users').select('*').order('id', { ascending: true });
+          // 🌟 ถ้าตาราง users ดึงไม่ได้ ให้โยน Error ออกไปโชว์ที่หน้าจอ
+          if (error) throw new Error("เกิดปัญหาที่ตาราง users: " + error.message);
+          
+          allUsersData = (data || []).map(item => [ 
+              item.id || '', item.nickname || '', item.workGroup || '', item.department || '', 
+              item.username || '', item.password || '', item.role || 'Member', item.status || 'Active', 
+              item.telegram || '', item.shiftSet || '' 
+          ]);
+          loadUsers(); updatePenaltySelect(); setupJobFilters();
+          if (typeof renderHrEvalList === 'function') renderHrEvalList();
+      } catch (error) {
+          console.error(error);
+          throw error; // ส่ง Error ให้ refreshData จับ
+      }
   }
 
   function setupJobFilters() {
