@@ -3790,7 +3790,7 @@ async function saveSiteQuota(e) {
     }
 }
 
-// 🌟 2. อัปเกรด AI ระบบสุ่มหน้าที่ ให้ยึดเป้ากำลังคนเป็นหลัก
+// 🌟 2. อัปเกรด AI ระบบสุ่มหน้าที่ ให้ยึดเป้ากำลังคนเป็นหลัก + บาลานซ์เว็บรอง
 function randomizeDuties() {
     if (!currentJobShiftSet || currentJobShiftSet === '') {
         Swal.fire({toast:true, position:'top', title:'กรุณาเลือกเซ็ตกะก่อนครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
@@ -3802,8 +3802,14 @@ function randomizeDuties() {
         try {
             // ดึงโควต้าเป้าหมายของกะนี้
             let targets = (sysSettings.dutyTypes.SITE_TARGETS && sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet]) ? sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] : {};
-            let currentAssigned = {};
-            sysSettings.websites.forEach(w => currentAssigned[w] = 0);
+            
+            // 🌟 แยกตัวนับยอดระหว่าง "เว็บหลัก" กับ "เว็บรอง"
+            let currentAssignedMain = {};
+            let currentAssignedSub = {}; 
+            sysSettings.websites.forEach(w => {
+                currentAssignedMain[w] = 0;
+                currentAssignedSub[w] = 0;
+            });
 
             let availableUsers = [];
             document.querySelectorAll('#dutyTableBody tr').forEach(r => {
@@ -3816,36 +3822,44 @@ function randomizeDuties() {
                 }
             });
 
-            // สุ่มลำดับคนเพื่อความยุติธรรม
+            // สุ่มลำดับคนก่อนเพื่อความยุติธรรมในการจ่ายงาน
             availableUsers.sort(() => 0.5 - Math.random());
 
             // 🎯 PASS 1: ยัดคนลงเว็บ "หลัก" ตามเป้าโควต้าก่อน
             availableUsers.forEach(u => {
-                // หาเว็บที่เขาสามารถทำได้ และโควต้ายังไม่เต็ม
-                let validSites = u.capableSites.filter(s => (currentAssigned[s] || 0) < (targets[s] || 0));
+                let validSites = u.capableSites.filter(s => (currentAssignedMain[s] || 0) < (targets[s] || 0));
                 
                 if (validSites.length > 0) {
                     let chosen = validSites[Math.floor(Math.random() * validSites.length)];
                     u.assignedMain = chosen;
-                    currentAssigned[chosen]++;
+                    currentAssignedMain[chosen]++;
                 }
             });
 
-            // 🎯 PASS 2: ถ้าโควต้าเต็มหมดแล้ว แต่ยังมีคนตกค้าง ให้ยัดลงเว็บที่คนน้อยที่สุด
+            // 🎯 PASS 2: ถ้าโควต้าเต็มหมดแล้ว แต่ยังมีคนตกค้าง ให้ยัดลงเว็บที่คนน้อยที่สุด (สำหรับเว็บหลัก)
             availableUsers.filter(u => !u.assignedMain).forEach(u => {
-                let fallbackSites = u.capableSites.sort((a,b) => (currentAssigned[a]||0) - (currentAssigned[b]||0));
+                let fallbackSites = u.capableSites.sort((a,b) => (currentAssignedMain[a]||0) - (currentAssignedMain[b]||0));
                 u.assignedMain = fallbackSites[0];
-                currentAssigned[fallbackSites[0]]++;
+                currentAssignedMain[fallbackSites[0]]++;
             });
 
-            // 🎯 PASS 3: สุ่มเว็บ "รอง" ให้เป็นหน้าที่เสริม (ห้ามซ้ำกับหลัก)
+            // 🎯 PASS 3: จัดสรรเว็บ "รอง" ให้บาลานซ์ที่สุด (ห้ามซ้ำกับหลัก)
             availableUsers.forEach(u => {
+                // กรองเอาเฉพาะเว็บที่พนักงานทำได้ และไม่ใช่เว็บหลักที่เพิ่งได้ไป
                 let remain = u.capableSites.filter(s => s !== u.assignedMain);
+                
                 if(remain.length > 0) {
-                    u.assignedSub = remain[Math.floor(Math.random() * remain.length)];
+                    // 1. สลับลำดับแบบสุ่มก่อน (กันไม่ให้เว็บชื่อเดิมๆ โดนเลือกซ้ำเวลามียอดสำรองเท่ากัน)
+                    remain.sort(() => 0.5 - Math.random()); 
+                    // 2. 🌟 คัดกรองเอาเว็บที่มียอด "รอง" น้อยที่สุดขึ้นมาเป็นอันดับแรก
+                    remain.sort((a, b) => (currentAssignedSub[a] || 0) - (currentAssignedSub[b] || 0));
+                    
+                    // จ่ายเว็บที่ขาดคนสำรองที่สุดให้กับพนักงานคนนี้
+                    u.assignedSub = remain[0];
+                    currentAssignedSub[remain[0]]++;
                 }
                 
-                // อัปเดตลงหน้าจอ
+                // --- ส่วนนี้คือการอัปเดตข้อมูลลงหน้าจอ (เหมือนเดิม) ---
                 const inSiteMain = u.row.querySelector('.sel-site-main'); 
                 const inSiteSub = u.row.querySelector('.sel-site-sub');
                 if(inSiteMain) inSiteMain.value = u.assignedMain || "";
@@ -3877,7 +3891,7 @@ function randomizeDuties() {
 
             updateSiteSummary();
             renderMealTable(); 
-            Swal.fire({toast:true, position:'top-end', title:'จัดสรรคนเข้าเว็บตามเป้าสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+            Swal.fire({toast:true, position:'top-end', title:'จัดสรรคนและบาลานซ์เว็บสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
         } catch(e) {
             console.error(e);
             Swal.fire('Error', 'เกิดข้อผิดพลาดในการคำนวณกำลังคน', 'error');
