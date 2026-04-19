@@ -1838,7 +1838,8 @@
   let dailyDutiesData = {}; 
   let dailyStatsData = {}; 
   let dailyScheduleData = {}; 
-  let dailyMealData = {}; 
+  let dailyMealData = {};
+  let userSiteHistory = {};
   
   let currentJobTab = 'duty'; 
   let currentJobFilter = 'ALL'; 
@@ -3546,15 +3547,49 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   function renderJobTables() { if(currentJobTab === 'duty') buildDutyTable(); else buildStatTable(); }
 
   async function loadDailyJobData() { 
-      const dateStr = document.getElementById('jobDatePicker').value; if(!dateStr) return; 
-      const { data: dData } = await supabaseClient.from('daily_duties').select('*').eq('dateStr', dateStr); dailyDutiesData = {}; if(dData) dData.forEach(r => dailyDutiesData[r.nickname] = { site: r.assignedSite, duty: r.assignedDuty });
-      const { data: sData } = await supabaseClient.from('daily_stats').select('*').eq('dateStr', dateStr); dailyStatsData = {}; if(sData) sData.forEach(r => dailyStatsData[r.nickname] = r.statsData ? JSON.parse(r.statsData) : {});
-      const [y, m, d] = dateStr.split('-'); const ym = `${y}-${m}`;
-      const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); dailyScheduleData = {}; if (schData) { schData.forEach(r => { const days = r.daysData ? JSON.parse(r.daysData) : {}; dailyScheduleData[r.nickname] = days[parseInt(d)] || ''; }); }
-      
-      if(currentJobShiftSet === 'ALL') currentJobShiftSet = '';
-      renderJobTables(); 
-  }
+    const targetDateStr = document.getElementById('jobDatePicker').value; 
+    if(!targetDateStr) return; 
+
+    // 🌟 คำนวณหาวันที่ย้อนหลัง 1 และ 2 วัน
+    const tDate = new Date(targetDateStr);
+    const d1 = new Date(tDate); d1.setDate(d1.getDate() - 1);
+    const d2 = new Date(tDate); d2.setDate(d2.getDate() - 2);
+    const past1Str = d1.toISOString().split('T')[0];
+    const past2Str = d2.toISOString().split('T')[0];
+
+    // 🌟 ดึงข้อมูลรวดเดียว 3 วัน (วันนี้, เมื่อวาน, วันก่อนหน้า)
+    const { data: dData } = await supabaseClient.from('daily_duties')
+        .select('*')
+        .in('dateStr', [targetDateStr, past1Str, past2Str]); 
+        
+    dailyDutiesData = {}; 
+    userSiteHistory = {}; // ล้างประวัติเพื่อคำนวณใหม่
+
+    if(dData) {
+        dData.forEach(r => { 
+            if (r.dateStr === targetDateStr) {
+                dailyDutiesData[r.nickname] = { site: r.assignedSite, duty: r.assignedDuty };
+            } else {
+                // 🌟 เก็บข้อมูลลงแฟ้มประวัติย้อนหลัง 2 วัน
+                if (!userSiteHistory[r.nickname]) userSiteHistory[r.nickname] = new Set();
+                let parsedSites = r.assignedSite.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+                parsedSites.forEach(s => userSiteHistory[r.nickname].add(s));
+            }
+        });
+    }
+
+    const { data: sData } = await supabaseClient.from('daily_stats').select('*').eq('dateStr', targetDateStr); 
+    dailyStatsData = {}; 
+    if(sData) sData.forEach(r => dailyStatsData[r.nickname] = r.statsData ? JSON.parse(r.statsData) : {});
+
+    const [y, m, d] = targetDateStr.split('-'); const ym = `${y}-${m}`;
+    const { data: schData } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym); 
+    dailyScheduleData = {}; 
+    if (schData) { schData.forEach(r => { const days = r.daysData ? JSON.parse(r.daysData) : {}; dailyScheduleData[r.nickname] = days[parseInt(d)] || ''; }); }
+    
+    if(currentJobShiftSet === 'ALL') currentJobShiftSet = '';
+    renderJobTables(); 
+}
 
   function buildDutyTable() {
     const tbody = document.getElementById('dutyTableBody'); tbody.innerHTML = '';
@@ -3602,15 +3637,82 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       if (myRole === 'SuperAdmin') {
           canEditThisRow = true;
       } else if (myRole === 'Admin') {
-          // ถ้าเป้าหมายคือ Member และอยู่ 'คนละแผนก' กับ Admin ถึงจะแก้ได้
           if (targetRole === 'Member' && myDeptGroup !== targetDeptGroup) {
               canEditThisRow = true;
           }
-          // ถ้าเป็นชื่อตัวเอง ให้แก้ของตัวเองได้ด้วย
           if (nick === myNick) {
               canEditThisRow = true;
           }
       }
+
+      let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
+      let availableDuties = [];
+      if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
+      else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
+      
+      // 🌟 สร้างช่องเลือกเว็บ (อัปเดตใส่ onchange เพื่อแจ้งเตือนประวัติงานซ้ำ)
+      let siteDisplayHtml = '';
+      if (canEditThisRow) {
+          let siteMainOptions = `<option value="">- เว็บหลัก -</option>`;
+          let siteSubOptions = `<option value="">- เว็บรอง -</option>`;
+          (sysSettings.websites || []).forEach(w => {
+              siteMainOptions += `<option value="${w}" ${mainSite===w?'selected':''}>${w}</option>`;
+              siteSubOptions += `<option value="${w}" ${subSite===w?'selected':''}>${w}</option>`;
+          });
+          siteDisplayHtml = `<div class="d-flex flex-column gap-1">
+                                <select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="checkSiteHistoryWarning(this, '${nick}'); updateSiteSummary()">${siteMainOptions}</select>
+                                <select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="checkSiteHistoryWarning(this, '${nick}'); updateSiteSummary()">${siteSubOptions}</select>
+                             </div>`;
+      } else {
+          siteDisplayHtml = `<div class="d-flex flex-column gap-1 text-start">
+                                <span class="text-info small">หลัก: <b>${mainSite || '-'}</b></span>
+                                <span class="text-warning small">รอง: <b>${subSite || '-'}</b></span>
+                                <input type="hidden" class="hidden-site-main" value="${mainSite}">
+                                <input type="hidden" class="hidden-site-sub" value="${subSite}">
+                             </div>`;
+      }
+
+      // สร้างช่องเลือกหน้าที่
+      let dutyDisplayHtml = '';
+      if (canEditThisRow) {
+          let dutyOptions = `<option value="">- เลือกหน้าที่ -</option>`; 
+          availableDuties.forEach(d => { dutyOptions += `<option value="${d}" ${curData.duty===d?'selected':''}>${d}</option>`; });
+          dutyDisplayHtml = `<select class="form-select form-select-sm bg-dark text-white sel-duty">${dutyOptions}</select>`;
+      } else {
+          dutyDisplayHtml = `<span class="text-white fw-bold">${curData.duty || '-'}</span>
+                             <input type="hidden" class="hidden-duty" value="${curData.duty || ''}">`;
+      }
+      
+      const adminBtn = canEditThisRow ? `<button class="btn btn-sm btn-outline-info" onclick="openUserSiteModal('${nick}')">⚙️</button>` : '-';
+      
+      if (capable.includes('EXCLUDE_DUTY')) { tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="true" style="opacity: 0.4;"><td class="fw-bold text-white"><del>${nick}</del></td><td class="text-muted small">${dept.split(' ')[0]}</td><td colspan="3" class="text-center text-danger small">🚫 ถูกซ่อนจากตาราง</td><td class="text-center">${adminBtn}</td></tr>`; return; }
+      if (offDutyStamps.includes(curStamp) || curStamp === '') { const sConf = stampConfig[curStamp] || stampConfig['']; tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="true" data-excluded="false"><td class="fw-bold text-white">${nick}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td colspan="2" class="text-center bg-dark" style="opacity:0.8"><span class="badge px-3 py-2" style="background-color:${sConf.bg}; color:${sConf.text}; border: 1px solid ${sConf.text};">🛏️ ${sConf.label}</span></td><td class="text-center">${adminBtn}</td></tr>`; } 
+      else { 
+          let stampHtml = ''; if(curStamp && stampConfig[curStamp]){ const c=stampConfig[curStamp]; stampHtml=`<span class="badge ms-2" style="background-color:${c.bg}; color:${c.text}; border: 1px solid ${c.text}; font-size:0.7rem;">${c.label}</span>`; } 
+          tbody.innerHTML += `<tr data-nick="${nick}" data-dept="${dept}" data-leave="false" data-excluded="false"><td class="fw-bold text-white">${nick} ${stampHtml}</td><td class="text-muted small">${dept.split(' ')[0]}</td><td>${sitesBadge}</td><td>${siteDisplayHtml}</td><td>${dutyDisplayHtml}</td><td class="text-center">${adminBtn}</td></tr>`; 
+      }
+    });
+    updateSiteSummary();
+  }
+
+  // 🌟 ฟังก์ชันแจ้งเตือนหากแอดมินเลือกเว็บซ้ำกับ 2 วันที่ผ่านมา (วางไว้นอกลูป)
+  function checkSiteHistoryWarning(selectEl, nick) {
+      const selectedSite = selectEl.value;
+      if (!selectedSite || selectedSite === "") return;
+
+      if (userSiteHistory[nick] && userSiteHistory[nick].has(selectedSite)) {
+          Swal.fire({
+              toast: true,
+              position: 'bottom-end',
+              icon: 'warning',
+              title: `⚠️ แจ้งเตือนประวัติงานซ้ำ`,
+              html: `<span class="text-white"><b>${nick}</b> เพิ่งทำเว็บ <b class="text-warning">${selectedSite}</b> ไปแล้ว<br>ในช่วง 1-2 วันที่ผ่านมาครับ</span>`,
+              timer: 5000,
+              showConfirmButton: false,
+              background: '#151518', color: '#ffcc00'
+          });
+      }
+  }
 
       let myDeptType = dept.includes('ODOL') ? 'ODOL' : 'OD';
       let availableDuties = [];
@@ -3627,8 +3729,8 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               siteSubOptions += `<option value="${w}" ${subSite===w?'selected':''}>${w}</option>`;
           });
           siteDisplayHtml = `<div class="d-flex flex-column gap-1">
-                                <select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="updateSiteSummary()">${siteMainOptions}</select>
-                                <select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="updateSiteSummary()">${siteSubOptions}</select>
+                                <select class="form-select form-select-sm bg-dark text-info sel-site-main border-info" onchange="checkSiteHistoryWarning(this, '${nick}'); updateSiteSummary()">${siteMainOptions}</select>
+                                <select class="form-select form-select-sm bg-dark text-warning sel-site-sub border-warning" onchange="checkSiteHistoryWarning(this, '${nick}'); updateSiteSummary()">${siteSubOptions}</select>
                              </div>`;
       } else {
           siteDisplayHtml = `<div class="d-flex flex-column gap-1 text-start">
@@ -3834,6 +3936,7 @@ async function saveSiteQuota(e) {
     }
 }
 
+// 🌟 อัปเกรด AI: ยึดเป้ากำลังคน + บาลานซ์เว็บรอง + ป้องกันรับงานซ้ำ 2 วันย้อนหลัง
 function randomizeDuties() {
     if (!currentJobShiftSet || currentJobShiftSet === '') {
         Swal.fire({toast:true, position:'top', title:'กรุณาเลือกเซ็ตกะก่อนครับ', icon:'warning', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
@@ -3845,22 +3948,17 @@ function randomizeDuties() {
         return;
     }
 
-    Swal.fire({title:'กำลังจัดสรรคนเข้าเว็บ...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()});
+    Swal.fire({title:'🤖 AI กำลังคำนวณและจัดสรรคน...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()});
     setTimeout(() => {
         try {
             let targets = (sysSettings.dutyTypes.SITE_TARGETS && sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet]) ? sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] : {};
-            
             let currentAssignedMain = {};
             let currentAssignedSub = {}; 
-            sysSettings.websites.forEach(w => {
-                currentAssignedMain[w] = 0;
-                currentAssignedSub[w] = 0;
-            });
+            sysSettings.websites.forEach(w => { currentAssignedMain[w] = 0; currentAssignedSub[w] = 0; });
 
             let availableUsers = [];
             document.querySelectorAll('#dutyTableBody tr').forEach(r => {
                 if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
-                
                 const nick = r.getAttribute('data-nick'); 
                 const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
                 
@@ -3888,9 +3986,23 @@ function randomizeDuties() {
 
             availableUsers.sort(() => 0.5 - Math.random());
 
-            // 🎯 PASS 1: เว็บหลักตามโควต้า
+            // 🌟 Helper: คัดแยกเว็บที่ "ไม่เคยทำใน 2 วันที่ผ่านมา"
+            const getFreshSites = (nick, allCapable) => {
+                const history = userSiteHistory[nick] ? Array.from(userSiteHistory[nick]) : [];
+                return allCapable.filter(s => !history.includes(s));
+            };
+
+            // 🎯 PASS 1: เว็บหลักตามโควต้า (พยายามให้เว็บที่ไม่ซ้ำก่อน)
             availableUsers.forEach(u => {
-                let validSites = u.capableSites.filter(s => (currentAssignedMain[s] || 0) < (targets[s] || 0));
+                let freshSites = getFreshSites(u.nick, u.capableSites);
+                // ลองหาเว็บที่ไม่ซ้ำและโควต้ายังไม่เต็มก่อน
+                let validSites = freshSites.filter(s => (currentAssignedMain[s] || 0) < (targets[s] || 0));
+                
+                // ถ้าไม่มีเว็บที่ไม่ซ้ำเลย (หมดทางเลือก) ค่อยยอมเอาเว็บเดิมมาทำ เพื่อให้โควต้าครบ
+                if (validSites.length === 0) {
+                    validSites = u.capableSites.filter(s => (currentAssignedMain[s] || 0) < (targets[s] || 0));
+                }
+
                 if (validSites.length > 0) {
                     let chosen = validSites[Math.floor(Math.random() * validSites.length)];
                     u.assignedMain = chosen;
@@ -3898,28 +4010,29 @@ function randomizeDuties() {
                 }
             });
 
-            // 🎯 PASS 2: คนตกค้างจากเว็บหลัก ยัดลงเว็บที่คนขาดที่สุด
+            // 🎯 PASS 2: คนตกค้างจากเว็บหลัก ยัดลงเว็บที่คนขาดที่สุด (พยายามให้เว็บที่ไม่ซ้ำก่อน)
             availableUsers.filter(u => !u.assignedMain).forEach(u => {
-                let fallbackSites = u.capableSites.sort((a,b) => (currentAssignedMain[a]||0) - (currentAssignedMain[b]||0));
+                let freshSites = getFreshSites(u.nick, u.capableSites);
+                let fallbackSites = (freshSites.length > 0 ? freshSites : u.capableSites).sort((a,b) => (currentAssignedMain[a]||0) - (currentAssignedMain[b]||0));
                 u.assignedMain = fallbackSites[0];
                 currentAssignedMain[fallbackSites[0]]++;
             });
 
-            // 🎯 PASS 3: จัดสรรเว็บ "รอง" ให้บาลานซ์ที่สุด (เช็คจากยอดคนทำเว็บนั้นรวมกันทั้งหลัก+รอง)
+            // 🎯 PASS 3: จัดสรรเว็บ "รอง" ให้บาลานซ์ที่สุด และหลีกเลี่ยงเว็บซ้ำ
             availableUsers.forEach(u => {
                 let remain = u.capableSites.filter(s => s !== u.assignedMain);
-                if(remain.length > 0) {
-                    remain.sort(() => 0.5 - Math.random()); 
-                    
-                    // 🌟 บาลานซ์สุดยอด: จัดให้คนที่ว่าง ไปรับเว็บที่รวม (หลัก+รอง) น้อยที่สุด
-                    remain.sort((a, b) => {
+                let freshRemain = getFreshSites(u.nick, remain);
+                let poolToUse = freshRemain.length > 0 ? freshRemain : remain;
+
+                if(poolToUse.length > 0) {
+                    poolToUse.sort(() => 0.5 - Math.random()); 
+                    poolToUse.sort((a, b) => {
                         let scoreA = (currentAssignedMain[a] || 0) + (currentAssignedSub[a] || 0);
                         let scoreB = (currentAssignedMain[b] || 0) + (currentAssignedSub[b] || 0);
                         return scoreA - scoreB;
                     });
-                    
-                    u.assignedSub = remain[0];
-                    currentAssignedSub[remain[0]]++;
+                    u.assignedSub = poolToUse[0];
+                    currentAssignedSub[poolToUse[0]]++;
                 }
                 
                 const inSiteMain = u.row.querySelector('.sel-site-main'); 
@@ -3952,7 +4065,7 @@ function randomizeDuties() {
 
             updateSiteSummary();
             renderMealTable(); 
-            Swal.fire({toast:true, position:'top-end', title:'จัดสรรคนและบาลานซ์เว็บสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+            Swal.fire({toast:true, position:'top-end', title:'AI จัดสรรและป้องกันงานซ้ำสำเร็จ!', icon:'success', timer:3000, showConfirmButton:false, background:'#111', color:'#00ff66'});
         } catch(e) {
             console.error(e);
             Swal.fire('Error', 'เกิดข้อผิดพลาดในการคำนวณกำลังคน', 'error');
