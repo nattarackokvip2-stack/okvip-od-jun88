@@ -3561,50 +3561,136 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
     });
     updateSiteSummary();
   }
+
+   function updateSiteSummary() {
+      let counts = {};
+      (sysSettings.websites || []).forEach(w => counts[w] = { main: 0, sub: 0 });
+
+      document.querySelectorAll('#dutyTableBody tr').forEach(r => {
+          if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
+          
+          // 🌟 นับทั้งคนที่แก้ไขได้ และคนที่ถูกล็อคสิทธิ์ไว้
+          const mainSel = r.querySelector('.sel-site-main') || r.querySelector('.hidden-site-main');
+          const subSel = r.querySelector('.sel-site-sub') || r.querySelector('.hidden-site-sub');
+          
+          if(mainSel && mainSel.value && counts[mainSel.value]) counts[mainSel.value].main++;
+          if(subSel && subSel.value && counts[subSel.value]) counts[subSel.value].sub++;
+      });
+
+      let html = '';
+      for(let w in counts) {
+          if(counts[w].main > 0 || counts[w].sub > 0) {
+              html += `<div class="badge" style="background: #151518; border: 1px solid #444; padding: 8px 12px; font-size: 0.85rem; font-weight: normal;">
+                  <span class="text-white fw-bold me-2">${w}</span>
+                  <span class="text-info me-1">หลัก: ${counts[w].main}</span> | 
+                  <span class="text-warning ms-1">รอง: ${counts[w].sub}</span>
+              </div>`;
+          }
+      }
+      const summaryArea = document.getElementById('siteSummaryArea');
+      if (currentJobTab !== 'duty') { summaryArea.style.display = 'none'; return; }
+      
+      const titleDept = currentJobFilter.split(' ')[0];
+      document.getElementById('siteSummaryTitle').innerText = `📊 สรุปกำลังคนกะปัจจุบัน (${titleDept} - ${currentJobShiftSet}):`;
+
+      if(html === '') { document.getElementById('siteSummaryBadges').innerHTML = '<span class="text-muted small mt-1">ยังไม่มีการลงงานพนักงานในกะนี้</span>'; } 
+      else { document.getElementById('siteSummaryBadges').innerHTML = html; }
+      summaryArea.style.display = 'flex';
+  }
+
+  function confirmClearDuty() {
+      Swal.fire({
+          title: 'ล้างตารางหน้าที่?', text: 'ข้อมูลหน้าที่เฉพาะคนที่คุณมีสิทธิ์แก้ไขจะถูกเคลียร์ (อย่าลืมกด "บันทึกหน้าที่" ด้วย)', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+      }).then((r) => {
+          if (r.isConfirmed) {
+              document.querySelectorAll('#dutyTableBody tr').forEach(row => {
+                  if(row.getAttribute('data-leave')==='true' || row.getAttribute('data-excluded')==='true') return;
+                  
+                  // 🌟 ล้างเฉพาะช่องที่มองเห็นได้ (อิงตามสิทธิ์)
+                  const mSel = row.querySelector('.sel-site-main'); 
+                  const sSel = row.querySelector('.sel-site-sub'); 
+                  const dSel = row.querySelector('.sel-duty'); 
+                  
+                  if(mSel) mSel.value = '';
+                  if(sSel) sSel.value = '';
+                  if(dSel) dSel.value = '';
+                  
+                  const nick = row.getAttribute('data-nick');
+                  if(mSel || sSel || dSel) {
+                      if(dailyDutiesData[nick]) { dailyDutiesData[nick].site = ''; dailyDutiesData[nick].duty = ''; }
+                  }
+              });
+              updateSiteSummary();
+              Swal.fire({toast:true, position:'top', title:'เคลียร์เรียบร้อย! (อย่าลืมกดบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+      });
+  }
   
   function randomizeDuties() {
       Swal.fire({title:'กำลังคำนวณสุ่มหน้าที่...', allowOutsideClick: false, didOpen:()=>Swal.showLoading()});
       setTimeout(() => {
-          let allAvailableSites = {}; let availableUsers = [];
-          document.querySelectorAll('#dutyTableBody tr').forEach(r => {
-              if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
-              const nick = r.getAttribute('data-nick'); const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
-              if(capableSites.length > 0) { availableUsers.push({ row: r, nick: nick, capableSites: capableSites }); capableSites.forEach(site => { if(!allAvailableSites[site]) allAvailableSites[site] = 0; allAvailableSites[site]++; }); }
-          });
-          let siteAssignmentCount = {}; sysSettings.websites.forEach(s => siteAssignmentCount[s] = 0);
-          availableUsers.sort(() => 0.5 - Math.random());
+          try {
+              let allAvailableSites = {}; let availableUsers = [];
+              document.querySelectorAll('#dutyTableBody tr').forEach(r => {
+                  if(r.getAttribute('data-leave')==='true' || r.getAttribute('data-excluded')==='true') return;
+                  
+                  const nick = r.getAttribute('data-nick'); 
+                  const userObj = allUsersData.find(u => u[1] === nick);
+                  const targetRole = userObj ? userObj[6] : 'Member';
+                  
+                  // 🌟 เช็คสิทธิ์ก่อนสุ่ม
+                  let canEditThisRow = false;
+                  if (myRole === 'SuperAdmin') canEditThisRow = true;
+                  else if (myRole === 'Admin' && targetRole === 'Member') canEditThisRow = true;
 
-          availableUsers.forEach(u => {
-              let assignedPrimary = null; let assignedSecondary = null;
-              let possiblePrimarySites = u.capableSites.sort((a, b) => (siteAssignmentCount[a] || 0) - (siteAssignmentCount[b] || 0));
-              if (possiblePrimarySites.length > 0) { assignedPrimary = possiblePrimarySites[0]; if(siteAssignmentCount[assignedPrimary] !== undefined) siteAssignmentCount[assignedPrimary]++; }
-              if (possiblePrimarySites.length > 1) { let remainingSites = possiblePrimarySites.slice(1).sort(() => 0.5 - Math.random()); assignedSecondary = remainingSites[0]; }
-              
-              const inSiteMain = u.row.querySelector('.sel-site-main'); const inSiteSub = u.row.querySelector('.sel-site-sub');
-              if(inSiteMain) inSiteMain.value = assignedPrimary || "";
-              if(inSiteSub) inSiteSub.value = assignedSecondary || "";
-              
-              let displayStr = ""; 
-              if (assignedPrimary && assignedSecondary) displayStr = `${assignedPrimary} (หลัก), ${assignedSecondary} (รอง)`; 
-              else if (assignedPrimary) displayStr = `${assignedPrimary} (หลัก)`;
-              else if (assignedSecondary) displayStr = `${assignedSecondary} (รอง)`;
-              if(!dailyDutiesData[u.nick]) dailyDutiesData[u.nick] = {}; dailyDutiesData[u.nick].site = displayStr;
-              
-              const inDuty = u.row.querySelector('.sel-duty');
-              let myDeptType = u.row.getAttribute('data-dept').includes('ODOL') ? 'ODOL' : 'OD';
-              let availableDuties = [];
-              if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
-              else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
-              
-              if(inDuty && availableDuties.length > 0) {
-                  let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)];
-                  inDuty.value = randomDuty;
-                  dailyDutiesData[u.nick].duty = randomDuty;
-              }
-          });
-          updateSiteSummary();
-          renderMealTable(); 
-          Swal.fire({toast:true, position:'top-end', title:'สุ่มและบาลานซ์เว็บสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+                  if(canEditThisRow) {
+                      const capableSites = (sysSettings.userSites[nick] || []).filter(s => s !== 'EXCLUDE_DUTY');
+                      if(capableSites.length > 0) { 
+                          availableUsers.push({ row: r, nick: nick, capableSites: capableSites }); 
+                          capableSites.forEach(site => { if(!allAvailableSites[site]) allAvailableSites[site] = 0; allAvailableSites[site]++; }); 
+                      }
+                  }
+              });
+              let siteAssignmentCount = {}; sysSettings.websites.forEach(s => siteAssignmentCount[s] = 0);
+              availableUsers.sort(() => 0.5 - Math.random());
+
+              availableUsers.forEach(u => {
+                  let assignedPrimary = null; let assignedSecondary = null;
+                  let possiblePrimarySites = u.capableSites.sort((a, b) => (siteAssignmentCount[a] || 0) - (siteAssignmentCount[b] || 0));
+                  if (possiblePrimarySites.length > 0) { assignedPrimary = possiblePrimarySites[0]; if(siteAssignmentCount[assignedPrimary] !== undefined) siteAssignmentCount[assignedPrimary]++; }
+                  if (possiblePrimarySites.length > 1) { let remainingSites = possiblePrimarySites.slice(1).sort(() => 0.5 - Math.random()); assignedSecondary = remainingSites[0]; }
+                  
+                  const inSiteMain = u.row.querySelector('.sel-site-main'); const inSiteSub = u.row.querySelector('.sel-site-sub');
+                  if(inSiteMain) inSiteMain.value = assignedPrimary || "";
+                  if(inSiteSub) inSiteSub.value = assignedSecondary || "";
+                  
+                  let displayStr = ""; 
+                  if (assignedPrimary && assignedSecondary) displayStr = `${assignedPrimary} (หลัก), ${assignedSecondary} (รอง)`; 
+                  else if (assignedPrimary) displayStr = `${assignedPrimary} (หลัก)`;
+                  else if (assignedSecondary) displayStr = `${assignedSecondary} (รอง)`;
+                  if(!dailyDutiesData[u.nick]) dailyDutiesData[u.nick] = {}; dailyDutiesData[u.nick].site = displayStr;
+                  
+                  const inDuty = u.row.querySelector('.sel-duty');
+                  let myDeptType = u.row.getAttribute('data-dept') || '';
+                  myDeptType = myDeptType.includes('ODOL') ? 'ODOL' : 'OD';
+
+                  let availableDuties = [];
+                  if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
+                  else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
+                  
+                  if(inDuty && availableDuties.length > 0) {
+                      let randomDuty = availableDuties[Math.floor(Math.random() * availableDuties.length)];
+                      inDuty.value = randomDuty;
+                      dailyDutiesData[u.nick].duty = randomDuty;
+                  }
+              });
+              updateSiteSummary();
+              renderMealTable(); 
+              Swal.fire({toast:true, position:'top-end', title:'สุ่มและบาลานซ์เว็บสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+          } catch(e) {
+              console.error(e);
+              Swal.fire('Error', 'เกิดข้อผิดพลาดในการสุ่มหน้าที่', 'error');
+          }
       }, 500);
   }
   
@@ -4943,11 +5029,8 @@ async function confirmDeleteProvider(id) { Swal.fire({ title: 'ลบข้อ�
           // ลบข้อมูลออกจากฐานข้อมูล
           await supabaseClient.from('shift_logs').delete().eq('id', logId);
           
-          Swal.fire({toast:true, position:'top-end', title:'ลบข้อความเรียบร้อย', icon:'success', timer: 1500, showConfirmButton: false, background:'#111', color:'#fff'});
-          
-          // 🌟 สั่งให้ปิด Popup ตัวเก่า แล้วโหลดเนื้อหาใหม่ขึ้นมาทันที
-          Swal.close(); 
-          setTimeout(openShiftLog, 300);
+          // โหลดหน้าต่างเดิมขึ้นมาทับเลย ป้องกันระบบรวน
+          openShiftLog(); 
       }
   }
 
