@@ -3938,10 +3938,16 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       });
       document.getElementById('quotaPresentCount').innerText = presentCount;
 
+      // ดึงข้อมูลโควต้าเดิม
       if(!sysSettings.dutyTypes.SITE_TARGETS) sysSettings.dutyTypes.SITE_TARGETS = {};
+      if(!sysSettings.dutyTypes.DUTY_TARGETS) sysSettings.dutyTypes.DUTY_TARGETS = {};
+      
       const currentQuotas = sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] || {};
+      const currentDutyQuotas = sysSettings.dutyTypes.DUTY_TARGETS[currentJobShiftSet] || {};
 
-      let html = '';
+      // 🌐 โซนเว็บไซต์
+      let html = '<div style="max-height: 55vh; overflow-y: auto; overflow-x: hidden; padding-right: 10px;">';
+      html += '<h6 class="text-info mt-1 mb-3 border-bottom border-secondary pb-2">🌐 โควต้าเว็บไซต์</h6><div class="row g-3 mb-4">';
       sysSettings.websites.forEach(w => {
           let val = currentQuotas[w] || 0;
           html += `
@@ -3950,24 +3956,30 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
               <input type="number" class="form-control bg-dark text-info border-secondary text-center quota-input" data-site="${w}" value="${val}" min="0" oninput="calcTotalQuota()">
           </div>`;
       });
+      html += '</div>';
+
+      // 📋 โซนหน้าที่ประจำวัน
+      html += '<h6 class="text-warning mb-3 border-bottom border-secondary pb-2">📋 โควต้าหน้าที่ประจำวัน</h6><div class="row g-3 pb-3">';
+      
+      let deptType = currentJobShiftSet.includes('ODOL') ? 'ODOL' : 'OD';
+      let availableDuties = sysSettings.dutyTypes[deptType] || [];
+      
+      availableDuties.forEach(d => {
+          let val = currentDutyQuotas[d] || 0;
+          html += `
+          <div class="col-6">
+              <label class="small text-white mb-1">${d}</label>
+              <input type="number" class="form-control bg-dark text-warning border-secondary text-center duty-quota-input" data-duty="${d}" value="${val}" min="0">
+          </div>`;
+      });
+      html += '</div></div>';
       
       document.getElementById('quotaInputsArea').innerHTML = html;
       calcTotalQuota();
       bootstrap.Modal.getOrCreateInstance(document.getElementById('siteQuotaModal')).show();
   }
 
-  function calcTotalQuota() {
-      let total = 0;
-      document.querySelectorAll('.quota-input').forEach(inp => total += (parseInt(inp.value) || 0));
-      document.getElementById('quotaTotalCount').innerText = total;
-      
-      const present = parseInt(document.getElementById('quotaPresentCount').innerText);
-      const totalEl = document.getElementById('quotaTotalCount');
-      if (total > present) { totalEl.classList.replace('text-white', 'text-danger'); totalEl.classList.replace('text-success', 'text-danger'); }
-      else if (total === present) { totalEl.classList.replace('text-white', 'text-success'); totalEl.classList.replace('text-danger', 'text-success'); }
-      else { totalEl.classList.replace('text-danger', 'text-white'); totalEl.classList.replace('text-success', 'text-white'); }
-  }
-
+  // 🌟 2. บันทึกโควต้าลงฐานข้อมูล
   async function saveSiteQuota(e) {
       e.preventDefault();
       const btn = document.getElementById('btnSaveQuota');
@@ -3979,8 +3991,17 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if(val > 0) newQuotas[inp.getAttribute('data-site')] = val;
       });
 
+      let newDutyQuotas = {};
+      document.querySelectorAll('.duty-quota-input').forEach(inp => {
+          let val = parseInt(inp.value) || 0;
+          if(val > 0) newDutyQuotas[inp.getAttribute('data-duty')] = val;
+      });
+
       if(!sysSettings.dutyTypes.SITE_TARGETS) sysSettings.dutyTypes.SITE_TARGETS = {};
       sysSettings.dutyTypes.SITE_TARGETS[currentJobShiftSet] = newQuotas;
+
+      if(!sysSettings.dutyTypes.DUTY_TARGETS) sysSettings.dutyTypes.DUTY_TARGETS = {};
+      sysSettings.dutyTypes.DUTY_TARGETS[currentJobShiftSet] = newDutyQuotas;
 
       try {
           const { data: existing } = await supabaseClient.from('job_settings').select('id').limit(1);
@@ -4077,80 +4098,78 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
                   currentAssignedMain[fallbackSites[0]]++;
               });
 
-              // PASS 3: เว็บรอง และ หน้าที่ประจำวัน
-              availableUsers.forEach(u => {
-                  let remain = u.capableSites.filter(s => s !== u.assignedMain);
-                  let freshRemain = getFreshSites(u.nick, remain);
-                  let poolToUse = freshRemain.length > 0 ? freshRemain : remain;
-
-                  if(poolToUse.length > 0) {
-                      poolToUse.sort(() => 0.5 - Math.random()); 
-                      poolToUse.sort((a, b) => {
-                          let scoreA = (currentAssignedMain[a] || 0) + (currentAssignedSub[a] || 0);
-                          let scoreB = (currentAssignedMain[b] || 0) + (currentAssignedSub[b] || 0);
-                          return scoreA - scoreB;
-                      });
-                      u.assignedSub = poolToUse[0];
-                      currentAssignedSub[poolToUse[0]]++;
+              // 🌟 PASS 3: จัดการหน้าที่ (Duty) ตามโควต้าและความสามารถ (1 คนหลายหน้าที่) 🌟
+              let deptType = currentJobShiftSet.includes('ODOL') ? 'ODOL' : 'OD';
+              let dutyTargets = (sysSettings.dutyTypes.DUTY_TARGETS && sysSettings.dutyTypes.DUTY_TARGETS[currentJobShiftSet]) ? sysSettings.dutyTypes.DUTY_TARGETS[currentJobShiftSet] : {};
+              
+              // สร้าง "กองกลางหน้าที่" ตามโควต้า (เช่น ถอนเงิน 5 ใบ, โปรโมชั่น 3 ใบ)
+              let dutyPool = [];
+              for (let d in dutyTargets) {
+                  for (let i = 0; i < dutyTargets[d]; i++) {
+                      dutyPool.push(d);
                   }
-                  
-                  const inSiteMain = u.row.querySelector('.sel-site-main'); 
-                  const inSiteSub = u.row.querySelector('.sel-site-sub');
-                  if(inSiteMain) inSiteMain.value = u.assignedMain || "";
-                  if(inSiteSub) inSiteSub.value = u.assignedSub || "";
+              }
+              // สับไพ่กองกลางให้มั่วๆ
+              dutyPool.sort(() => 0.5 - Math.random());
 
-                  let displayStr = ""; 
-                  if (u.assignedMain && u.assignedSub) displayStr = `${u.assignedMain} (หลัก), ${u.assignedSub} (รอง)`; 
-                  else if (u.assignedMain) displayStr = `${u.assignedMain} (หลัก)`;
-                  else if (u.assignedSub) displayStr = `${u.assignedSub} (รอง)`;
-
-                  if(!dailyDutiesData[u.nick]) dailyDutiesData[u.nick] = {}; 
-                  dailyDutiesData[u.nick].site = displayStr;
-
-                  // 🌟 จัดการหน้าที่ (Duty) แบ่งแยกตามแผนก 🌟
-                  let myDeptType = u.row.getAttribute('data-dept') || '';
-                  myDeptType = myDeptType.includes('ODOL') ? 'ODOL' : 'OD';
-
-                  let finalDutyToAssign = "";
-
-                  if (myDeptType === 'ODOL') {
-                      // 🛑 กฎเฉพาะ ODOL: บังคับให้เป็น "ถอนเงิน" เสมอ โดยไม่สุ่ม
-                      finalDutyToAssign = "ถอนเงิน";
-                  } else {
-                      // 🟢 กฎสำหรับแผนกอื่น: สุ่มตามหน้าที่ที่ตั้งค่าไว้ให้รายบุคคล
-                      let availableDuties = [];
-                      if (sysSettings.dutyTypes && sysSettings.dutyTypes[myDeptType]) availableDuties = sysSettings.dutyTypes[myDeptType];
-                      else if (Array.isArray(sysSettings.dutyTypes)) availableDuties = sysSettings.dutyTypes; 
-
+              // เอาไพ่หน้าที่แจกให้พนักงานทีละใบ
+              dutyPool.forEach(dutyNeeded => {
+                  // หาคนที่ "ทำได้" และ "ยังไม่ได้หน้าที่นี้ซ้ำ"
+                  let capableAndAvailable = availableUsers.filter(u => {
                       const rawCapable = sysSettings.userSites[u.nick] || [];
-                      const userAllowedDuties = rawCapable
-                          .filter(item => item.startsWith('DUTY:'))
-                          .map(item => item.replace('DUTY:', ''));
+                      const userAllowedDuties = rawCapable.filter(item => item.startsWith('DUTY:')).map(item => item.replace('DUTY:', ''));
+                      
+                      // ถ้าแอดมินยังไม่ได้ตั้งค่าเลย ให้ถือว่าทำได้ทุกอย่างไปก่อน (Fallback)
+                      let canDo = userAllowedDuties.length === 0 || userAllowedDuties.includes(dutyNeeded);
+                      let doesntHaveItYet = !u.assignedDuties.includes(dutyNeeded);
+                      return canDo && doesntHaveItYet;
+                  });
 
-                      let validDutiesForUser = availableDuties.filter(d => userAllowedDuties.includes(d));
-                      if (userAllowedDuties.length === 0) validDutiesForUser = availableDuties;
+                  if (capableAndAvailable.length > 0) {
+                      // เรียงลำดับคนตาม "จำนวนหน้าที่ที่ถืออยู่" จากน้อยไปมาก เพื่อความแฟร์!
+                      capableAndAvailable.sort((a, b) => a.assignedDuties.length - b.assignedDuties.length);
+                      
+                      // เลือกกลุ่มคนที่งานน้อยที่สุด แล้วสุ่มมา 1 คน
+                      let lowestCount = capableAndAvailable[0].assignedDuties.length;
+                      let candidates = capableAndAvailable.filter(u => u.assignedDuties.length === lowestCount);
+                      let chosenUser = candidates[Math.floor(Math.random() * candidates.length)];
+                      
+                      // ยัดหน้าที่ใส่มือ
+                      chosenUser.assignedDuties.push(dutyNeeded);
+                  }
+              });
 
-                      if(validDutiesForUser.length > 0) {
-                          finalDutyToAssign = validDutiesForUser[Math.floor(Math.random() * validDutiesForUser.length)];
+              // 🌟 PASS 4: เก็บตก! ถ้ามีคนไม่ได้งานเลยซักชิ้น (เพราะโควต้าน้อยกว่าคน) ให้หางานยัดให้ 1 งาน
+              availableUsers.forEach(u => {
+                  if (u.assignedDuties.length === 0) {
+                      const userAllowedDuties = (sysSettings.userSites[u.nick] || []).filter(item => item.startsWith('DUTY:')).map(item => item.replace('DUTY:', ''));
+                      let allDeptDuties = sysSettings.dutyTypes[deptType] || [];
+                      let validForThem = allDeptDuties.filter(d => userAllowedDuties.length === 0 || userAllowedDuties.includes(d));
+                      
+                      if (validForThem.length > 0) {
+                          // ถ้าเป็น ODOL แล้วทำถอนเงินได้ ให้บังคับยัดถอนเงินให้ก่อนเลย
+                          if (deptType === 'ODOL' && validForThem.includes('ถอนเงิน')) u.assignedDuties.push('ถอนเงิน');
+                          else u.assignedDuties.push(validForThem[Math.floor(Math.random() * validForThem.length)]);
                       }
                   }
+              });
 
-                  // อัปเดตข้อมูล Duty ลงหน้าจอ
-                  if (finalDutyToAssign !== "") {
-                      dailyDutiesData[u.nick].duty = finalDutyToAssign;
+              // 🌟 อัปเดตข้อมูลขึ้นหน้าจอ 🌟
+              availableUsers.forEach(u => {
+                  let joinedDuties = u.assignedDuties.join(', ');
+                  dailyDutiesData[u.nick].duty = joinedDuties;
 
-                      let safeNick = u.nick.replace(/[^a-zA-Z0-9]/g, '');
-                      let hiddenDuty = u.row.querySelector(`#dutyHidden_${safeNick}`);
-                      if(hiddenDuty) hiddenDuty.value = finalDutyToAssign;
-                      
-                      let dutyBtn = u.row.querySelector(`#dutyBtn_${safeNick}`);
-                      if(dutyBtn) dutyBtn.innerText = finalDutyToAssign;
+                  let safeNick = u.nick.replace(/[^a-zA-Z0-9]/g, '');
+                  let hiddenDuty = u.row.querySelector(`#dutyHidden_${safeNick}`);
+                  if(hiddenDuty) hiddenDuty.value = joinedDuties;
+                  
+                  let dutyBtn = u.row.querySelector(`#dutyBtn_${safeNick}`);
+                  if(dutyBtn) dutyBtn.innerText = joinedDuties !== '' ? joinedDuties : '- เลือกหน้าที่ -';
 
-                      // ติ๊กถูกใน Checkbox ให้ตรงกัน (ติ๊กแค่อันเดียว อันอื่นเคลียร์ทิ้ง)
-                      u.row.querySelectorAll(`.duty-check-${safeNick}`).forEach(chk => {
-                          chk.checked = (chk.value === finalDutyToAssign);
-                      });
-                  }
+                  // ติ๊กถูกใน Checkbox ให้ตรงกันหลายๆ ข้อ
+                  u.row.querySelectorAll(`.duty-check-${safeNick}`).forEach(chk => {
+                      chk.checked = u.assignedDuties.includes(chk.value);
+                  });
               });
 
               updateSiteSummary();
