@@ -3986,7 +3986,14 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
 
               updateSiteSummary();
               renderMealTable(); 
-              Swal.fire({toast:true, position:'top-end', title:'AI จัดสรรและป้องกันงานซ้ำสำเร็จ!', icon:'success', timer:3000, showConfirmButton:false, background:'#111', color:'#00ff66'});
+              Swal.fire({
+                icon: 'success',
+                title: 'AI จัดสรรและป้องกันงานซ้ำสำเร็จ!',
+                confirmButtonText: 'ตกลง',
+                confirmButtonColor: '#00cc66',
+                background: '#151518',
+                color: '#fff'
+            });
           } catch(e) {
               console.error(e);
               Swal.fire('Error', 'เกิดข้อผิดพลาดในการคำนวณกำลังคน', 'error');
