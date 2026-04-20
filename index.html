@@ -629,8 +629,9 @@
       </div>
 
       <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
-        <div id="tabBtnRealSchedule" class="dept-badge active" onclick="switchScheduleTab('REAL')" style="font-size: 1rem; padding: 8px 20px;">📅 1. ตารางวันทำงาน (ตารางจริง)</div>
-        <div id="tabBtnSwapSandbox" class="dept-badge" onclick="switchScheduleTab('SANDBOX')" style="font-size: 1rem; padding: 8px 20px; border-color: #ff9900; color: #ff9900;">🔀 2. โหมดจำลองสลับกะ (Sandbox)</div>
+        <div id="tabBtnDuty" class="dept-badge active" onclick="toggleJobTab('duty')" style="font-size: 1rem; padding: 8px 20px;">🎯 จัดการหน้าที่ (Duty)</div>
+        <div id="tabBtnStat" class="dept-badge" onclick="toggleJobTab('stat')" style="font-size: 1rem; padding: 8px 20px;">📊 บันทึกสถิติ (Stats)</div>
+        <div id="tabBtnImport" class="dept-badge" onclick="toggleJobTab('import')" style="font-size: 1rem; padding: 8px 20px; border-color: #00ff66; color: #00ff66;">📥 นำเข้าไฟล์สถิติ</div>
       </div>
 
       <div class="schedule-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
@@ -769,6 +770,55 @@
           </div>
       </div>
     </div>
+
+    <div id="importWorkspace" style="display: none;">
+          <div class="row g-4">
+              <div class="col-md-5">
+                  <div class="p-4 rounded" style="background: rgba(0, 255, 102, 0.05); border: 1px solid #00ff66;">
+                      <h5 class="fw-bold text-success mb-3">1. นำเข้าข้อมูล (CSV, Excel)</h5>
+                      
+                      <label class="small text-white mb-1">เลือกเว็บไซต์ที่ต้องการนำเข้ายอด:</label>
+                      <select id="importSiteSelect" class="form-select bg-dark text-info border-info mb-3 fw-bold" required></select>
+
+                      <label class="small text-white mb-1">เลือกคอลัมน์ชื่อพนักงาน (ไม่บังคับ):</label>
+                      <input type="text" id="importCustomCol" class="form-control bg-dark text-white border-secondary mb-3" placeholder="เช่น: ผู้ทำรายการ, Finance Approval">
+
+                      <label class="small text-white mb-1">อัปโหลดไฟล์:</label>
+                      <input type="file" id="csvFileInput" class="form-control bg-dark text-white border-secondary mb-4" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+
+                      <button class="btn btn-success w-100 py-2 fw-bold" id="btnProcessCsv" onclick="processImportFile()">🚀 ประมวลผลไฟล์</button>
+                  </div>
+              </div>
+
+              <div class="col-md-7">
+                  <div class="p-4 rounded h-100" style="background: #0a0a0c; border: 1px solid #333;">
+                      <div class="d-flex justify-content-between align-items-center mb-3">
+                          <h5 class="fw-bold text-info mb-0">2. ตัวอย่างข้อมูล (Preview)</h5>
+                          <button class="btn btn-sm btn-neon-blue fw-bold px-3" id="btnApplyImport" style="display: none;" onclick="applyImportedData()">✅ นำยอดลงตารางจริง</button>
+                      </div>
+                      
+                      <div id="importSummaryArea" class="mb-3" style="display:none;">
+                          <div class="badge bg-dark border border-success text-success px-3 py-2 me-2 fs-6">จับคู่ได้: <b id="previewMatchCount">0</b> คน</div>
+                          <div class="badge bg-dark border border-warning text-warning px-3 py-2 fs-6">ยอดรวม: <b id="previewTotalItems">0</b> รายการ</div>
+                      </div>
+
+                      <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border: 1px solid #222; border-radius: 8px;">
+                          <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                              <thead style="position: sticky; top: 0; z-index: 10;">
+                                  <tr>
+                                      <th class="bg-dark text-white">ชื่อพนักงานในระบบ</th>
+                                      <th class="bg-dark text-info text-center">ยอดที่จะถูกบวกเพิ่ม</th>
+                                  </tr>
+                              </thead>
+                              <tbody id="importPreviewTableBody">
+                                  <tr><td colspan="2" class="text-center py-5 text-muted">รอการประมวลผลไฟล์...</td></tr>
+                              </tbody>
+                          </table>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
 
     <div id="mealSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
@@ -3621,13 +3671,21 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
 
   function toggleJobTab(tabName) { 
       currentJobTab = tabName; 
+      
+      // เปลี่ยนสีปุ่มเมนู
       document.getElementById('tabBtnDuty').classList.toggle('active', tabName==='duty'); 
       document.getElementById('tabBtnStat').classList.toggle('active', tabName==='stat'); 
+      document.getElementById('tabBtnImport').classList.toggle('active', tabName==='import'); 
+      
+      // ซ่อน/โชว์ Workspace
       document.getElementById('dutyWorkspace').style.display = tabName==='duty' ? 'block' : 'none'; 
       document.getElementById('statWorkspace').style.display = tabName==='stat' ? 'block' : 'none'; 
-      if(tabName==='duty') document.getElementById('searchJob').value = jobSearchTerm;
-      else document.getElementById('searchStat').value = jobSearchTerm;
-      renderJobTables(); 
+      document.getElementById('importWorkspace').style.display = tabName==='import' ? 'block' : 'none'; 
+      
+      // จัดการช่องค้นหา
+      if(tabName==='duty') { document.getElementById('searchJob').value = jobSearchTerm; renderJobTables(); }
+      else if(tabName==='stat') { document.getElementById('searchStat').value = jobSearchTerm; renderJobTables(); }
+      else if(tabName==='import') { initImportWorkspace(); }
   }
   function filterJobDept(dept, btn) { currentJobFilter = dept; document.querySelectorAll('#jobSection .dept-badge').forEach(b => { if(b.id!=='tabBtnDuty'&&b.id!=='tabBtnStat') { b.classList.remove('active'); b.style.borderColor="#444"; b.style.color="#ccc"; }}); btn.classList.add('active'); btn.style.borderColor="#fff"; btn.style.color="#fff"; renderJobTables(); }
   function handleJobSearch(term) { jobSearchTerm = term.toLowerCase().trim(); renderJobTables(); }
@@ -6825,6 +6883,193 @@ function deleteBehavior(id) {
           btn.style.background = 'transparent';
           btn.style.boxShadow = 'none';
       }
+  }
+
+  // ==========================================
+  // 📥 ระบบแท็บนำเข้าไฟล์สถิติ (Auto Import Workspace)
+  // ==========================================
+  
+  let tempDataToImport = {}; // ตัวแปรพักข้อมูลก่อนกดยืนยันลงตาราง
+  let tempSiteToImport = "";
+
+  function initImportWorkspace() {
+      const siteSelect = document.getElementById('importSiteSelect');
+      const currentSelected = siteSelect.value;
+      siteSelect.innerHTML = '<option value="">-- เลือกเว็บไซต์ --</option>';
+      (sysSettings.websites || []).forEach(w => {
+          siteSelect.innerHTML += `<option value="${w}">${w}</option>`;
+      });
+      if(currentSelected) siteSelect.value = currentSelected;
+  }
+
+  function processImportFile() {
+      const siteName = document.getElementById('importSiteSelect').value;
+      const fileInput = document.getElementById('csvFileInput');
+      const customCol = document.getElementById('importCustomCol').value.toLowerCase().trim();
+      const btn = document.getElementById('btnProcessCsv');
+
+      if (!siteName) { Swal.fire('แจ้งเตือน', 'กรุณาเลือกเว็บไซต์ก่อนครับ', 'warning'); return; }
+      if (!fileInput.files.length) { Swal.fire('แจ้งเตือน', 'กรุณาอัปโหลดไฟล์ CSV หรือ Excel', 'warning'); return; }
+
+      btn.disabled = true; btn.innerText = '⏳ กำลังประมวลผล...';
+      Swal.fire({title: 'กำลังอ่านไฟล์...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+          try {
+              const data = new Uint8Array(e.target.result);
+              const workbook = XLSX.read(data, {type: 'array'});
+              const firstSheetName = workbook.SheetNames[0];
+              const worksheet = workbook[firstSheetName];
+              const jsonData = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
+
+              if (jsonData.length === 0) {
+                  Swal.fire('Error', 'ไม่พบข้อมูลในไฟล์ หรือไฟล์ว่างเปล่า', 'error');
+                  return;
+              }
+
+              // เตรียมรายชื่อพนักงาน
+              const allNicks = allUsersData.map(u => u[1].toUpperCase().trim()).filter(n => n !== '').sort((a, b) => b.length - a.length);
+              
+              // กำหนดคอลัมน์เป้าหมาย
+              let targetCols = ['risk verification', 'finance approval', 'ผู้ทำรายการ', 'พนักงาน', 'admin', 'username', 'ผู้ดำเนินการ'];
+              if (customCol) targetCols.unshift(customCol); // ถ้าแอดมินพิมพ์ระบุเอง ให้เอาไว้หน้าสุด
+
+              let userCounts = {};
+              let totalItems = 0;
+
+              jsonData.forEach(row => {
+                  let foundName = '';
+                  let normalizedRow = {};
+                  for (let key in row) { normalizedRow[key.toString().toLowerCase().trim()] = row[key]; }
+
+                  for (let col of targetCols) {
+                      if (normalizedRow[col] && normalizedRow[col].toString().trim() !== '') {
+                          foundName = normalizedRow[col].toString().split(' ')[0].toUpperCase();
+                          foundName = foundName.replace(/[^A-Z0-9ก-๙]/ig, '');
+                          break; 
+                      }
+                  }
+                  
+                  if (foundName) {
+                      for (let nick of allNicks) {
+                          if (foundName.includes(nick)) {
+                              userCounts[nick] = (userCounts[nick] || 0) + 1;
+                              totalItems++;
+                              break; 
+                          }
+                      }
+                  }
+              });
+
+              // สร้างตาราง Preview
+              const tbody = document.getElementById('importPreviewTableBody');
+              tbody.innerHTML = '';
+              let matchCount = 0;
+
+              // เรียงชื่อตามตัวอักษร
+              const sortedNames = Object.keys(userCounts).sort();
+              
+              sortedNames.forEach(nick => {
+                  const val = userCounts[nick];
+                  // ตรวจสอบว่าพนักงานคนนี้มีสิทธิ์ในกะนี้ไหม (ถ้าไม่มี ให้ขึ้นสีเทา)
+                  const isUserInTable = document.querySelector(`#statTableBody tr[data-nick="${nick}"]`);
+                  
+                  if (isUserInTable && isUserInTable.getAttribute('data-excluded') !== 'true') {
+                      tbody.innerHTML += `<tr><td class="fw-bold text-white">${nick}</td><td class="text-info text-center fw-bold fs-6">+${val}</td></tr>`;
+                      matchCount++;
+                  } else {
+                      tbody.innerHTML += `<tr style="opacity:0.4"><td class="text-white"><del>${nick}</del> <span class="badge bg-danger ms-2">ไม่อยู่ในกะนี้</span></td><td class="text-muted text-center">-</td></tr>`;
+                  }
+              });
+
+              if (Object.keys(userCounts).length === 0) {
+                  tbody.innerHTML = `<tr><td colspan="2" class="text-center py-5 text-warning">ระบบหาชื่อพนักงานที่ตรงกันไม่เจอเลยครับ ลองเช็คไฟล์หรือพิมพ์ชื่อคอลัมน์เองดูนะครับ</td></tr>`;
+              }
+
+              // อัปเดต Summary
+              document.getElementById('importSummaryArea').style.display = 'flex';
+              document.getElementById('previewMatchCount').innerText = matchCount;
+              document.getElementById('previewTotalItems').innerText = totalItems;
+
+              if (matchCount > 0) {
+                  tempDataToImport = userCounts;
+                  tempSiteToImport = siteName;
+                  document.getElementById('btnApplyImport').style.display = 'inline-block';
+              } else {
+                  tempDataToImport = {};
+                  document.getElementById('btnApplyImport').style.display = 'none';
+              }
+
+              Swal.close();
+
+          } catch (err) {
+              console.error("Parse Error:", err);
+              Swal.fire('Error', 'รูปแบบไฟล์ไม่ถูกต้อง หรืออ่านไฟล์ไม่ได้', 'error');
+          } finally {
+              btn.disabled = false; btn.innerText = '🚀 ประมวลผลไฟล์';
+          }
+      };
+      reader.readAsArrayBuffer(file);
+  }
+
+  function applyImportedData() {
+      if (Object.keys(tempDataToImport).length === 0) return;
+
+      Swal.fire({
+          title: 'ยืนยันการนำยอดลงตาราง?',
+          text: `ยอดทั้งหมดจะถูกนำไปบวกเพิ่มในช่องตารางของเว็บ ${tempSiteToImport} (กรุณากด "บันทึกสถิติ" ที่แท็บสถิติหลังจากนี้ด้วยนะครับ)`,
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonColor: '#00f0ff',
+          confirmButtonText: '✅ นำลงตารางเลย',
+          background: '#111', color: '#fff'
+      }).then((r) => {
+          if (r.isConfirmed) {
+              // สลับไปหน้าสถิติ
+              toggleJobTab('stat');
+              
+              const rows = document.querySelectorAll('#statTableBody tr');
+              rows.forEach(tr => {
+                  if (tr.getAttribute('data-excluded') === 'true') return;
+                  const nick = tr.getAttribute('data-nick').toUpperCase();
+                  
+                  if (tempDataToImport[nick]) {
+                      const inputField = tr.querySelector(`.stat-input[data-site="${tempSiteToImport}"]`);
+                      if (inputField) {
+                          // ปลดล็อกช่องถ้ามันล็อกอยู่ (ยัดเลขทะลุทะลวง)
+                          inputField.disabled = false;
+                          inputField.style.opacity = "1";
+                          inputField.classList.remove('bg-dark', 'text-muted', 'border-secondary');
+                          inputField.classList.add('text-info', 'fw-bold');
+                          inputField.style.border = "1px solid #00f0ff";
+                          inputField.style.background = "rgba(0, 240, 255, 0.05)";
+                          
+                          let currentVal = parseInt(inputField.value) || 0;
+                          inputField.value = currentVal + tempDataToImport[nick];
+                          
+                          // เอฟเฟกต์กระพริบ
+                          inputField.style.transition = '0.5s';
+                          inputField.style.backgroundColor = 'rgba(0, 255, 102, 0.4)';
+                          setTimeout(() => { inputField.style.backgroundColor = 'rgba(0, 240, 255, 0.05)'; }, 1500);
+
+                          calcRowTotal(inputField);
+                      }
+                  }
+              });
+
+              // ล้างค่าชั่วคราว
+              tempDataToImport = {};
+              document.getElementById('importPreviewTableBody').innerHTML = '<tr><td colspan="2" class="text-center py-5 text-muted">รอการประมวลผลไฟล์...</td></tr>';
+              document.getElementById('btnApplyImport').style.display = 'none';
+              document.getElementById('importSummaryArea').style.display = 'none';
+              document.getElementById('csvFileInput').value = '';
+
+              Swal.fire({toast:true, position:'top', title:'ยอดอัปเดตลงตารางแล้ว! อย่าลืมกดเซฟนะครับ', icon:'success', timer:3000, showConfirmButton:false, background:'#111', color:'#fff'});
+          }
+      });
   }
 </script>
 </body>
