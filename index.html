@@ -3285,8 +3285,7 @@ function applyStamp(cell, nick, dept, day) {
                         currentDayOffCount++;
                     }
                 }
-                
-                const limit = dailyOffLimits[myShiftSet];
+              const limit = dailyOffLimits[myShiftSet];
                 if (currentDayOffCount >= limit) {
                     isDraggingStamp = false;
                     Swal.fire({toast:true, position:'top', title:'⚠️ โควต้าคนหยุดรายวันเต็ม!', text:`กะ ${myShiftSet} ในวันนี้ มีคนหยุด (X, TX, PN) เต็มโควต้า ${limit} คนแล้วครับ`, icon:'error', background:'#111', color:'#fff', timer:4000, showConfirmButton:false});
@@ -3296,7 +3295,7 @@ function applyStamp(cell, nick, dept, day) {
         }
     }
 
-    // เปลี่ยนหน้าตา UI ในเซลล์
+    // 🌟 เปลี่ยนหน้าตา UI ในเซลล์ (เก็บไว้แค่นี้ชุดเดียวพอครับ)
     cell.innerText = currentStamp; 
     cell.style.backgroundColor = conf.bg; 
     cell.style.color = conf.text; 
@@ -3304,42 +3303,25 @@ function applyStamp(cell, nick, dept, day) {
     if (cell.getAttribute('data-original') !== currentStamp) cell.classList.add('unsaved-mark'); 
     else cell.classList.remove('unsaved-mark');
     
-    // บันทึกค่าลงตัวแปรชั่วคราว (รอ Save ตอนปล่อยเมาส์)
+    // บันทึกค่าลงตัวแปรชั่วคราว (รอ Save ตอนปล่อยเมาส์ทีเดียว)
     if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
     unsavedChanges[nick][day] = currentStamp; 
     unsavedChanges[nick]['dept'] = dept; 
-}
 
-      cell.innerText = currentStamp; 
-      cell.style.backgroundColor = conf.bg; 
-      cell.style.color = conf.text; 
-      
-      if (cell.getAttribute('data-original') !== currentStamp) cell.classList.add('unsaved-mark'); 
-      else cell.classList.remove('unsaved-mark');
-      
-      if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
-      unsavedChanges[nick][day] = currentStamp; unsavedChanges[nick]['dept'] = dept; 
-      
-      // 🌟 บันทึกอัตโนมัติในโหมดจำลอง ไม่ต้องกดปุ่ม
-      if(currentScheduleMode === 'SANDBOX') {
-          saveSandboxScheduleSilent();
-      } else {
-          document.getElementById('btnSaveSchedule').style.display = 'flex';
-      }
-  }
+} // <--- จบฟังก์ชัน applyStamp ตรงนี้เลย (ลบโค้ดที่เกี่ยวกับการเซฟอัตโนมัติออกไปเลย)
 
-  // 🌟 ฟังก์ชันเซฟตารางจำลองแบบไร้รอยต่อ (ไม่แสดงปุ่ม)
-  function saveSandboxScheduleSilent() {
-      const ym = document.getElementById('monthPicker').value;
-      for (const nick in unsavedChanges) {
-          const changes = unsavedChanges[nick];
-          if(!sandboxDataCache[nick]) sandboxDataCache[nick] = {};
-          for (const d in changes) {
-              if (d === 'dept') continue;
-              if (changes[d] === '') delete sandboxDataCache[nick][d];
-              else sandboxDataCache[nick][d] = changes[d];
-          }
-      }
+// 🌟 ฟังก์ชันเซฟตารางจำลองแบบไร้รอยต่อ (ไม่แสดงปุ่ม)
+function saveSandboxScheduleSilent() {
+    const ym = document.getElementById('monthPicker').value;
+    for (const nick in unsavedChanges) {
+        const changes = unsavedChanges[nick];
+        if(!sandboxDataCache[nick]) sandboxDataCache[nick] = {};
+        for (const d in changes) {
+            if (d === 'dept') continue;
+            if (changes[d] === '') delete sandboxDataCache[nick][d];
+            else sandboxDataCache[nick][d] = changes[d];
+        }
+    }
       localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({ schedules: sandboxDataCache, shifts: sandboxUserShiftCache }));
       
       document.querySelectorAll('.unsaved-mark').forEach(c => {
