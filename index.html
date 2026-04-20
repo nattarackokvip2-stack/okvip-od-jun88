@@ -4613,17 +4613,43 @@ function saveSandboxScheduleSilent() {
 
       if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
       
-      let optionsForODOL = `<option value="">-- เลือกเวลา --</option>`;
-      let optionsForOD = `<option value="">-- เลือกเวลา --</option>`;
+      // 🌟 แยกลิสต์เวลาทานข้าวของ กะเช้า(D) และ กะดึก(N)
+      let optionsForODOL_D = `<option value="">-- เลือกเวลา (กะเช้า) --</option>`;
+      let optionsForODOL_N = `<option value="">-- เลือกเวลา (กะดึก) --</option>`;
+      let optionsForOD_D = `<option value="">-- เลือกเวลา (กะเช้า) --</option>`;
+      let optionsForOD_N = `<option value="">-- เลือกเวลา (กะดึก) --</option>`;
 
       mealTimeBlocks.forEach(block => { 
-          let groupHtml = `<optgroup label="${block.name}">`; 
-          let slots = generateTimeSlots(block.start, block.end); 
-          slots.forEach(slot => { groupHtml += `<option value="${slot}" data-type="${block.type}">${slot}</option>`; }); 
-          groupHtml += `</optgroup>`; 
+          let groupHtmlD = `<optgroup label="${block.name}">`; 
+          let groupHtmlN = `<optgroup label="${block.name}">`; 
+          let hasD = false, hasN = false;
 
-          if (block.type === 'OD_POIPET') { optionsForODOL += groupHtml; optionsForOD += groupHtml; } 
-          else if (block.type === 'OD_LAOS') { optionsForOD += groupHtml; }
+          let slots = generateTimeSlots(block.start, block.end); 
+          slots.forEach(slot => { 
+              let [sh, sm] = slot.split('-')[0].split(':').map(Number);
+              let mins = sh * 60 + sm;
+              // กะเช้าคือช่วงเวลาที่เริ่มตั้งแต่ 08:00 ถึง 19:30 (480 ถึง 1199 นาที)
+              let isDaySlot = (mins >= 480 && mins < 1200);
+
+              if (isDaySlot) {
+                  groupHtmlD += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
+                  hasD = true;
+              } else {
+                  groupHtmlN += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
+                  hasN = true;
+              }
+          }); 
+          
+          groupHtmlD += `</optgroup>`; 
+          groupHtmlN += `</optgroup>`; 
+
+          if (block.type === 'OD_POIPET') { 
+              if (hasD) { optionsForODOL_D += groupHtmlD; optionsForOD_D += groupHtmlD; }
+              if (hasN) { optionsForODOL_N += groupHtmlN; optionsForOD_N += groupHtmlN; }
+          } else if (block.type === 'OD_LAOS') { 
+              if (hasD) optionsForOD_D += groupHtmlD; 
+              if (hasN) optionsForOD_N += groupHtmlN; 
+          }
       });
       
       workingUsers.forEach(u => {
@@ -4672,7 +4698,18 @@ function saveSandboxScheduleSilent() {
 
           let mealControlHtml = '';
           if (isAdmin || isMyRow) {
-              let myOptions = u.dept.includes('ODOL') ? optionsForODOL : optionsForOD;
+              // 🌟 โหลดตัวเลือกเวลา ตามกะของพนักงาน
+              let myOptions = "";
+              if (u.dept.includes('ODOL')) {
+                  myOptions = u.shiftType === 'D' ? optionsForODOL_D : optionsForODOL_N;
+              } else {
+                  myOptions = u.shiftType === 'D' ? optionsForOD_D : optionsForOD_N;
+              }
+              // เผื่อกรณีกะ OTHER
+              if (u.shiftType !== 'D' && u.shiftType !== 'N') {
+                  myOptions = u.dept.includes('ODOL') ? (optionsForODOL_D + optionsForODOL_N) : (optionsForOD_D + optionsForOD_N);
+              }
+
               let select1 = myOptions.replace(`value="${m1}"`, `value="${m1}" selected`); 
               let select2 = myOptions.replace(`value="${m2}"`, `value="${m2}" selected`);
               mealControlHtml = `
@@ -4720,43 +4757,77 @@ function saveSandboxScheduleSilent() {
       }
 
       setTimeout(checkMealOverlap, 500);
-  }
+}
 
-  function checkMealOverlap() {
-      let siteTimes = {};
-      document.querySelectorAll('#mealTableBody tr').forEach(tr => {
-          let site = tr.querySelector('.site-cell').innerText; let sel1 = tr.querySelector('.sel-meal-1'); let sel2 = tr.querySelector('.sel-meal-2'); let time1 = sel1.value; let time2 = sel2.value;
-          if(sel1.style.display !== 'none') { sel1.style.border = "1px solid #444"; sel1.style.color = "white"; }
-          if(sel2.style.display !== 'none') { sel2.style.border = "1px solid #444"; sel2.style.color = "white"; }
-          if(site !== 'ยังไม่ระบุเว็บ') { if(!siteTimes[site]) siteTimes[site] = []; if(time1) siteTimes[site].push({sel: sel1, time: time1}); if(time2) siteTimes[site].push({sel: sel2, time: time2}); }
-      });
-      for(let site in siteTimes) { let timesCount = {}; siteTimes[site].forEach(item => { timesCount[item.time] = (timesCount[item.time] || 0) + 1; }); siteTimes[site].forEach(item => { if(timesCount[item.time] > 1 && item.sel.style.display !== 'none') { item.sel.style.border = "1px solid #ff3366"; item.sel.style.color = "#ff3366"; } }); }
-  }
 
-  function autoBalanceMeals() {
+function autoBalanceMeals() {
       Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
       let workingUsers = [];
       document.querySelectorAll('#mealTableBody tr').forEach(tr => {
           const nick = tr.getAttribute('data-nick'); if(!nick) return;
           const site = tr.querySelector('.site-cell').innerText;
+          const deptText = tr.querySelector('td:nth-child(2)').innerText;
+          const isODOL = deptText.includes('ODOL');
           const stampText = tr.querySelector('td:nth-child(3)').innerText;
           const stamp = stampText.includes('เช้า') || stampText.includes('D') ? 'D' : (stampText.includes('ดึก') || stampText.includes('N') ? 'N' : 'OTHER');
-          workingUsers.push({ tr, nick, site, stamp });
+          workingUsers.push({ tr, nick, site, stamp, isODOL });
       });
       let siteGroups = {};
       workingUsers.forEach(u => { if(!siteGroups[u.site]) siteGroups[u.site] = []; siteGroups[u.site].push(u); });
+      
       for(let site in siteGroups) {
-          let users = siteGroups[site]; let dUsers = users.filter(u => u.stamp === 'D'); let nUsers = users.filter(u => u.stamp === 'N'); let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
-          let nSlots = []; let dSlots = [];
-          mealTimeBlocks.forEach(b => { let slots = generateTimeSlots(b.start, b.end); if(b.type === 'D') dSlots = dSlots.concat(slots); else nSlots = nSlots.concat(slots); });
-          let allSlots = nSlots.concat(dSlots);
+          let users = siteGroups[site]; 
+          let dUsers = users.filter(u => u.stamp === 'D'); 
+          let nUsers = users.filter(u => u.stamp === 'N'); 
+          let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
+          
+          let nSlotsODOL = [], dSlotsODOL = [], nSlotsOD = [], dSlotsOD = [];
+          
+          mealTimeBlocks.forEach(b => { 
+              let slots = generateTimeSlots(b.start, b.end); 
+              slots.forEach(slot => {
+                  let [sh, sm] = slot.split('-')[0].split(':').map(Number);
+                  let mins = sh * 60 + sm;
+                  let isDaySlot = (mins >= 480 && mins < 1200); // 08:00 ถึง 19:30
+                  
+                  if (b.type === 'OD_POIPET') {
+                      if (isDaySlot) { dSlotsODOL.push(slot); dSlotsOD.push(slot); }
+                      else { nSlotsODOL.push(slot); nSlotsOD.push(slot); }
+                  } else if (b.type === 'OD_LAOS') {
+                      if (isDaySlot) dSlotsOD.push(slot);
+                      else nSlotsOD.push(slot);
+                  }
+              });
+          });
+
           nUsers.sort(() => Math.random() - 0.5); dUsers.sort(() => Math.random() - 0.5);
-          dUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = dSlots[i % dSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = dSlots[(i + 3) % dSlots.length] || ''; } });
-          nUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = nSlots[i % nSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = nSlots[(i + 3) % nSlots.length] || ''; } });
-          otherUsers.forEach((u, i) => { if(u.tr.querySelector('.sel-meal-1').style.display !== 'none') { u.tr.querySelector('.sel-meal-1').value = allSlots[i % allSlots.length] || ''; u.tr.querySelector('.sel-meal-2').value = allSlots[(i + 3) % allSlots.length] || ''; } });
+          
+          dUsers.forEach((u, i) => { 
+              let mySlots = u.isODOL ? dSlotsODOL : dSlotsOD;
+              if(u.tr.querySelector('.sel-meal-1').style.display !== 'none' && mySlots.length > 0) { 
+                  u.tr.querySelector('.sel-meal-1').value = mySlots[i % mySlots.length] || ''; 
+                  u.tr.querySelector('.sel-meal-2').value = mySlots[(i + 3) % mySlots.length] || ''; 
+              } 
+          });
+          
+          nUsers.forEach((u, i) => { 
+              let mySlots = u.isODOL ? nSlotsODOL : nSlotsOD;
+              if(u.tr.querySelector('.sel-meal-1').style.display !== 'none' && mySlots.length > 0) { 
+                  u.tr.querySelector('.sel-meal-1').value = mySlots[i % mySlots.length] || ''; 
+                  u.tr.querySelector('.sel-meal-2').value = mySlots[(i + 3) % mySlots.length] || ''; 
+              } 
+          });
+          
+          otherUsers.forEach((u, i) => { 
+              let mySlots = u.isODOL ? dSlotsODOL.concat(nSlotsODOL) : dSlotsOD.concat(nSlotsOD);
+              if(u.tr.querySelector('.sel-meal-1').style.display !== 'none' && mySlots.length > 0) { 
+                  u.tr.querySelector('.sel-meal-1').value = mySlots[i % mySlots.length] || ''; 
+                  u.tr.querySelector('.sel-meal-2').value = mySlots[(i + 3) % mySlots.length] || ''; 
+              } 
+          });
       }
-      setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาสำเร็จ (โปรดตรวจสอบและบันทึก)', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
-  }
+      setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาตามกะงานสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
+}
 
   async function saveMealData() {
       const dateStr = document.getElementById('mealDatePicker').value; let hasOverlap = false;
