@@ -629,9 +629,8 @@
       </div>
 
       <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
-        <div id="tabBtnDuty" class="dept-badge active" onclick="toggleJobTab('duty')" style="font-size: 1rem; padding: 8px 20px;">🎯 จัดการหน้าที่ (Duty)</div>
-        <div id="tabBtnStat" class="dept-badge" onclick="toggleJobTab('stat')" style="font-size: 1rem; padding: 8px 20px;">📊 บันทึกสถิติ (Stats)</div>
-        <div id="tabBtnImport" class="dept-badge" onclick="toggleJobTab('import')" style="font-size: 1rem; padding: 8px 20px; border-color: #00ff66; color: #00ff66;">📥 นำเข้าไฟล์สถิติ</div>
+        <div id="tabBtnRealSchedule" class="dept-badge active" onclick="switchScheduleTab('REAL')" style="font-size: 1rem; padding: 8px 20px;">📅 1. ตารางวันทำงาน (ตารางจริง)</div>
+        <div id="tabBtnSwapSandbox" class="dept-badge" onclick="switchScheduleTab('SANDBOX')" style="font-size: 1rem; padding: 8px 20px; border-color: #ff9900; color: #ff9900;">🔀 2. โหมดจำลองสลับกะ (Sandbox)</div>
       </div>
 
       <div class="schedule-toolbar d-flex justify-content-between align-items-center flex-wrap gap-2" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border-color);">
@@ -707,6 +706,7 @@
       <div class="filter-bar border-bottom border-secondary pb-3 mb-3">
         <div id="tabBtnDuty" class="dept-badge active" onclick="toggleJobTab('duty')" style="font-size: 1rem; padding: 8px 20px;">🎯 จัดการหน้าที่ (Duty)</div>
         <div id="tabBtnStat" class="dept-badge" onclick="toggleJobTab('stat')" style="font-size: 1rem; padding: 8px 20px;">📊 บันทึกสถิติ (Stats)</div>
+        <div id="tabBtnImport" class="dept-badge" onclick="toggleJobTab('import')" style="font-size: 1rem; padding: 8px 20px; border-color: #00ff66; color: #00ff66;">📥 นำเข้าไฟล์สถิติ</div>
       </div>
       
       <div class="d-flex align-items-center gap-3 mb-3 flex-wrap p-3" style="background: rgba(255,204,0,0.05); border: 1px solid rgba(255,204,0,0.2); border-radius: 10px;">
