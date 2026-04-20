@@ -4602,7 +4602,18 @@ function saveSandboxScheduleSilent() {
         if (!isOff && !isExcluded) {
             const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ'; let shiftType = 'OTHER';
             if (stamp === 'D' || stamp.includes('เช้า')) shiftType = 'D'; else if (stamp === 'N' || stamp.includes('ดึก')) shiftType = 'N'; else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
-            let matchSearch = !searchT || nick.toLowerCase().includes(searchT); let matchShift = shiftF === 'ALL' || shiftType === shiftF; let matchDept = deptF === 'ALL' || dept.includes(deptF);
+            let matchSearch = !searchT || nick.toLowerCase().includes(searchT); 
+let matchShift = shiftF === 'ALL' || shiftType === shiftF; 
+
+// 🌟 แก้ไขการกรองแผนก OD ให้ตัด ODOL ออกอย่างเด็ดขาด
+let matchDept = false;
+if (deptF === 'ALL') {
+    matchDept = true;
+} else if (deptF === 'OD') {
+    matchDept = dept.includes('OD') && !dept.includes('ODOL');
+} else {
+    matchDept = dept.includes(deptF);
+}
             
             if (matchSearch && matchShift && matchDept) { 
                 workingUsers.push({ nick, dept, site, stamp, shiftType, shiftSet }); 
