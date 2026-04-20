@@ -2430,7 +2430,7 @@
         const { data: profile, error: profileError } = await supabaseClient
             .from('users')
             .select('*')
-            .eq('id', authData.user.id) // ใช้ UUID จาก Auth มาหาในตารางเรา
+            .eq('auth_id', authData.user.id)
             .single();
 
         if (profileError || !profile) throw new Error("ไม่พบข้อมูลพนักงานในระบบโปรไฟล์");
