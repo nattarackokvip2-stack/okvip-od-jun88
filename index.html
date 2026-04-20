@@ -758,7 +758,8 @@
       <div id="statWorkspace" style="display: none;">
           <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
              <input type="text" id="searchStat" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
-             <div id="statActionBtns">
+             <div id="statActionBtns" class="d-flex gap-2 flex-wrap">
+               <button class="btn btn-outline-success fw-bold px-3" onclick="openImportCsvModal()">📥 นำเข้าไฟล์ CSV/Excel</button>
                <button class="btn btn-neon-yellow px-4" onclick="saveStatTable()">💾 บันทึกสถิติทั้งหมด</button>
              </div>
           </div>
@@ -1797,6 +1798,26 @@
        </div>
     </div>
   </div></div>
+</div>
+
+<div class="modal fade" id="importCsvModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border: 1px solid #00ff66; box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-3 text-center text-success">📥 นำเข้าข้อมูลสถิติจากไฟล์</h4>
+        <p class="small text-muted text-center mb-4">รองรับไฟล์ .csv และ .xlsx ระบบจะอ่านชื่อพนักงานและรวมยอดให้</p>
+        
+        <label class="small text-white mb-1">1. ไฟล์นี้เป็นข้อมูลของเว็บไซต์ใด?</label>
+        <select id="importSiteSelect" class="form-select bg-dark text-info border-info mb-3 fw-bold" required>
+            </select>
+
+        <label class="small text-white mb-1">2. อัปโหลดไฟล์</label>
+        <input type="file" id="csvFileInput" class="form-control bg-dark text-white border-secondary mb-4" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+
+        <button class="btn btn-success w-100 py-2 fw-bold" onclick="processImportFile()">🚀 ประมวลผลและกรอกข้อมูล</button>
+      </div>
+    </div>
+  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
@@ -6825,6 +6846,145 @@ function deleteBehavior(id) {
           btn.style.background = 'transparent';
           btn.style.boxShadow = 'none';
       }
+  }
+
+  // ==========================================
+  // 📥 ระบบนำเข้าไฟล์ CSV / Excel เพื่อกรอกสถิติ
+  // ==========================================
+  
+  function openImportCsvModal() {
+      // ดึงรายชื่อเว็บมาใส่ใน Dropdown
+      const siteSelect = document.getElementById('importSiteSelect');
+      siteSelect.innerHTML = '<option value="">-- เลือกเว็บไซต์ --</option>';
+      sysSettings.websites.forEach(w => {
+          siteSelect.innerHTML += `<option value="${w}">${w}</option>`;
+      });
+      
+      document.getElementById('csvFileInput').value = ''; // เคลียร์ไฟล์เก่า
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('importCsvModal')).show();
+  }
+
+  function processImportFile() {
+      const siteName = document.getElementById('importSiteSelect').value;
+      const fileInput = document.getElementById('csvFileInput');
+
+      if (!siteName) {
+          Swal.fire('แจ้งเตือน', 'กรุณาเลือกเว็บไซต์ก่อนครับ', 'warning');
+          return;
+      }
+      if (!fileInput.files.length) {
+          Swal.fire('แจ้งเตือน', 'กรุณาอัปโหลดไฟล์ CSV หรือ Excel', 'warning');
+          return;
+      }
+
+      Swal.fire({title: 'กำลังอ่านไฟล์...', didOpen: () => Swal.showLoading()});
+
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+          try {
+              const data = e.target.result;
+              // ใช้ไลบรารี XLSX อ่านไฟล์
+              const workbook = XLSX.read(data, {type: 'binary'});
+              const firstSheetName = workbook.SheetNames[0];
+              const worksheet = workbook[firstSheetName];
+              // แปลงตารางเป็น JSON (อาร์เรย์ของ Object)
+              const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+              if (jsonData.length === 0) {
+                  Swal.fire('Error', 'ไม่พบข้อมูลในไฟล์ หรือไฟล์ว่างเปล่า', 'error');
+                  return;
+              }
+
+              analyzeAndFillData(jsonData, siteName);
+
+          } catch (err) {
+              console.error(err);
+              Swal.fire('Error', 'รูปแบบไฟล์ไม่ถูกต้อง หรืออ่านไฟล์ไม่ได้', 'error');
+          }
+      };
+
+      reader.readAsBinaryString(file);
+  }
+
+  function analyzeAndFillData(data, siteName) {
+      // 1. ตัวแปรเก็บยอดรวม { "ชื่อพนักงาน": จำนวนรายการ }
+      let userCounts = {};
+
+      // ⚠️ จุดสำคัญ: กำหนดคำค้นหาคอลัมน์ (ปรับแก้ตามไฟล์จริงของเว็บคุณได้)
+      const columnNamesForEmployee = ['ผู้ทำรายการ', 'พนักงาน', 'Admin', 'Username', 'ผู้ดำเนินการ'];
+      const columnNamesForType = ['ประเภท', 'รายการ', 'Type', 'Action'];
+      const keywordsToCount = ['ถอน', 'ถอนเงิน', 'withdraw']; // คำที่ถือว่าเป็นยอดสถิติ
+
+      data.forEach(row => {
+          // หาคอลัมน์ชื่อพนักงานในแถวนี้
+          let empName = '';
+          for (let key of columnNamesForEmployee) {
+              if (row[key]) { empName = row[key].toString().trim().toUpperCase(); break; }
+          }
+
+          // หาคอลัมน์ประเภทรายการในแถวนี้
+          let actionType = '';
+          for (let key of columnNamesForType) {
+              if (row[key]) { actionType = row[key].toString().trim(); break; }
+          }
+
+          // ถ้าระบุชื่อได้ และประเภทรายการตรงกับคีย์เวิร์ด (เช่น มีคำว่า 'ถอน')
+          if (empName) {
+              let shouldCount = false;
+              // ถ้าไฟล์ไม่มีคอลัมน์ประเภท (มีแค่ชื่อกับเลข) ให้นับทั้งหมด
+              if (!actionType) {
+                  shouldCount = true;
+              } else {
+                  // เช็คว่าตรงกับคีย์เวิร์ดถอนเงินไหม
+                  shouldCount = keywordsToCount.some(kw => actionType.includes(kw));
+              }
+
+              if (shouldCount) {
+                  // ในไฟล์ CSV ชื่ออาจจะมีตัวเลขตามหลัง เช่น NAT01 ให้ตัดตัวเลขออกเหลือแค่ NAT (ถ้าจำเป็น)
+                  // ถ้าระบบชื่อตรงกันเป๊ะ ก็ใช้ empName ได้เลย
+                  let cleanName = empName.replace(/[0-9]/g, ''); 
+
+                  userCounts[cleanName] = (userCounts[cleanName] || 0) + 1;
+              }
+          }
+      });
+
+      // 2. นำข้อมูลที่นับได้ ไปหยอดลงตารางบนหน้าเว็บ
+      let matchCount = 0;
+      const rows = document.querySelectorAll('#statTableBody tr');
+      
+      rows.forEach(tr => {
+          if (tr.getAttribute('data-excluded') === 'true') return;
+          const nick = tr.getAttribute('data-nick').toUpperCase();
+          
+          // ตรวจสอบว่าในไฟล์มียอดของคนนี้ไหม
+          if (userCounts[nick]) {
+              // หาช่อง input ของเว็บที่เลือกไว้
+              const inputField = tr.querySelector(`.stat-input[data-site="${siteName}"]`);
+              if (inputField && !inputField.disabled) {
+                  inputField.value = userCounts[nick];
+                  
+                  // เอฟเฟกต์กระพริบสีเขียวเพื่อให้รู้ว่าช่องนี้ถูกอัปเดตออโต้
+                  inputField.style.transition = '0.5s';
+                  inputField.style.backgroundColor = 'rgba(0, 255, 102, 0.4)';
+                  setTimeout(() => { inputField.style.backgroundColor = 'rgba(0, 240, 255, 0.05)'; }, 1500);
+
+                  // สั่งคำนวณยอดรวมแถวใหม่
+                  calcRowTotal(inputField);
+                  matchCount++;
+              }
+          }
+      });
+
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('importCsvModal')).hide();
+      Swal.fire({
+          title: 'อิมพอร์ตสำเร็จ!',
+          text: `ดึงยอดให้พนักงานได้ตรงกัน ${matchCount} คน (อย่าลืมตรวจสอบและกดบันทึกสถิตินะครับ)`,
+          icon: 'success',
+          background: '#111', color: '#fff'
+      });
   }
 </script>
 </body>
