@@ -6978,7 +6978,14 @@ function deleteBehavior(id) {
           // ถ้ามีข้อมูลสถิติของคนนี้ และ เป็นช่องเว็บที่ตรงกับที่เราเลือกให้ลงข้อมูล (ถ้าช่องนั้นไม่โดน Disabled อยู่)
           if (userCounts[nick]) {
               const inputField = tr.querySelector(`.stat-input[data-site="${siteName}"]`);
-              if (inputField && !inputField.disabled) {
+              if (inputField) {
+                  // ปลดล็อคช่องให้เป็นสีฟ้าเพื่อให้เห็นตัวเลขชัดเจน
+                  inputField.disabled = false;
+                  inputField.style.opacity = "1";
+                  inputField.classList.remove('bg-dark', 'text-muted', 'border-secondary');
+                  inputField.classList.add('text-info', 'fw-bold');
+                  inputField.style.border = "1px solid #00f0ff";
+                  inputField.style.background = "rgba(0, 240, 255, 0.05)";
                   let currentVal = parseInt(inputField.value) || 0;
                   inputField.value = currentVal + userCounts[nick];
                   
