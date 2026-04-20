@@ -1904,6 +1904,9 @@
   // ==========================================
   // 🛠️ ฟังก์ชันหลักของระบบ
   // ==========================================
+  function usernameToEmail(username) {
+      return `${username.toLowerCase().trim()}@okvip-system.com`;
+  }
   function handleLogout() { 
       localStorage.clear(); 
       document.getElementById('mainDashboard').style.display = 'none'; 
@@ -2412,49 +2415,48 @@
     }
 
     btn.disabled = true; 
-    btn.innerText = 'Checking...';
+    btn.innerText = '🔐 กำลังยืนยันตัวตน...';
 
     try {
-        // 🌟 เปลี่ยนมาใช้การเช็คข้อมูลจากตาราง users โดยตรง (ตรงกับระบบสมัคร)
-        const { data, error } = await supabaseClient
+        // 🌟 1. ล็อกอินผ่าน Supabase Auth
+        const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+            email: usernameToEmail(u),
+            password: p
+        });
+
+        if (authError) throw authError;
+
+        // 🌟 2. เมื่อผ่าน Auth แล้ว ให้ดึงข้อมูลโปรไฟล์จากตาราง public.users
+        const { data: profile, error: profileError } = await supabaseClient
             .from('users')
             .select('*')
-            .eq('username', u)
-            .eq('password', p)
-            .maybeSingle();
+            .eq('id', authData.user.id) // ใช้ UUID จาก Auth มาหาในตารางเรา
+            .single();
 
-        // ถ้ารหัสผ่านผิด หรือไม่มียูสเซอร์นี้ในตาราง
-        if (error || !data) { 
-            Swal.fire({title:'Error', text:'ยูสเซอร์หรือรหัสผ่านไม่ถูกต้อง', icon:'error', background:'#111', color:'#fff'}); 
-            btn.disabled = false; 
-            btn.innerText = 'เข้าสู่ระบบ'; 
-            return; 
-        }
+        if (profileError || !profile) throw new Error("ไม่พบข้อมูลพนักงานในระบบโปรไฟล์");
 
-        // ถ้าบัญชีโดนบล็อค
-        if (data.status === 'Blocked') { 
-            Swal.fire({title:'Error', text:'บัญชีนี้ถูกระงับการใช้งาน', icon:'error', background:'#111', color:'#fff'}); 
-            btn.disabled = false; 
-            btn.innerText = 'เข้าสู่ระบบ'; 
-            return; 
-        }
-        
-        // 🌟 ล็อกอินสำเร็จ! บันทึกค่าและเข้าสู่แดชบอร์ด
+        if (profile.status === 'Blocked') throw new Error("บัญชีนี้ถูกระงับการใช้งาน");
+
+        // 🌟 3. ล็อกอินสำเร็จ เก็บ Session
         localStorage.setItem('okvip_user', u); 
-        localStorage.setItem('okvip_role', data.role); 
-        localStorage.setItem('okvip_nick', data.nickname); 
+        localStorage.setItem('okvip_role', profile.role); 
+        localStorage.setItem('okvip_nick', profile.nickname); 
         localStorage.setItem('okvip_time', new Date().getTime().toString());
         currentUsername = u; 
 
         document.getElementById('loginPage').style.display = 'none'; 
         document.getElementById('mainDashboard').style.display = 'block';
-        verifyUserStatus(u, data.nickname, data.role, true); 
+        
+        // เริ่มต้นโหลดข้อมูลต่างๆ
+        verifyUserStatus(u, profile.nickname, profile.role, true); 
 
     } catch (err) { 
         console.error("Login Error:", err);
-        Swal.fire({title:'Error', text:'ระบบขัดข้อง: ' + err.message, icon:'error', background:'#111', color:'#fff'}); 
+        let msg = "ยูสเซอร์เนมหรือรหัสผ่านไม่ถูกต้อง";
+        if(err.message.includes("Email not confirmed")) msg = "บัญชีนี้ยังไม่ได้ยืนยันอีเมล (โปรดตั้งค่าปิดการ Confirm ใน Supabase)";
+        
+        Swal.fire({title:'Error', text: msg, icon:'error', background:'#111', color:'#fff'}); 
     } finally {
-        // คืนค่าปุ่มกลับมาเหมือนเดิม
         btn.disabled = false; 
         btn.innerText = 'เข้าสู่ระบบ'; 
     }
@@ -2582,58 +2584,69 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   async function handleRegSubmit(e) {
     e.preventDefault(); 
     const btn = document.getElementById('btnSubmitReg'); 
-    btn.innerText = '⏳ กำลังบันทึก...'; 
     const idx = document.getElementById('editUserIdx').value;
+    
+    const uName = document.getElementById('uName').value;
+    const pWord = document.getElementById('uPass').value;
+    const nickname = document.getElementById('nick').value;
+    const department = document.getElementById('dept').value;
+    const role = document.getElementById('uRole').value;
+    const shiftSet = document.getElementById('uSet').value;
+    const workGroup = document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value;
 
-    const payload = { 
-        nickname: document.getElementById('nick').value, 
-        workGroup: document.getElementById('work').value === 'OTHER' ? document.getElementById('otherWork').value : document.getElementById('work').value, 
-        department: document.getElementById('dept').value, 
-        username: document.getElementById('uName').value, 
-        role: document.getElementById('uRole').value, 
-        shiftSet: document.getElementById('uSet').value 
-    };
-
-    // นำรหัสผ่านกลับมาใส่ใน Payload
-    const passVal = document.getElementById('uPass').value; 
-    if(passVal) payload.password = passVal;
+    btn.disabled = true;
+    btn.innerText = '⏳ กำลังประมวลผล...'; 
 
     try {
         if (idx !== "") { 
-            // 📝 กรณีแก้ไขข้อมูล
+            // 📝 กรณีแก้ไขข้อมูล (ปรับปรุงเฉพาะข้อมูลในตาราง public.users)
             const userId = allUsersData[idx][0]; 
-            const { data: dupCheck } = await supabaseClient.from('users').select('id').eq('username', payload.username).neq('id', userId); 
-            if (dupCheck && dupCheck.length > 0) { 
-                Swal.fire('Error', 'ยูสเซอร์เนมนี้มีคนใช้แล้ว', 'error'); 
-                btn.innerText = 'บันทึกข้อมูล'; 
-                return; 
-            } 
-            await supabaseClient.from('users').update(payload).eq('id', userId); 
+            const updatePayload = { nickname, workGroup, department, role, shiftSet };
+            
+            const { error } = await supabaseClient.from('users').update(updatePayload).eq('id', userId);
+            if (error) throw error;
+
+            // *หากต้องการเปลี่ยนรหัสผ่านพนักงานใน Auth ต้องใช้ Admin API หรือให้ User เปลี่ยนเอง*
         } else { 
-            // ➕ กรณีเพิ่มพนักงานใหม่
-            if(!payload.password) { 
-                Swal.fire('Error', 'กรุณาตั้งรหัสผ่าน', 'error'); 
-                btn.innerText = 'บันทึกข้อมูล'; 
-                return; 
-            } 
-            payload.status = 'Active'; 
-            const { data: dupCheck } = await supabaseClient.from('users').select('id, nickname, username').or(`nickname.eq.${payload.nickname},username.eq.${payload.username}`); 
-            if (dupCheck && dupCheck.length > 0) { 
-                Swal.fire('Error', 'ชื่อเล่น หรือ ยูสเซอร์เนม นี้มีในระบบแล้ว', 'error'); 
-                btn.innerText = 'บันทึกข้อมูล'; 
-                return; 
-            } 
-            // บันทึกลงตารางตรงๆ แบบไม่มีลิมิต
-            await supabaseClient.from('users').insert([payload]); 
+            // ➕ กรณีเพิ่มพนักงานใหม่ (สร้าง Auth User + สร้าง Profile)
+            if(!pWord) throw new Error("กรุณาตั้งรหัสผ่านให้พนักงานใหม่");
+
+            // 1. สร้างบัญชีใน Supabase Auth
+            const { data: authUser, error: authError } = await supabaseClient.auth.signUp({
+                email: usernameToEmail(uName),
+                password: pWord,
+                options: {
+                    data: { display_name: nickname } // เก็บ Meta data ไว้ใน Auth ด้วย
+                }
+            });
+
+            if (authError) throw authError;
+            if (!authUser.user) throw new Error("ไม่สามารถสร้างบัญชีผู้ใช้ได้");
+
+            // 2. บันทึกข้อมูลลงตาราง public.users โดยใช้ ID เดียวกับ Auth
+            const profilePayload = {
+                id: authUser.user.id, // 🌟 สำคัญ: เชื่อมโยง ID กัน
+                username: uName,
+                nickname: nickname,
+                workGroup: workGroup,
+                department: department,
+                role: role,
+                shiftSet: shiftSet,
+                status: 'Active'
+            };
+
+            const { error: profileError } = await supabaseClient.from('users').insert([profilePayload]);
+            if (profileError) throw profileError;
         }
 
         bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); 
         refreshData(document.getElementById('refreshBtn')); 
-        Swal.fire({toast:true, position:'top-end', title:'บันทึกพนักงานสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false});
+        Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false});
 
     } catch (err) { 
         Swal.fire('Error', err.message, 'error'); 
     } finally {
+        btn.disabled = false;
         btn.innerText = 'บันทึกข้อมูล'; 
     }
 }
