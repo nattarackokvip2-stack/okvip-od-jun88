@@ -1948,45 +1948,82 @@
   }
 
   async function saveMyProfile(e) {
-      e.preventDefault();
-      const tg = document.getElementById('myProfileTelegram').value.trim();
-      const oldPass = document.getElementById('myProfileOldPass').value;
-      const newPass = document.getElementById('myProfileNewPass').value;
-      const confirmPass = document.getElementById('myProfileConfirmPass').value;
-      const myUser = localStorage.getItem('okvip_user'); 
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveMyProfile');
+    
+    // ดึงค่าจากฟอร์มตาม ID ที่คุณตั้งไว้
+    const telegram = document.getElementById('myProfileTelegram').value.trim();
+    const oldPass = document.getElementById('myProfileOldPass').value.trim();
+    const newPass = document.getElementById('myProfileNewPass').value.trim();
+    const confirmPass = document.getElementById('myProfileConfirmPass').value.trim();
 
-      const btn = document.getElementById('btnSaveMyProfile');
-      btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
+    // ตรวจสอบความถูกต้องถ้ามีการขอเปลี่ยนรหัสผ่าน
+    if (newPass !== "") {
+        if (oldPass === "") {
+            Swal.fire({ title: 'แจ้งเตือน', text: 'กรุณากรอกรหัสผ่านเก่าเพื่อยืนยันตัวตน', icon: 'warning', background: '#111', color: '#fff' });
+            return;
+        }
+        if (newPass !== confirmPass) {
+            Swal.fire({ title: 'แจ้งเตือน', text: 'รหัสผ่านใหม่และการยืนยันรหัสผ่านไม่ตรงกัน!', icon: 'warning', background: '#111', color: '#fff' });
+            return;
+        }
+    }
 
-      try {
-          const { data: userData, error: fetchErr } = await supabaseClient.from('users').select('id, password').eq('username', myUser).single();
-          if (fetchErr || !userData) throw new Error('ดึงข้อมูลผู้ใช้ไม่สำเร็จ');
+    btn.disabled = true;
+    btn.innerText = '⏳ กำลังบันทึก...';
 
-          let updatePayload = {};
-          let finalTg = tg;
-          if (finalTg && !finalTg.startsWith('@')) finalTg = '@' + finalTg;
-          updatePayload.telegram = finalTg;
+    try {
+        // ดึงข้อมูล User ปัจจุบันที่กำลังล็อกอินอยู่
+        const { data: userData, error: userError } = await supabaseClient.auth.getUser();
+        if (userError || !userData.user) throw new Error("ไม่พบข้อมูลผู้ใช้งาน กรุณาล็อกอินใหม่");
 
-          if (oldPass || newPass || confirmPass) {
-              if (!oldPass) throw new Error('กรุณากรอก "รหัสผ่านเก่า" เพื่อยืนยันตัวตน');
-              if (userData.password !== oldPass) throw new Error('รหัสผ่านเก่าไม่ถูกต้อง!');
-              if (!newPass) throw new Error('กรุณากรอกรหัสผ่านใหม่');
-              if (newPass !== confirmPass) throw new Error('รหัสผ่านใหม่และการยืนยันไม่ตรงกัน');
-              updatePayload.password = newPass;
-          }
+        // 🌟 1. กรณีที่มีการเปลี่ยนรหัสผ่าน
+        if (newPass !== "") {
+            // 1.1 ยืนยันรหัสผ่านเก่าก่อน (เพื่อความปลอดภัย)
+            const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+                email: userData.user.email,
+                password: oldPass
+            });
+            if (signInError) throw new Error("รหัสผ่านเก่าไม่ถูกต้อง!");
 
-          const { error: updateErr } = await supabaseClient.from('users').update(updatePayload).eq('id', userData.id);
-          if (updateErr) throw updateErr;
+            // 1.2 สั่งอัปเดตรหัสผ่านใหม่ใน Supabase Auth
+            const { error: updateAuthErr } = await supabaseClient.auth.updateUser({
+                password: newPass
+            });
+            if (updateAuthErr) throw updateAuthErr;
 
-          bootstrap.Modal.getOrCreateInstance(document.getElementById('myProfileModal')).hide();
-          Swal.fire({toast: true, position: 'top-end', title: 'อัปเดตข้อมูลส่วนตัวสำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'});
-          refreshData(document.getElementById('refreshBtn')); 
-      } catch (err) {
-          Swal.fire('Error', err.message, 'error');
-      } finally {
-          btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูล';
-      }
-  }
+            // 1.3 สั่งอัปเดตรหัสผ่านใหม่ในตาราง users ด้วย
+            const { error: dbPassErr } = await supabaseClient
+                .from('users')
+                .update({ password: newPass })
+                .eq('auth_id', userData.user.id);
+            if (dbPassErr) throw dbPassErr;
+        }
+
+        // 🌟 2. อัปเดตข้อมูล Telegram ในตาราง users
+        if (telegram !== "") {
+            const { error: dbTelegramErr } = await supabaseClient
+                .from('users')
+                .update({ telegram: telegram })
+                .eq('auth_id', userData.user.id);
+            if (dbTelegramErr) throw dbTelegramErr;
+        }
+
+        // หากทุกอย่างสำเร็จ
+        Swal.fire({ title: 'สำเร็จ', text: 'บันทึกข้อมูลส่วนตัวเรียบร้อยแล้ว', icon: 'success', background: '#111', color: '#fff' });
+        
+        // ปิด Modal และล้างฟอร์ม
+        bootstrap.Modal.getInstance(document.getElementById('myProfileModal')).hide();
+        document.getElementById('myProfileForm').reset();
+
+    } catch (err) {
+        console.error("เกิดข้อผิดพลาดในการอัปเดตโปรไฟล์:", err);
+        Swal.fire({ title: 'ผิดพลาด', text: err.message, icon: 'error', background: '#111', color: '#fff' });
+    } finally {
+        btn.disabled = false;
+        btn.innerText = '💾 บันทึกข้อมูล';
+    }
+}
 
   // ==========================================
   // 🌟 ฟังก์ชันแจ้งเตือน Telegram
@@ -2625,8 +2662,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
 
             // 2. บันทึกข้อมูลลงตาราง public.users โดยใช้ ID เดียวกับ Auth
             const profilePayload = {
-                id: authUser.user.id, // 🌟 สำคัญ: เชื่อมโยง ID กัน
+                auth_id: authUser.user.id, // 🌟 แก้เป็น auth_id แล้วครับ
                 username: uName,
+                password: pWord, // 🌟 เพิ่มบันทึกรหัสผ่านลงตารางด้วยเพื่อให้ระบบเดิมไม่รวน
                 nickname: nickname,
                 workGroup: workGroup,
                 department: department,
