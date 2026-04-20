@@ -758,8 +758,7 @@
       <div id="statWorkspace" style="display: none;">
           <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
              <input type="text" id="searchStat" class="form-control neon-input-search" placeholder="🔍 ค้นหาชื่อพนักงาน..." oninput="handleJobSearch(this.value)" style="width: 200px;">
-             <div id="statActionBtns" class="d-flex gap-2 flex-wrap">
-               <button class="btn btn-outline-success fw-bold px-3" onclick="openImportCsvModal()">📥 นำเข้าไฟล์ CSV/Excel</button>
+             <div id="statActionBtns">
                <button class="btn btn-neon-yellow px-4" onclick="saveStatTable()">💾 บันทึกสถิติทั้งหมด</button>
              </div>
           </div>
@@ -1798,25 +1797,6 @@
        </div>
     </div>
   </div></div>
-</div>
-
-<div class="modal fade" id="importCsvModal" tabindex="-1" data-bs-theme="dark">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content" style="border: 1px solid #00ff66; box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);">
-      <div class="modal-body p-4">
-        <h4 class="fw-bold mb-3 text-center text-success">📥 นำเข้าข้อมูลสถิติจากไฟล์</h4>
-        <p class="small text-muted text-center mb-4">ระบบจะอ่านยอดจากไฟล์มาบวกเพิ่มในช่องตารางของเว็บที่คุณเลือก</p>
-        
-        <label class="small text-white mb-1">1. ไฟล์นี้เป็นข้อมูลของเว็บไซต์ใด?</label>
-        <select id="importSiteSelect" class="form-select bg-dark text-info border-info mb-3 fw-bold" required></select>
-
-        <label class="small text-white mb-1">2. อัปโหลดไฟล์ (CSV, Excel)</label>
-        <input type="file" id="csvFileInput" class="form-control bg-dark text-white border-secondary mb-4" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
-
-        <button class="btn btn-success w-100 py-2 fw-bold" id="btnProcessCsv" onclick="processImportFile()">🚀 ประมวลผลและบวกยอด</button>
-      </div>
-    </div>
-  </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
@@ -6844,180 +6824,6 @@ function deleteBehavior(id) {
           arrow.innerText = '▶'; // เปลี่ยนลูกศรชี้ออก
           btn.style.background = 'transparent';
           btn.style.boxShadow = 'none';
-      }
-  }
-
-  // ==========================================
-  // 📥 ระบบนำเข้าไฟล์ CSV / Excel เพื่อกรอกสถิติ
-  // ==========================================
-  
-  function openImportCsvModal() {
-      // ดึงรายชื่อเว็บที่แอดมินตั้งค่าไว้มาใส่ใน Dropdown
-      const siteSelect = document.getElementById('importSiteSelect');
-      siteSelect.innerHTML = '<option value="">-- เลือกเว็บไซต์ --</option>';
-      (sysSettings.websites || []).forEach(w => {
-          siteSelect.innerHTML += `<option value="${w}">${w}</option>`;
-      });
-      
-      document.getElementById('csvFileInput').value = ''; 
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('importCsvModal')).show();
-  }
-
-  function processImportFile() {
-      const siteName = document.getElementById('importSiteSelect').value;
-      const fileInput = document.getElementById('csvFileInput');
-      const btn = document.getElementById('btnProcessCsv');
-
-      if (!siteName) {
-          Swal.fire('แจ้งเตือน', 'กรุณาเลือกเว็บไซต์ก่อนครับ', 'warning');
-          return;
-      }
-      if (!fileInput.files.length) {
-          Swal.fire('แจ้งเตือน', 'กรุณาอัปโหลดไฟล์ CSV หรือ Excel', 'warning');
-          return;
-      }
-
-      btn.disabled = true;
-      btn.innerText = '⏳ กำลังประมวลผล...';
-      Swal.fire({title: 'กำลังอ่านไฟล์...', allowOutsideClick: false, didOpen: () => Swal.showLoading()});
-
-      const file = fileInput.files[0];
-      const reader = new FileReader();
-
-      reader.onload = function(e) {
-          try {
-              // 🌟 อัปเกรด: เปลี่ยนมาใช้ ArrayBuffer ซึ่งเสถียรกว่าในการอ่านไฟล์รองรับทั้ง CSV และ Excel 
-              const data = new Uint8Array(e.target.result);
-              const workbook = XLSX.read(data, {type: 'array'});
-              const firstSheetName = workbook.SheetNames[0];
-              const worksheet = workbook[firstSheetName];
-              
-              const jsonData = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
-
-              if (jsonData.length === 0) {
-                  Swal.fire('Error', 'ไม่พบข้อมูลในไฟล์ หรือไฟล์ว่างเปล่า', 'error');
-                  btn.disabled = false; btn.innerText = '🚀 ประมวลผลและบวกยอด';
-                  return;
-              }
-
-              analyzeAndFillData(jsonData, siteName);
-
-          } catch (err) {
-              console.error("File Parse Error:", err);
-              Swal.fire('Error', 'รูปแบบไฟล์ไม่ถูกต้อง หรืออ่านไฟล์ไม่ได้: ' + err.message, 'error');
-          } finally {
-              btn.disabled = false; btn.innerText = '🚀 ประมวลผลและบวกยอด';
-          }
-      };
-      
-      reader.onerror = function() {
-          Swal.fire('Error', 'ไม่สามารถอ่านไฟล์ได้', 'error');
-          btn.disabled = false; btn.innerText = '🚀 ประมวลผลและบวกยอด';
-      }
-
-      // 🌟 ใช้ readAsArrayBuffer แทน BinaryString เพื่อแก้ปัญหาอ่านไฟล์ไม่เข้า
-      reader.readAsArrayBuffer(file);
-  }
-
-  function analyzeAndFillData(data, siteName) {
-      let userCounts = {};
-
-      // รายชื่อพนักงานในระบบ (ตัวพิมพ์ใหญ่ทั้งหมด)
-      const allNicks = allUsersData
-          .map(u => u[1].toUpperCase().trim())
-          .filter(n => n !== '')
-          .sort((a, b) => b.length - a.length);
-
-      let debugFoundNames = new Set(); // เก็บชื่อที่เจอในไฟล์เพื่อเช็คดูว่ามันอ่านออกไหม
-
-      data.forEach(row => {
-          let foundName = '';
-          
-          // 🌟 ทำให้ฉลาดขึ้น: แปลงชื่อหัวคอลัมน์ทุกอันให้เป็นตัวพิมพ์เล็กและตัดช่องว่างทิ้ง เพื่อให้ค้นหาง่ายขึ้น
-          let normalizedRow = {};
-          for (let key in row) {
-              normalizedRow[key.toString().toLowerCase().trim()] = row[key];
-          }
-
-          // คอลัมน์ที่น่าจะมีชื่อแอดมินอยู่
-          const targetCols = ['risk verification', 'finance approval', 'ผู้ทำรายการ', 'พนักงาน', 'admin', 'username', 'ผู้ดำเนินการ'];
-
-          for (let col of targetCols) {
-              if (normalizedRow[col] && normalizedRow[col].toString().trim() !== '') {
-                  // ข้อมูลมักเป็น "odolnookerjun88 Approve" เราดึงคำแรกมา
-                  foundName = normalizedRow[col].toString().split(' ')[0].toUpperCase();
-                  
-                  // ลบพวกอักขระแปลกๆ ออก
-                  foundName = foundName.replace(/[^A-Z0-9ก-๙]/ig, '');
-                  
-                  debugFoundNames.add(foundName);
-                  break; // เจอชื่อแล้ว ข้ามคอลัมน์อื่นในแถวนี้ไปเลย
-              }
-          }
-          
-          if (foundName) {
-              // เช็คว่าชื่อในไฟล์ ตรงกับพนักงานคนไหนในระบบ OKVIP เราบ้าง
-              for (let nick of allNicks) {
-                  // ตัวอย่าง: ODOLNOOKERJUN88 มีคำว่า NOOKER อยู่ข้างใน
-                  if (foundName.includes(nick)) {
-                      userCounts[nick] = (userCounts[nick] || 0) + 1;
-                      break; 
-                  }
-              }
-          }
-      });
-
-      let matchCount = 0;
-      let totalItems = 0;
-      const rows = document.querySelectorAll('#statTableBody tr');
-      
-      rows.forEach(tr => {
-          if (tr.getAttribute('data-excluded') === 'true') return;
-          const nick = tr.getAttribute('data-nick').toUpperCase();
-          
-          // ถ้ามีข้อมูลสถิติของคนนี้ และ เป็นช่องเว็บที่ตรงกับที่เราเลือกให้ลงข้อมูล (ถ้าช่องนั้นไม่โดน Disabled อยู่)
-          if (userCounts[nick]) {
-              const inputField = tr.querySelector(`.stat-input[data-site="${siteName}"]`);
-              if (inputField) {
-                  // ปลดล็อคช่องให้เป็นสีฟ้าเพื่อให้เห็นตัวเลขชัดเจน
-                  inputField.disabled = false;
-                  inputField.style.opacity = "1";
-                  inputField.classList.remove('bg-dark', 'text-muted', 'border-secondary');
-                  inputField.classList.add('text-info', 'fw-bold');
-                  inputField.style.border = "1px solid #00f0ff";
-                  inputField.style.background = "rgba(0, 240, 255, 0.05)";
-                  let currentVal = parseInt(inputField.value) || 0;
-                  inputField.value = currentVal + userCounts[nick];
-                  
-                  inputField.style.transition = '0.5s';
-                  inputField.style.backgroundColor = 'rgba(0, 255, 102, 0.4)';
-                  setTimeout(() => { inputField.style.backgroundColor = 'rgba(0, 240, 255, 0.05)'; }, 1500);
-
-                  calcRowTotal(inputField);
-                  matchCount++;
-                  totalItems += userCounts[nick];
-              }
-          }
-      });
-
-      bootstrap.Modal.getOrCreateInstance(document.getElementById('importCsvModal')).hide();
-      
-      if (matchCount > 0) {
-          Swal.fire({
-              title: 'อิมพอร์ตสำเร็จ!',
-              html: `ระบบจับคู่ยอดให้พนักงานได้ <b>${matchCount} คน</b><br>รวมยอดทั้งหมด <b>${totalItems} รายการ</b><br><br><span class="text-warning small">* อย่าลืมตรวจสอบและกดบันทึกสถิติด้วยนะครับ *</span>`,
-              icon: 'success',
-              background: '#111', color: '#fff'
-          });
-      } else {
-          // ถ้าระบบหาไม่เจอเลย ให้แสดงชื่อที่มันเจอในไฟล์ให้แอดมินดู เพื่อเช็คว่าสะกดผิดไหม
-          let sampleNames = Array.from(debugFoundNames).slice(0, 5).join(', ');
-          Swal.fire({
-              title: 'ไม่พบข้อมูลที่ตรงกัน',
-              html: `ไม่สามารถจับคู่ชื่อแอดมินในไฟล์ กับพนักงานกะนี้ที่รับผิดชอบเว็บ <b>${siteName}</b> ได้เลยครับ<br><br><small class="text-muted">ชื่อตัวอย่างที่พบในไฟล์: ${sampleNames || 'ไม่พบชื่อเลย'}</small>`,
-              icon: 'info',
-              background: '#111', color: '#fff'
-          });
       }
   }
 </script>
