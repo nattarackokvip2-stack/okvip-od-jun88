@@ -2078,7 +2078,6 @@
       { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD" },
 
       // ====== 🟠 ของแผนก ODOL ======
-      // (แอดมินสามารถเปลี่ยนเวลา Start/End ด้านล่างนี้ ให้ไม่ตรงกับ OD ได้เลยครับ)
       { name: "ODOL (รอบ 1) [03:00-05:00]", start: "03:00", end: "05:00", type: "ODOL" },
       { name: "ODOL (รอบ 2) [08:00-11:00]", start: "08:00", end: "11:00", type: "ODOL" },
       { name: "ODOL (รอบ 3) [13:00-15:00]", start: "13:00", end: "15:00", type: "ODOL" },
@@ -4625,7 +4624,6 @@ function saveSandboxScheduleSilent() {
 
     if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
     
-    // 🌟 แยกลิสต์เวลาทานข้าวของ กะเช้า(D) และ กะดึก(N) อย่างปลอดภัย
     let optionsForODOL_D = `<option value="">-- เลือกเวลา (กะเช้า) --</option>`;
     let optionsForODOL_N = `<option value="">-- เลือกเวลา (กะดึก) --</option>`;
     let optionsForOD_D = `<option value="">-- เลือกเวลา (กะเช้า) --</option>`;
@@ -4642,8 +4640,6 @@ function saveSandboxScheduleSilent() {
                 let timePart = slot.split('-')[0];
                 let [sh, sm] = timePart.split(':').map(Number);
                 let mins = (sh || 0) * 60 + (sm || 0);
-                
-                // กะเช้าคือช่วงเวลาที่เริ่มตั้งแต่ 08:00 ถึง 19:30 (480 ถึง 1199 นาที)
                 let isDaySlot = (mins >= 480 && mins < 1200);
 
                 if (isDaySlot) {
@@ -4653,9 +4649,7 @@ function saveSandboxScheduleSilent() {
                     groupHtmlN += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
                     hasN = true;
                 }
-            } catch(e) {
-                // ข้าม slot ที่อ่านค่าไม่ได้
-            }
+            } catch(e) {}
         }); 
         
         groupHtmlD += `</optgroup>`; 
@@ -4668,6 +4662,7 @@ function saveSandboxScheduleSilent() {
             if (hasD) optionsForODOL_D += groupHtmlD; 
             if (hasN) optionsForODOL_N += groupHtmlN; 
         }
+    });
     
     workingUsers.forEach(u => {
         let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; 
@@ -4715,14 +4710,12 @@ function saveSandboxScheduleSilent() {
 
         let mealControlHtml = '';
         if (isAdmin || isMyRow) {
-            // 🌟 โหลดตัวเลือกเวลา ตามกะของพนักงาน
             let myOptions = "";
             if (u.dept.includes('ODOL')) {
                 myOptions = u.shiftType === 'D' ? optionsForODOL_D : optionsForODOL_N;
             } else {
                 myOptions = u.shiftType === 'D' ? optionsForOD_D : optionsForOD_N;
             }
-            // เผื่อกรณีกะ OTHER ให้โชว์หมด
             if (u.shiftType !== 'D' && u.shiftType !== 'N') {
                 myOptions = u.dept.includes('ODOL') ? (optionsForODOL_D + optionsForODOL_N) : (optionsForOD_D + optionsForOD_N);
             }
@@ -4774,9 +4767,8 @@ function saveSandboxScheduleSilent() {
             `;
         }
     }
-
     setTimeout(checkMealOverlap, 500);
-}
+  }
 
 function autoBalanceMeals() {
     Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
@@ -4807,7 +4799,7 @@ function autoBalanceMeals() {
                 try {
                     let [sh, sm] = slot.split('-')[0].split(':').map(Number);
                     let mins = (sh || 0) * 60 + (sm || 0);
-                    let isDaySlot = (mins >= 480 && mins < 1200); // 08:00 ถึง 19:30
+                    let isDaySlot = (mins >= 480 && mins < 1200);
                     
                     if (b.type === 'OD') {
                         if (isDaySlot) dSlotsOD.push(slot);
@@ -4820,11 +4812,9 @@ function autoBalanceMeals() {
             });
         });
 
-        // สุ่มลำดับพนักงานก่อนแจกจ่ายรอบ
         nUsers.sort(() => Math.random() - 0.5); 
         dUsers.sort(() => Math.random() - 0.5);
         
-        // แจกจ่ายเวลากะเช้า
         dUsers.forEach((u, i) => { 
             let mySlots = u.isODOL ? dSlotsODOL : dSlotsOD;
             let sel1 = u.tr.querySelector('.sel-meal-1');
@@ -4835,7 +4825,6 @@ function autoBalanceMeals() {
             } 
         });
         
-        // แจกจ่ายเวลากะดึก
         nUsers.forEach((u, i) => { 
             let mySlots = u.isODOL ? nSlotsODOL : nSlotsOD;
             let sel1 = u.tr.querySelector('.sel-meal-1');
@@ -4846,7 +4835,6 @@ function autoBalanceMeals() {
             } 
         });
         
-        // แจกจ่ายเวลาคนอื่นๆ (Other) กวาดรวมหมด
         otherUsers.forEach((u, i) => { 
             let mySlots = u.isODOL ? dSlotsODOL.concat(nSlotsODOL) : dSlotsOD.concat(nSlotsOD);
             let sel1 = u.tr.querySelector('.sel-meal-1');
