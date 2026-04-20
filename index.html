@@ -772,53 +772,53 @@
     </div>
 
     <div id="importWorkspace" style="display: none;">
-          <div class="row g-4">
-              <div class="col-md-5">
-                  <div class="p-4 rounded" style="background: rgba(0, 255, 102, 0.05); border: 1px solid #00ff66;">
-                      <h5 class="fw-bold text-success mb-3">1. นำเข้าข้อมูล (CSV, Excel)</h5>
-                      
-                      <label class="small text-white mb-1">เลือกเว็บไซต์ที่ต้องการนำเข้ายอด:</label>
-                      <select id="importSiteSelect" class="form-select bg-dark text-info border-info mb-3 fw-bold" required></select>
+      <div class="row g-4">
+          <div class="col-md-5">
+              <div class="p-4 rounded" style="background: rgba(0, 255, 102, 0.05); border: 1px solid #00ff66;">
+                  <h5 class="fw-bold text-success mb-3">1. นำเข้าข้อมูล (CSV, Excel)</h5>
+                  
+                  <label class="small text-white mb-1">เลือกเว็บไซต์ที่ต้องการนำเข้ายอด:</label>
+                  <select id="importSiteSelect" class="form-select bg-dark text-info border-info mb-3 fw-bold" required></select>
 
-                      <label class="small text-white mb-1">เลือกคอลัมน์ชื่อพนักงาน (ไม่บังคับ):</label>
-                      <input type="text" id="importCustomCol" class="form-control bg-dark text-white border-secondary mb-3" placeholder="เช่น: ผู้ทำรายการ, Finance Approval">
+                  <label class="small text-white mb-1">เลือกคอลัมน์ชื่อพนักงาน (ไม่บังคับ):</label>
+                  <input type="text" id="importCustomCol" class="form-control bg-dark text-white border-secondary mb-3" placeholder="เช่น: ผู้ทำรายการ, Finance Approval">
 
-                      <label class="small text-white mb-1">อัปโหลดไฟล์:</label>
-                      <input type="file" id="csvFileInput" class="form-control bg-dark text-white border-secondary mb-4" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
+                  <label class="small text-white mb-1">อัปโหลดไฟล์:</label>
+                  <input type="file" id="csvFileInput" class="form-control bg-dark text-white border-secondary mb-4" accept=".csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel">
 
-                      <button class="btn btn-success w-100 py-2 fw-bold" id="btnProcessCsv" onclick="processImportFile()">🚀 ประมวลผลไฟล์</button>
-                  </div>
+                  <button class="btn btn-success w-100 py-2 fw-bold" id="btnProcessCsv" onclick="processImportFile()">🚀 ประมวลผลไฟล์</button>
               </div>
+          </div>
 
-              <div class="col-md-7">
-                  <div class="p-4 rounded h-100" style="background: #0a0a0c; border: 1px solid #333;">
-                      <div class="d-flex justify-content-between align-items-center mb-3">
-                          <h5 class="fw-bold text-info mb-0">2. ตัวอย่างข้อมูล (Preview)</h5>
-                          <button class="btn btn-sm btn-neon-blue fw-bold px-3" id="btnApplyImport" style="display: none;" onclick="applyImportedData()">✅ นำยอดลงตารางจริง</button>
-                      </div>
-                      
-                      <div id="importSummaryArea" class="mb-3" style="display:none;">
-                          <div class="badge bg-dark border border-success text-success px-3 py-2 me-2 fs-6">จับคู่ได้: <b id="previewMatchCount">0</b> คน</div>
-                          <div class="badge bg-dark border border-warning text-warning px-3 py-2 fs-6">ยอดรวม: <b id="previewTotalItems">0</b> รายการ</div>
-                      </div>
+          <div class="col-md-7">
+              <div class="p-4 rounded h-100" style="background: #0a0a0c; border: 1px solid #333;">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                      <h5 class="fw-bold text-info mb-0">2. ตัวอย่างข้อมูล (Preview)</h5>
+                      <button class="btn btn-sm btn-neon-blue fw-bold px-3" id="btnApplyImport" style="display: none;" onclick="applyImportedData()">✅ นำยอดลงตารางจริง</button>
+                  </div>
+                  
+                  <div id="importSummaryArea" class="mb-3" style="display:none;">
+                      <div class="badge bg-dark border border-success text-success px-3 py-2 me-2 fs-6">จับคู่ได้: <b id="previewMatchCount">0</b> คน</div>
+                      <div class="badge bg-dark border border-warning text-warning px-3 py-2 fs-6">ยอดรวม: <b id="previewTotalItems">0</b> รายการ</div>
+                  </div>
 
-                      <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border: 1px solid #222; border-radius: 8px;">
-                          <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
-                              <thead style="position: sticky; top: 0; z-index: 10;">
-                                  <tr>
-                                      <th class="bg-dark text-white">ชื่อพนักงานในระบบ</th>
-                                      <th class="bg-dark text-info text-center">ยอดที่จะถูกบวกเพิ่ม</th>
-                                  </tr>
-                              </thead>
-                              <tbody id="importPreviewTableBody">
-                                  <tr><td colspan="2" class="text-center py-5 text-muted">รอการประมวลผลไฟล์...</td></tr>
-                              </tbody>
-                          </table>
-                      </div>
+                  <div class="table-responsive" style="max-height: 400px; overflow-y: auto; border: 1px solid #222; border-radius: 8px;">
+                      <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+                          <thead style="position: sticky; top: 0; z-index: 10;">
+                              <tr>
+                                  <th class="bg-dark text-white">ชื่อพนักงานในระบบ</th>
+                                  <th class="bg-dark text-info text-center">ยอดที่จะถูกบวกเพิ่ม</th>
+                              </tr>
+                          </thead>
+                          <tbody id="importPreviewTableBody">
+                              <tr><td colspan="2" class="text-center py-5 text-muted">รอการประมวลผลไฟล์...</td></tr>
+                          </tbody>
+                      </table>
                   </div>
               </div>
           </div>
       </div>
+  </div>
 
     <div id="mealSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
