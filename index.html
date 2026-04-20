@@ -4571,273 +4571,285 @@ function saveSandboxScheduleSilent() {
   async function loadDailyMealData() { const dateStr = document.getElementById('mealDatePicker').value; if(!dateStr) return; const { data } = await supabaseClient.from('meal_schedules').select('*').eq('dateStr', dateStr).limit(1); dailyMealData = {}; if (data && data.length > 0) { dailyMealData = data[0].mealData ? JSON.parse(data[0].mealData) : {}; } renderMealTable(); }
 
   function renderMealTable() {
-      const tbody = document.getElementById('mealTableBody'); tbody.innerHTML = '';
-      const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : ''; 
-      const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL'; 
-      const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL';
-      
-      const myNick = localStorage.getItem('okvip_nick') || ''; 
+    const tbody = document.getElementById('mealTableBody'); 
+    if(!tbody) return;
+    tbody.innerHTML = '';
+    
+    const searchT = document.getElementById('searchMeal') ? document.getElementById('searchMeal').value.toLowerCase().trim() : ''; 
+    const shiftF = document.getElementById('filterMealShift') ? document.getElementById('filterMealShift').value : 'ALL'; 
+    const deptF = document.getElementById('filterMealDept') ? document.getElementById('filterMealDept').value : 'ALL';
+    
+    const myNick = localStorage.getItem('okvip_nick') || ''; 
 
-      let workingUsers = [];
-      allUsersData.forEach(u => {
-          if(!u || u[7] !== 'Active') return false; 
-          const nick = u[1]; 
-          const dept = u[3] ? u[3].toString() : ''; 
-          const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
-          const stamp = dailyScheduleData[nick] || ''; 
-          const isOff = offDutyStamps.includes(stamp) || stamp === ''; 
-          const isExcluded = (sysSettings.userSites[nick] || []).includes('EXCLUDE_DUTY');
-          
-          if (!isOff && !isExcluded) {
-              const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ'; let shiftType = 'OTHER';
-              if (stamp === 'D' || stamp.includes('เช้า')) shiftType = 'D'; else if (stamp === 'N' || stamp.includes('ดึก')) shiftType = 'N'; else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
-              let matchSearch = !searchT || nick.toLowerCase().includes(searchT); let matchShift = shiftF === 'ALL' || shiftType === shiftF; let matchDept = deptF === 'ALL' || dept.includes(deptF);
-              
-              if (matchSearch && matchShift && matchDept) { 
-                  workingUsers.push({ nick, dept, site, stamp, shiftType, shiftSet }); 
-              }
-          }
-      });
-      
-      const tableHead = document.querySelector('#mealSection table thead tr');
-      if(tableHead) {
-          tableHead.innerHTML = `
-            <th>ชื่อพนักงาน</th>
-            <th>แผนก</th>
-            <th>กะงานวันนี้</th>
-            <th>เว็บที่รับผิดชอบวันนี้</th>
-            <th>เพื่อนร่วมงานเว็บเดียวกัน</th>
-            <th>จัดรอบทานข้าว</th>
-          `;
-      }
+    let workingUsers = [];
+    allUsersData.forEach(u => {
+        if(!u || u[7] !== 'Active') return; 
+        const nick = u[1]; 
+        const dept = u[3] ? u[3].toString() : ''; 
+        const shiftSet = (u[9] !== null && u[9] !== undefined) ? u[9].toString() : ''; 
+        const stamp = dailyScheduleData[nick] || ''; 
+        const isOff = offDutyStamps.includes(stamp) || stamp === ''; 
+        const isExcluded = (sysSettings.userSites[nick] || []).includes('EXCLUDE_DUTY');
+        
+        if (!isOff && !isExcluded) {
+            const site = (dailyDutiesData[nick] && dailyDutiesData[nick].site) ? dailyDutiesData[nick].site : 'ยังไม่ระบุเว็บ'; let shiftType = 'OTHER';
+            if (stamp === 'D' || stamp.includes('เช้า')) shiftType = 'D'; else if (stamp === 'N' || stamp.includes('ดึก')) shiftType = 'N'; else if (stamp === 'D' || stamp.includes('ดึก')) shiftType = 'D';
+            let matchSearch = !searchT || nick.toLowerCase().includes(searchT); let matchShift = shiftF === 'ALL' || shiftType === shiftF; let matchDept = deptF === 'ALL' || dept.includes(deptF);
+            
+            if (matchSearch && matchShift && matchDept) { 
+                workingUsers.push({ nick, dept, site, stamp, shiftType, shiftSet }); 
+            }
+        }
+    });
+    
+    const tableHead = document.querySelector('#mealSection table thead tr');
+    if(tableHead) {
+        tableHead.innerHTML = `
+          <th>ชื่อพนักงาน</th>
+          <th>แผนก</th>
+          <th>กะงานวันนี้</th>
+          <th>เว็บที่รับผิดชอบวันนี้</th>
+          <th>เพื่อนร่วมงานเว็บเดียวกัน</th>
+          <th>จัดรอบทานข้าว</th>
+        `;
+    }
 
-      if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
-      
-      // 🌟 แยกลิสต์เวลาทานข้าวของ กะเช้า(D) และ กะดึก(N)
-      let optionsForODOL_D = `<option value="">-- เลือกเวลา (กะเช้า) --</option>`;
-      let optionsForODOL_N = `<option value="">-- เลือกเวลา (กะดึก) --</option>`;
-      let optionsForOD_D = `<option value="">-- เลือกเวลา (กะเช้า) --</option>`;
-      let optionsForOD_N = `<option value="">-- เลือกเวลา (กะดึก) --</option>`;
+    if(workingUsers.length === 0) { tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบพนักงานตามเงื่อนไขที่เลือก (หรือยังไม่ลงหน้าที่)</td></tr>`; return; }
+    
+    // 🌟 แยกลิสต์เวลาทานข้าวของ กะเช้า(D) และ กะดึก(N) อย่างปลอดภัย
+    let optionsForODOL_D = `<option value="">-- เลือกเวลา (กะเช้า) --</option>`;
+    let optionsForODOL_N = `<option value="">-- เลือกเวลา (กะดึก) --</option>`;
+    let optionsForOD_D = `<option value="">-- เลือกเวลา (กะเช้า) --</option>`;
+    let optionsForOD_N = `<option value="">-- เลือกเวลา (กะดึก) --</option>`;
 
-      mealTimeBlocks.forEach(block => { 
-          let groupHtmlD = `<optgroup label="${block.name}">`; 
-          let groupHtmlN = `<optgroup label="${block.name}">`; 
-          let hasD = false, hasN = false;
+    mealTimeBlocks.forEach(block => { 
+        let groupHtmlD = `<optgroup label="${block.name}">`; 
+        let groupHtmlN = `<optgroup label="${block.name}">`; 
+        let hasD = false, hasN = false;
 
-          let slots = generateTimeSlots(block.start, block.end); 
-          slots.forEach(slot => { 
-              let [sh, sm] = slot.split('-')[0].split(':').map(Number);
-              let mins = sh * 60 + sm;
-              // กะเช้าคือช่วงเวลาที่เริ่มตั้งแต่ 08:00 ถึง 19:30 (480 ถึง 1199 นาที)
-              let isDaySlot = (mins >= 480 && mins < 1200);
+        let slots = generateTimeSlots(block.start, block.end); 
+        slots.forEach(slot => { 
+            try {
+                let timePart = slot.split('-')[0];
+                let [sh, sm] = timePart.split(':').map(Number);
+                let mins = (sh || 0) * 60 + (sm || 0);
+                
+                // กะเช้าคือช่วงเวลาที่เริ่มตั้งแต่ 08:00 ถึง 19:30 (480 ถึง 1199 นาที)
+                let isDaySlot = (mins >= 480 && mins < 1200);
 
-              if (isDaySlot) {
-                  groupHtmlD += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
-                  hasD = true;
-              } else {
-                  groupHtmlN += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
-                  hasN = true;
-              }
-          }); 
-          
-          groupHtmlD += `</optgroup>`; 
-          groupHtmlN += `</optgroup>`; 
+                if (isDaySlot) {
+                    groupHtmlD += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
+                    hasD = true;
+                } else {
+                    groupHtmlN += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
+                    hasN = true;
+                }
+            } catch(e) {
+                // ข้าม slot ที่อ่านค่าไม่ได้
+            }
+        }); 
+        
+        groupHtmlD += `</optgroup>`; 
+        groupHtmlN += `</optgroup>`; 
 
-          if (block.type === 'OD_POIPET') { 
-              if (hasD) { optionsForODOL_D += groupHtmlD; optionsForOD_D += groupHtmlD; }
-              if (hasN) { optionsForODOL_N += groupHtmlN; optionsForOD_N += groupHtmlN; }
-          } else if (block.type === 'OD_LAOS') { 
-              if (hasD) optionsForOD_D += groupHtmlD; 
-              if (hasN) optionsForOD_N += groupHtmlN; 
-          }
-      });
-      
-      workingUsers.forEach(u => {
-          let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; 
-          if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (เช้า)</span>`; 
-          if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (ดึก)</span>`;
-          
-          const curMeal = dailyMealData[u.nick] || {}; 
-          const m1 = curMeal.slot1 || ''; 
-          const m2 = curMeal.slot2 || '';
+        if (block.type === 'OD_POIPET') { 
+            if (hasD) { optionsForODOL_D += groupHtmlD; optionsForOD_D += groupHtmlD; }
+            if (hasN) { optionsForODOL_N += groupHtmlN; optionsForOD_N += groupHtmlN; }
+        } else if (block.type === 'OD_LAOS') { 
+            if (hasD) optionsForOD_D += groupHtmlD; 
+            if (hasN) optionsForOD_N += groupHtmlN; 
+        }
+    });
+    
+    workingUsers.forEach(u => {
+        let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; 
+        if(u.stamp === 'D') stampBadge = `<span class="badge" style="background: rgba(0, 255, 102, 0.2); color: #00ff66; border: 1px solid #00ff66;">${u.stamp} (เช้า)</span>`; 
+        if(u.stamp === 'N') stampBadge = `<span class="badge" style="background: rgba(0, 240, 255, 0.2); color: #00f0ff; border: 1px solid #00f0ff;">${u.stamp} (ดึก)</span>`;
+        
+        const curMeal = dailyMealData[u.nick] || {}; 
+        const m1 = curMeal.slot1 || ''; 
+        const m2 = curMeal.slot2 || '';
 
-          const isMyRow = (u.nick === myNick);
-          const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
-          
-          let nameDisplay = u.nick;
-          let rowStyle = '';
-          if (isMyRow) {
-              nameDisplay = `<span style="color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.8); font-weight: bold; border: 1px solid var(--neon-green); padding: 4px 10px; border-radius: 6px;">${u.nick} (ฉัน)</span>`;
-              rowStyle = 'background-color: rgba(0, 255, 102, 0.05);';
-          }
+        const isMyRow = (u.nick === myNick);
+        const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
+        
+        let nameDisplay = u.nick;
+        let rowStyle = '';
+        if (isMyRow) {
+            nameDisplay = `<span style="color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.8); font-weight: bold; border: 1px solid var(--neon-green); padding: 4px 10px; border-radius: 6px;">${u.nick} (ฉัน)</span>`;
+            rowStyle = 'background-color: rgba(0, 255, 102, 0.05);';
+        }
 
-          let coworkersList = [];
-          if (u.site !== 'ยังไม่ระบุเว็บ') {
-              let mySites = u.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
-              
-              workingUsers.forEach(otherUser => {
-                  if (otherUser.nick !== u.nick && 
-                      otherUser.site !== 'ยังไม่ระบุเว็บ' &&
-                      otherUser.dept === u.dept && 
-                      otherUser.shiftSet === u.shiftSet) { 
-                      
-                      let otherSites = otherUser.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
-                      let isShared = mySites.some(mySite => otherSites.includes(mySite));
-                      
-                      if (isShared) {
-                          coworkersList.push(`<span class="text-warning">${otherUser.nick}</span>`);
-                      }
-                  }
-              });
-          }
-          
-          let coworkersDisplay = '<span class="text-muted small">-</span>';
-          if (coworkersList.length > 0) {
-              coworkersDisplay = `<div class="small" style="max-width: 150px; white-space: normal; line-height: 1.4;">${coworkersList.join(', ')}</div>`;
-          }
+        let coworkersList = [];
+        if (u.site !== 'ยังไม่ระบุเว็บ') {
+            let mySites = u.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+            
+            workingUsers.forEach(otherUser => {
+                if (otherUser.nick !== u.nick && 
+                    otherUser.site !== 'ยังไม่ระบุเว็บ' &&
+                    otherUser.dept === u.dept && 
+                    otherUser.shiftSet === u.shiftSet) { 
+                    
+                    let otherSites = otherUser.site.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+                    let isShared = mySites.some(mySite => otherSites.includes(mySite));
+                    
+                    if (isShared) {
+                        coworkersList.push(`<span class="text-warning">${otherUser.nick}</span>`);
+                    }
+                }
+            });
+        }
+        
+        let coworkersDisplay = '<span class="text-muted small">-</span>';
+        if (coworkersList.length > 0) {
+            coworkersDisplay = `<div class="small" style="max-width: 150px; white-space: normal; line-height: 1.4;">${coworkersList.join(', ')}</div>`;
+        }
 
-          let mealControlHtml = '';
-          if (isAdmin || isMyRow) {
-              // 🌟 โหลดตัวเลือกเวลา ตามกะของพนักงาน
-              let myOptions = "";
-              if (u.dept.includes('ODOL')) {
-                  myOptions = u.shiftType === 'D' ? optionsForODOL_D : optionsForODOL_N;
-              } else {
-                  myOptions = u.shiftType === 'D' ? optionsForOD_D : optionsForOD_N;
-              }
-              // เผื่อกรณีกะ OTHER
-              if (u.shiftType !== 'D' && u.shiftType !== 'N') {
-                  myOptions = u.dept.includes('ODOL') ? (optionsForODOL_D + optionsForODOL_N) : (optionsForOD_D + optionsForOD_N);
-              }
+        let mealControlHtml = '';
+        if (isAdmin || isMyRow) {
+            // 🌟 โหลดตัวเลือกเวลา ตามกะของพนักงาน
+            let myOptions = "";
+            if (u.dept.includes('ODOL')) {
+                myOptions = u.shiftType === 'D' ? optionsForODOL_D : optionsForODOL_N;
+            } else {
+                myOptions = u.shiftType === 'D' ? optionsForOD_D : optionsForOD_N;
+            }
+            // เผื่อกรณีกะ OTHER ให้โชว์หมด
+            if (u.shiftType !== 'D' && u.shiftType !== 'N') {
+                myOptions = u.dept.includes('ODOL') ? (optionsForODOL_D + optionsForODOL_N) : (optionsForOD_D + optionsForOD_N);
+            }
 
-              let select1 = myOptions.replace(`value="${m1}"`, `value="${m1}" selected`); 
-              let select2 = myOptions.replace(`value="${m2}"`, `value="${m2}" selected`);
-              mealControlHtml = `
-                  <div class="d-flex gap-2">
-                      <select class="form-select form-select-sm bg-dark text-white sel-meal-1" onchange="checkMealOverlap()">${select1}</select>
-                      <select class="form-select form-select-sm bg-dark text-white sel-meal-2" onchange="checkMealOverlap()">${select2}</select>
-                  </div>
-              `;
-          } else {
-              let t1 = m1 ? `<span class="badge bg-secondary">${m1}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`;
-              let t2 = m2 ? `<span class="badge bg-secondary">${m2}</span>` : ``;
-              mealControlHtml = `
-                  <div class="d-flex gap-2 align-items-center">
-                      ${t1} ${t2}
-                      <select class="sel-meal-1" style="display:none;"><option value="${m1}">${m1}</option></select>
-                      <select class="sel-meal-2" style="display:none;"><option value="${m2}">${m2}</option></select>
-                  </div>
-              `;
-          }
+            let select1 = myOptions.replace(`value="${m1}"`, `value="${m1}" selected`); 
+            let select2 = myOptions.replace(`value="${m2}"`, `value="${m2}" selected`);
+            mealControlHtml = `
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm bg-dark text-white sel-meal-1" onchange="checkMealOverlap()">${select1}</select>
+                    <select class="form-select form-select-sm bg-dark text-white sel-meal-2" onchange="checkMealOverlap()">${select2}</select>
+                </div>
+            `;
+        } else {
+            let t1 = m1 ? `<span class="badge bg-secondary">${m1}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`;
+            let t2 = m2 ? `<span class="badge bg-secondary">${m2}</span>` : ``;
+            mealControlHtml = `
+                <div class="d-flex gap-2 align-items-center">
+                    ${t1} ${t2}
+                    <select class="sel-meal-1" style="display:none;"><option value="${m1}">${m1}</option></select>
+                    <select class="sel-meal-2" style="display:none;"><option value="${m2}">${m2}</option></select>
+                </div>
+            `;
+        }
 
-          tbody.innerHTML += `
-              <tr data-nick="${u.nick}" style="${rowStyle}">
-                  <td class="fw-bold text-white">${nameDisplay}</td>
-                  <td class="text-muted small">${u.dept.split(' ')[0]}</td>
-                  <td>${stampBadge}</td>
-                  <td class="text-info site-cell">${u.site}</td>
-                  <td>${coworkersDisplay}</td>
-                  <td style="width: 320px;">${mealControlHtml}</td>
-              </tr>
-          `;
-      });
+        tbody.innerHTML += `
+            <tr data-nick="${u.nick}" style="${rowStyle}">
+                <td class="fw-bold text-white">${nameDisplay}</td>
+                <td class="text-muted small">${u.dept.split(' ')[0]}</td>
+                <td>${stampBadge}</td>
+                <td class="text-info site-cell">${u.site}</td>
+                <td>${coworkersDisplay}</td>
+                <td style="width: 320px;">${mealControlHtml}</td>
+            </tr>
+        `;
+    });
 
-      const actionBtnsContainer = document.getElementById('mealActionBtns');
-      actionBtnsContainer.style.display = 'flex'; 
-      
-      if (myRole === 'Member') {
-          actionBtnsContainer.innerHTML = `
-              <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>
-          `;
-      } else {
-          actionBtnsContainer.innerHTML = `
-              <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
-              <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
-          `;
-      }
+    const actionBtnsContainer = document.getElementById('mealActionBtns');
+    if(actionBtnsContainer) {
+        actionBtnsContainer.style.display = 'flex'; 
+        
+        if (myRole === 'Member') {
+            actionBtnsContainer.innerHTML = `
+                <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>
+            `;
+        } else {
+            actionBtnsContainer.innerHTML = `
+                <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
+                <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
+            `;
+        }
+    }
 
-      setTimeout(checkMealOverlap, 500);
+    setTimeout(checkMealOverlap, 500);
 }
 
 function autoBalanceMeals() {
-      Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
-      let workingUsers = [];
-      document.querySelectorAll('#mealTableBody tr').forEach(tr => {
-          const nick = tr.getAttribute('data-nick'); if(!nick) return;
-          const site = tr.querySelector('.site-cell').innerText;
-          const deptText = tr.querySelector('td:nth-child(2)').innerText;
-          const isODOL = deptText.includes('ODOL');
-          const stampText = tr.querySelector('td:nth-child(3)').innerText;
-          const stamp = stampText.includes('เช้า') || stampText.includes('D') ? 'D' : (stampText.includes('ดึก') || stampText.includes('N') ? 'N' : 'OTHER');
-          workingUsers.push({ tr, nick, site, stamp, isODOL });
-      });
-      let siteGroups = {};
-      workingUsers.forEach(u => { if(!siteGroups[u.site]) siteGroups[u.site] = []; siteGroups[u.site].push(u); });
-      
-      for(let site in siteGroups) {
-          let users = siteGroups[site]; 
-          let dUsers = users.filter(u => u.stamp === 'D'); 
-          let nUsers = users.filter(u => u.stamp === 'N'); 
-          let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
-          
-          let nSlotsODOL = [], dSlotsODOL = [], nSlotsOD = [], dSlotsOD = [];
-          
-          mealTimeBlocks.forEach(b => { 
-              let slots = generateTimeSlots(b.start, b.end); 
-              slots.forEach(slot => {
-                  let [sh, sm] = slot.split('-')[0].split(':').map(Number);
-                  let mins = sh * 60 + sm;
-                  let isDaySlot = (mins >= 480 && mins < 1200); // 08:00 ถึง 19:30
-                  
-                  if (b.type === 'OD_POIPET') {
-                      if (isDaySlot) { dSlotsODOL.push(slot); dSlotsOD.push(slot); }
-                      else { nSlotsODOL.push(slot); nSlotsOD.push(slot); }
-                  } else if (b.type === 'OD_LAOS') {
-                      if (isDaySlot) dSlotsOD.push(slot);
-                      else nSlotsOD.push(slot);
-                  }
-              });
-          });
+    Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
+    let workingUsers = [];
+    document.querySelectorAll('#mealTableBody tr').forEach(tr => {
+        const nick = tr.getAttribute('data-nick'); if(!nick) return;
+        const site = tr.querySelector('.site-cell').innerText;
+        const deptText = tr.querySelector('td:nth-child(2)').innerText;
+        const isODOL = deptText.includes('ODOL');
+        const stampText = tr.querySelector('td:nth-child(3)').innerText;
+        const stamp = stampText.includes('เช้า') || stampText.includes('D') ? 'D' : (stampText.includes('ดึก') || stampText.includes('N') ? 'N' : 'OTHER');
+        workingUsers.push({ tr, nick, site, stamp, isODOL });
+    });
+    let siteGroups = {};
+    workingUsers.forEach(u => { if(!siteGroups[u.site]) siteGroups[u.site] = []; siteGroups[u.site].push(u); });
+    
+    for(let site in siteGroups) {
+        let users = siteGroups[site]; 
+        let dUsers = users.filter(u => u.stamp === 'D'); 
+        let nUsers = users.filter(u => u.stamp === 'N'); 
+        let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
+        
+        let nSlotsODOL = [], dSlotsODOL = [], nSlotsOD = [], dSlotsOD = [];
+        
+        mealTimeBlocks.forEach(b => { 
+            let slots = generateTimeSlots(b.start, b.end); 
+            slots.forEach(slot => {
+                try {
+                    let [sh, sm] = slot.split('-')[0].split(':').map(Number);
+                    let mins = (sh || 0) * 60 + (sm || 0);
+                    let isDaySlot = (mins >= 480 && mins < 1200); // 08:00 ถึง 19:30
+                    
+                    if (b.type === 'OD_POIPET') {
+                        if (isDaySlot) { dSlotsODOL.push(slot); dSlotsOD.push(slot); }
+                        else { nSlotsODOL.push(slot); nSlotsOD.push(slot); }
+                    } else if (b.type === 'OD_LAOS') {
+                        if (isDaySlot) dSlotsOD.push(slot);
+                        else nSlotsOD.push(slot);
+                    }
+                } catch(e) {}
+            });
+        });
 
-          // สุ่มลำดับพนักงานก่อนแจกจ่ายรอบ
-          nUsers.sort(() => Math.random() - 0.5); 
-          dUsers.sort(() => Math.random() - 0.5);
-          
-          // แจกจ่ายเวลากะเช้า
-          dUsers.forEach((u, i) => { 
-              let mySlots = u.isODOL ? dSlotsODOL : dSlotsOD;
-              let sel1 = u.tr.querySelector('.sel-meal-1');
-              let sel2 = u.tr.querySelector('.sel-meal-2');
-              if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
-                  sel1.value = mySlots[i % mySlots.length] || ''; 
-                  // หากมีเวลาพัก 2 รอบต่อคน (เช่นเช้าและบ่าย) ให้ห่างกัน 3 ลำดับสล็อต (ประมาณ 1.5 ชม.)
-                  sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
-              } 
-          });
-          
-          // แจกจ่ายเวลากะดึก
-          nUsers.forEach((u, i) => { 
-              let mySlots = u.isODOL ? nSlotsODOL : nSlotsOD;
-              let sel1 = u.tr.querySelector('.sel-meal-1');
-              let sel2 = u.tr.querySelector('.sel-meal-2');
-              if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
-                  sel1.value = mySlots[i % mySlots.length] || ''; 
-                  sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
-              } 
-          });
-          
-          // แจกจ่ายเวลาคนอื่นๆ (Other) กวาดรวมหมด
-          otherUsers.forEach((u, i) => { 
-              let mySlots = u.isODOL ? dSlotsODOL.concat(nSlotsODOL) : dSlotsOD.concat(nSlotsOD);
-              let sel1 = u.tr.querySelector('.sel-meal-1');
-              let sel2 = u.tr.querySelector('.sel-meal-2');
-              if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
-                  sel1.value = mySlots[i % mySlots.length] || ''; 
-                  sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
-              } 
-          });
-      }
-      setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาตามกะงานสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
+        // สุ่มลำดับพนักงานก่อนแจกจ่ายรอบ
+        nUsers.sort(() => Math.random() - 0.5); 
+        dUsers.sort(() => Math.random() - 0.5);
+        
+        // แจกจ่ายเวลากะเช้า
+        dUsers.forEach((u, i) => { 
+            let mySlots = u.isODOL ? dSlotsODOL : dSlotsOD;
+            let sel1 = u.tr.querySelector('.sel-meal-1');
+            let sel2 = u.tr.querySelector('.sel-meal-2');
+            if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
+                sel1.value = mySlots[i % mySlots.length] || ''; 
+                if (sel2) sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
+            } 
+        });
+        
+        // แจกจ่ายเวลากะดึก
+        nUsers.forEach((u, i) => { 
+            let mySlots = u.isODOL ? nSlotsODOL : nSlotsOD;
+            let sel1 = u.tr.querySelector('.sel-meal-1');
+            let sel2 = u.tr.querySelector('.sel-meal-2');
+            if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
+                sel1.value = mySlots[i % mySlots.length] || ''; 
+                if (sel2) sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
+            } 
+        });
+        
+        // แจกจ่ายเวลาคนอื่นๆ (Other) กวาดรวมหมด
+        otherUsers.forEach((u, i) => { 
+            let mySlots = u.isODOL ? dSlotsODOL.concat(nSlotsODOL) : dSlotsOD.concat(nSlotsOD);
+            let sel1 = u.tr.querySelector('.sel-meal-1');
+            let sel2 = u.tr.querySelector('.sel-meal-2');
+            if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
+                sel1.value = mySlots[i % mySlots.length] || ''; 
+                if (sel2) sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
+            } 
+        });
+    }
+    setTimeout(() => { checkMealOverlap(); Swal.fire({toast:true, position:'top-end', title:'กระจายเวลาตามกะงานสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'}); }, 1000);
 }
 
   async function saveMealData() {
