@@ -4893,8 +4893,71 @@ function autoBalanceMeals() {
   }
 
   function checkMealOverlap() {
-      // โค้ดตรวจจับเวลาทานข้าวชนกัน
-  }
+    const rows = document.querySelectorAll('#mealTableBody tr');
+    let siteGroups = {};
+
+    // 1. ล้างสีกรอบแดงออกก่อนทุกครั้งที่เริ่มเช็ค
+    rows.forEach(tr => {
+        const sel1 = tr.querySelector('.sel-meal-1');
+        const sel2 = tr.querySelector('.sel-meal-2');
+        if(sel1) sel1.style.borderColor = '';
+        if(sel2) sel2.style.borderColor = '';
+    });
+
+    // 2. จัดกลุ่มคนตามเว็บไซต์และกะงาน
+    rows.forEach(tr => {
+        const siteCell = tr.querySelector('.site-cell');
+        if(!siteCell) return;
+        
+        const siteText = siteCell.innerText;
+        if(siteText === 'ยังไม่ระบุเว็บ') return;
+
+        // ดึงค่ากะมาเช็ค (เช้า/ดึก)
+        const stampText = tr.querySelector('td:nth-child(3)').innerText;
+        const shiftType = stampText.includes('เช้า') || stampText.includes('D') ? 'D' : (stampText.includes('ดึก') || stampText.includes('N') ? 'N' : 'OTHER');
+
+        const sel1 = tr.querySelector('.sel-meal-1');
+        const sel2 = tr.querySelector('.sel-meal-2');
+        if(!sel1 || sel1.style.display === 'none') return;
+
+        // แยกเว็บหลัก-รอง ให้อยู่ใน Array
+        let sites = siteText.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+
+        sites.forEach(site => {
+            const key = site + '_' + shiftType; // คีย์ = ชื่อเว็บ_กะ
+            if(!siteGroups[key]) siteGroups[key] = [];
+            siteGroups[key].push({
+                tr: tr,
+                val1: sel1.value,
+                val2: sel2 ? sel2.value : '',
+                sel1: sel1,
+                sel2: sel2
+            });
+        });
+    });
+
+    // 3. ตรวจสอบคนในกลุ่มเดียวกันว่าเวลาชนกันไหม (ถ้าชนให้เปลี่ยนขอบเป็นสีแดง)
+    for(let key in siteGroups) {
+        let users = siteGroups[key];
+        for(let i = 0; i < users.length; i++) {
+            for(let j = i + 1; j < users.length; j++) {
+                let u1 = users[i];
+                let u2 = users[j];
+
+                if(u1.val1 && (u1.val1 === u2.val1 || u1.val1 === u2.val2)) {
+                    u1.sel1.style.borderColor = '#ff3366'; // สีแดง
+                    if(u1.val1 === u2.val1) u2.sel1.style.borderColor = '#ff3366';
+                    if(u1.val1 === u2.val2 && u2.sel2) u2.sel2.style.borderColor = '#ff3366';
+                }
+                if(u1.val2 && (u1.val2 === u2.val1 || u1.val2 === u2.val2)) {
+                    u1.sel2.style.borderColor = '#ff3366';
+                    if(u1.val2 === u2.val1) u2.sel1.style.borderColor = '#ff3366';
+                    if(u1.val2 === u2.val2 && u2.sel2) u2.sel2.style.borderColor = '#ff3366';
+                }
+            }
+        }
+    }
+}
   // ==========================================
 // 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests)
 // ==========================================
