@@ -4759,7 +4759,6 @@ function saveSandboxScheduleSilent() {
       setTimeout(checkMealOverlap, 500);
 }
 
-
 function autoBalanceMeals() {
       Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
       let workingUsers = [];
@@ -4800,29 +4799,41 @@ function autoBalanceMeals() {
               });
           });
 
-          nUsers.sort(() => Math.random() - 0.5); dUsers.sort(() => Math.random() - 0.5);
+          // สุ่มลำดับพนักงานก่อนแจกจ่ายรอบ
+          nUsers.sort(() => Math.random() - 0.5); 
+          dUsers.sort(() => Math.random() - 0.5);
           
+          // แจกจ่ายเวลากะเช้า
           dUsers.forEach((u, i) => { 
               let mySlots = u.isODOL ? dSlotsODOL : dSlotsOD;
-              if(u.tr.querySelector('.sel-meal-1').style.display !== 'none' && mySlots.length > 0) { 
-                  u.tr.querySelector('.sel-meal-1').value = mySlots[i % mySlots.length] || ''; 
-                  u.tr.querySelector('.sel-meal-2').value = mySlots[(i + 3) % mySlots.length] || ''; 
+              let sel1 = u.tr.querySelector('.sel-meal-1');
+              let sel2 = u.tr.querySelector('.sel-meal-2');
+              if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
+                  sel1.value = mySlots[i % mySlots.length] || ''; 
+                  // หากมีเวลาพัก 2 รอบต่อคน (เช่นเช้าและบ่าย) ให้ห่างกัน 3 ลำดับสล็อต (ประมาณ 1.5 ชม.)
+                  sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
               } 
           });
           
+          // แจกจ่ายเวลากะดึก
           nUsers.forEach((u, i) => { 
               let mySlots = u.isODOL ? nSlotsODOL : nSlotsOD;
-              if(u.tr.querySelector('.sel-meal-1').style.display !== 'none' && mySlots.length > 0) { 
-                  u.tr.querySelector('.sel-meal-1').value = mySlots[i % mySlots.length] || ''; 
-                  u.tr.querySelector('.sel-meal-2').value = mySlots[(i + 3) % mySlots.length] || ''; 
+              let sel1 = u.tr.querySelector('.sel-meal-1');
+              let sel2 = u.tr.querySelector('.sel-meal-2');
+              if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
+                  sel1.value = mySlots[i % mySlots.length] || ''; 
+                  sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
               } 
           });
           
+          // แจกจ่ายเวลาคนอื่นๆ (Other) กวาดรวมหมด
           otherUsers.forEach((u, i) => { 
               let mySlots = u.isODOL ? dSlotsODOL.concat(nSlotsODOL) : dSlotsOD.concat(nSlotsOD);
-              if(u.tr.querySelector('.sel-meal-1').style.display !== 'none' && mySlots.length > 0) { 
-                  u.tr.querySelector('.sel-meal-1').value = mySlots[i % mySlots.length] || ''; 
-                  u.tr.querySelector('.sel-meal-2').value = mySlots[(i + 3) % mySlots.length] || ''; 
+              let sel1 = u.tr.querySelector('.sel-meal-1');
+              let sel2 = u.tr.querySelector('.sel-meal-2');
+              if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
+                  sel1.value = mySlots[i % mySlots.length] || ''; 
+                  sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
               } 
           });
       }
