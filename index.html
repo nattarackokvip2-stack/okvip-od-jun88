@@ -3139,35 +3139,51 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
   }
 
   function recalcScheduleSummary() {
-      const ym = document.getElementById('monthPicker').value;
-      if(!ym) return;
-      const [year, month] = ym.split('-'); 
-      const daysInMonth = new Date(year, month, 0).getDate();
+    const ym = document.getElementById('monthPicker').value;
+    if(!ym) return;
+    const [year, month] = ym.split('-'); 
+    const daysInMonth = new Date(year, month, 0).getDate();
 
-      for(let d=1; d<=daysInMonth; d++) {
-          // รีเซ็ตค่านับของทั้ง 2 กะ
-          let counts = { 'A': { work: 0, off: 0 }, 'B': { work: 0, off: 0 } };
-          
-          document.querySelectorAll('#schTbody tr').forEach(tr => {
-              let cell = tr.querySelector(`td[data-day="${d}"]`);
-              let shiftType = tr.getAttribute('data-shift'); // ดึงค่ากะที่ฝังไว้ในแถว
-              
-              if(cell && shiftType && counts[shiftType]) {
-                  let val = cell.innerText.trim();
-                  if(val === 'D' || val === 'N' || val === 'M') counts[shiftType].work++;
-                  if(['X', 'PN', 'TX', 'XX'].includes(val)) counts[shiftType].off++; 
-              }
-          });
+    // 1. สร้าง Object เตรียมกล่องเปล่าๆ ไว้เก็บคะแนนของทุกวันรวดเดียว
+    let dailyCounts = {};
+    for(let d = 1; d <= daysInMonth; d++) {
+        dailyCounts[d] = { 'A': { work: 0, off: 0 }, 'B': { work: 0, off: 0 } };
+    }
 
-          // อัปเดตตัวเลขลงบนตาราง (เฉพาะบรรทัดที่แสดงผลอยู่)
-          ['A', 'B'].forEach(sh => {
-              const wEl = document.getElementById(`sum-work-${sh}-${d}`);
-              const oEl = document.getElementById(`sum-off-${sh}-${d}`);
-              if(wEl) wEl.innerText = counts[sh].work;
-              if(oEl) oEl.innerText = counts[sh].off;
-          });
-      }
-  }
+    // 2. วนลูปอ่านข้อมูลพนักงาน (อ่านแค่รอบเดียว ไม่ต้องวนซ้ำซ้อน)
+    const rows = document.querySelectorAll('#schTbody tr');
+    rows.forEach(tr => {
+        const shiftType = tr.getAttribute('data-shift'); // ดึงค่ากะ (A หรือ B)
+        
+        // ถ้าไม่มีกะ ไม่ต้องคำนวณ ข้ามไปคนถัดไปเลย
+        if(!shiftType || !['A', 'B'].includes(shiftType)) return;
+
+        // ดึง cell ทั้งหมดในแถวนี้ แล้วนับค่ารวดเดียว
+        const cells = tr.querySelectorAll('.cell-day');
+        cells.forEach(cell => {
+            const d = cell.getAttribute('data-day');
+            const val = cell.innerText.trim();
+
+            if(d && dailyCounts[d]) {
+                if(val === 'D' || val === 'N' || val === 'M') {
+                    dailyCounts[d][shiftType].work++;
+                } else if(['X', 'PN', 'TX', 'XX'].includes(val)) {
+                    dailyCounts[d][shiftType].off++;
+                }
+            }
+        });
+    });
+
+    // 3. เอาตัวเลขที่นับเสร็จแล้ว ไปแสดงผลบนหัวตาราง (อัปเดตหน้าจอแค่รอบเดียวจบ)
+    for(let d = 1; d <= daysInMonth; d++) {
+        ['A', 'B'].forEach(sh => {
+            const wEl = document.getElementById(`sum-work-${sh}-${d}`);
+            const oEl = document.getElementById(`sum-off-${sh}-${d}`);
+            if(wEl) wEl.innerText = dailyCounts[d][sh].work;
+            if(oEl) oEl.innerText = dailyCounts[d][sh].off;
+        });
+    }
+}
   
   function selectStamp(code, btn) { 
       if (myRole !== 'SuperAdmin' && code !== 'X' && code !== '') { 
