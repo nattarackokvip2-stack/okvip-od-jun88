@@ -6886,13 +6886,12 @@ function deleteBehavior(id) {
 
       reader.onload = function(e) {
           try {
-              const data = e.target.result;
-              // อ่านไฟล์ด้วยไลบรารี XLSX ที่ติดตั้งไว้แล้วในระบบ
-              const workbook = XLSX.read(data, {type: 'binary'});
+              // 🌟 อัปเกรด: เปลี่ยนมาใช้ ArrayBuffer ซึ่งเสถียรกว่าในการอ่านไฟล์รองรับทั้ง CSV และ Excel 
+              const data = new Uint8Array(e.target.result);
+              const workbook = XLSX.read(data, {type: 'array'});
               const firstSheetName = workbook.SheetNames[0];
               const worksheet = workbook[firstSheetName];
               
-              // แปลงตารางเป็น JSON เพื่อง่ายต่อการค้นหา
               const jsonData = XLSX.utils.sheet_to_json(worksheet, {defval: ""});
 
               if (jsonData.length === 0) {
@@ -6904,8 +6903,8 @@ function deleteBehavior(id) {
               analyzeAndFillData(jsonData, siteName);
 
           } catch (err) {
-              console.error(err);
-              Swal.fire('Error', 'รูปแบบไฟล์ไม่ถูกต้อง หรืออ่านไฟล์ไม่ได้', 'error');
+              console.error("File Parse Error:", err);
+              Swal.fire('Error', 'รูปแบบไฟล์ไม่ถูกต้อง หรืออ่านไฟล์ไม่ได้: ' + err.message, 'error');
           } finally {
               btn.disabled = false; btn.innerText = '🚀 ประมวลผลและบวกยอด';
           }
@@ -6916,40 +6915,50 @@ function deleteBehavior(id) {
           btn.disabled = false; btn.innerText = '🚀 ประมวลผลและบวกยอด';
       }
 
-      reader.readAsBinaryString(file);
+      // 🌟 ใช้ readAsArrayBuffer แทน BinaryString เพื่อแก้ปัญหาอ่านไฟล์ไม่เข้า
+      reader.readAsArrayBuffer(file);
   }
 
   function analyzeAndFillData(data, siteName) {
       let userCounts = {};
 
-      // 🌟 คอลัมน์ที่ระบบจะค้นหาชื่อแอดมินหรือพนักงาน (รองรับไฟล์หลายแบบในอนาคต)
-      const possibleEmpCols = [
-          'Risk Verification', 'Finance Approval', 'ผู้ทำรายการ', 'พนักงาน', 
-          'Admin', 'Username', 'ผู้ดำเนินการ', 'Operator', 'Update By', 'User'
-      ];
-
-      // สร้าง List รายชื่อพนักงานในระบบ (ตัวพิมพ์ใหญ่ทั้งหมด) และเรียงจากชื่อยาวไปสั้น
-      // เพื่อป้องกันการจับคู่ผิดพลาดในชื่อที่คล้ายกัน เช่น NAT กับ NATTY
+      // รายชื่อพนักงานในระบบ (ตัวพิมพ์ใหญ่ทั้งหมด)
       const allNicks = allUsersData
           .map(u => u[1].toUpperCase().trim())
           .filter(n => n !== '')
           .sort((a, b) => b.length - a.length);
 
+      let debugFoundNames = new Set(); // เก็บชื่อที่เจอในไฟล์เพื่อเช็คดูว่ามันอ่านออกไหม
+
       data.forEach(row => {
           let foundName = '';
           
-          // ไล่หาคอลัมน์ที่มีข้อมูลรายชื่อคนทำรายการ
-          for (let col of possibleEmpCols) {
-              if (row[col] && row[col].toString().trim() !== '') {
-                  // ข้อมูลในเว็บมักมาเป็น "odolnookerjun88 Approve" เราจึงแยกด้วยช่องว่างเอาคำแรกสุด
-                  foundName = row[col].toString().split(' ')[0].toUpperCase();
-                  break; 
+          // 🌟 ทำให้ฉลาดขึ้น: แปลงชื่อหัวคอลัมน์ทุกอันให้เป็นตัวพิมพ์เล็กและตัดช่องว่างทิ้ง เพื่อให้ค้นหาง่ายขึ้น
+          let normalizedRow = {};
+          for (let key in row) {
+              normalizedRow[key.toString().toLowerCase().trim()] = row[key];
+          }
+
+          // คอลัมน์ที่น่าจะมีชื่อแอดมินอยู่
+          const targetCols = ['risk verification', 'finance approval', 'ผู้ทำรายการ', 'พนักงาน', 'admin', 'username', 'ผู้ดำเนินการ'];
+
+          for (let col of targetCols) {
+              if (normalizedRow[col] && normalizedRow[col].toString().trim() !== '') {
+                  // ข้อมูลมักเป็น "odolnookerjun88 Approve" เราดึงคำแรกมา
+                  foundName = normalizedRow[col].toString().split(' ')[0].toUpperCase();
+                  
+                  // ลบพวกอักขระแปลกๆ ออก
+                  foundName = foundName.replace(/[^A-Z0-9ก-๙]/ig, '');
+                  
+                  debugFoundNames.add(foundName);
+                  break; // เจอชื่อแล้ว ข้ามคอลัมน์อื่นในแถวนี้ไปเลย
               }
           }
           
           if (foundName) {
               // เช็คว่าชื่อในไฟล์ ตรงกับพนักงานคนไหนในระบบ OKVIP เราบ้าง
               for (let nick of allNicks) {
+                  // ตัวอย่าง: ODOLNOOKERJUN88 มีคำว่า NOOKER อยู่ข้างใน
                   if (foundName.includes(nick)) {
                       userCounts[nick] = (userCounts[nick] || 0) + 1;
                       break; 
@@ -6966,20 +6975,17 @@ function deleteBehavior(id) {
           if (tr.getAttribute('data-excluded') === 'true') return;
           const nick = tr.getAttribute('data-nick').toUpperCase();
           
-          // ถ้าระบบนับยอดของคนนี้ได้
+          // ถ้ามีข้อมูลสถิติของคนนี้ และ เป็นช่องเว็บที่ตรงกับที่เราเลือกให้ลงข้อมูล (ถ้าช่องนั้นไม่โดน Disabled อยู่)
           if (userCounts[nick]) {
               const inputField = tr.querySelector(`.stat-input[data-site="${siteName}"]`);
               if (inputField && !inputField.disabled) {
-                  // เอาตัวเลขไป "บวกเพิ่ม" จากยอดเดิม (รองรับการอัปโหลดไฟล์ถอนและโปรแยกกัน)
                   let currentVal = parseInt(inputField.value) || 0;
                   inputField.value = currentVal + userCounts[nick];
                   
-                  // เอฟเฟกต์กระพริบสีเขียวเพื่อให้สังเกตได้ว่าช่องไหนมีการอัปเดตอัตโนมัติ
                   inputField.style.transition = '0.5s';
                   inputField.style.backgroundColor = 'rgba(0, 255, 102, 0.4)';
                   setTimeout(() => { inputField.style.backgroundColor = 'rgba(0, 240, 255, 0.05)'; }, 1500);
 
-                  // สั่งคำนวณยอดรวมของแถวนั้นๆ ใหม่
                   calcRowTotal(inputField);
                   matchCount++;
                   totalItems += userCounts[nick];
@@ -6992,14 +6998,16 @@ function deleteBehavior(id) {
       if (matchCount > 0) {
           Swal.fire({
               title: 'อิมพอร์ตสำเร็จ!',
-              html: `ระบบจับคู่พนักงานได้ <b>${matchCount} คน</b><br>รวมยอดทั้งหมด <b>${totalItems} รายการ</b><br><br><span class="text-warning small">* อย่าลืมตรวจสอบและกดบันทึกสถิติด้วยนะครับ *</span>`,
+              html: `ระบบจับคู่ยอดให้พนักงานได้ <b>${matchCount} คน</b><br>รวมยอดทั้งหมด <b>${totalItems} รายการ</b><br><br><span class="text-warning small">* อย่าลืมตรวจสอบและกดบันทึกสถิติด้วยนะครับ *</span>`,
               icon: 'success',
               background: '#111', color: '#fff'
           });
       } else {
+          // ถ้าระบบหาไม่เจอเลย ให้แสดงชื่อที่มันเจอในไฟล์ให้แอดมินดู เพื่อเช็คว่าสะกดผิดไหม
+          let sampleNames = Array.from(debugFoundNames).slice(0, 5).join(', ');
           Swal.fire({
               title: 'ไม่พบข้อมูลที่ตรงกัน',
-              text: 'ไม่สามารถจับคู่ชื่อแอดมินในไฟล์ กับชื่อพนักงานในกะนี้ได้เลยครับ',
+              html: `ไม่สามารถจับคู่ชื่อแอดมินในไฟล์ กับพนักงานกะนี้ที่รับผิดชอบเว็บ <b>${siteName}</b> ได้เลยครับ<br><br><small class="text-muted">ชื่อตัวอย่างที่พบในไฟล์: ${sampleNames || 'ไม่พบชื่อเลย'}</small>`,
               icon: 'info',
               background: '#111', color: '#fff'
           });
