@@ -651,7 +651,6 @@
             <div id="stampToolboxWrapper" style="display: none; opacity: 0; transition: opacity 0.3s ease;">
                 <div class="d-flex align-items-center gap-1 border border-secondary px-2 py-1" style="background: rgba(0,0,0,0.5); border-radius: 10px;">
                     <div class="d-flex align-items-center gap-1" id="stampPalette"></div>
-                    
                     <div class="stamp-info-wrapper ms-2">
                         <div class="stamp-info-icon">!</div>
                         <div class="stamp-tooltip" id="stampTooltipContent"></div>
@@ -667,6 +666,7 @@
         </div>
 
         <div class="d-flex gap-2 align-items-center flex-wrap">
+            
             <div id="realScheduleActions" style="display: flex; gap: 6px; align-items: center;">
                 <button id="btnClearSchedule" onclick="confirmClearSchedule()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🗑️ ล้างตาราง</button>
                 <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะ</button>
@@ -681,6 +681,7 @@
             
             <button onclick="handleUnifiedSave()" class="neon-save-button ms-2" id="btnSaveSchedule" style="display: none;">💾 บันทึกตาราง</button>
         </div>
+
       </div>
 
       <div class="table-container" id="scheduleTableContainer">
