@@ -567,7 +567,8 @@
           </table>
         </div>
       </div>
-    </div> <div id="announceSection" class="content-section">
+  </div> 
+     <div id="announceSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
         <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
@@ -2181,12 +2182,12 @@
               ctx.imageSmoothingEnabled = true;
               ctx.imageSmoothingQuality = "high";
               ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/png'); 
-              
-              Swal.close(); callback(compressedBase64);
-          };
-      };}
-
+              const compressedBase64 = canvas.toDataURL('image/png');
+            Swal.close();
+            callback(compressedBase64);
+        };
+    };
+}
   function setupPasteArea(areaId, fileId, processCallback, isHighQuality = false) {
       const area = document.getElementById(areaId); const fileInput = document.getElementById(fileId);
       if(area && fileInput) {
@@ -3358,8 +3359,7 @@ function applyStamp(cell, nick, dept, day) {
     if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
     unsavedChanges[nick][day] = currentStamp; 
     unsavedChanges[nick]['dept'] = dept; 
-
-} // <--- จบฟังก์ชัน applyStamp ตรงนี้เลย (ลบโค้ดที่เกี่ยวกับการเซฟอัตโนมัติออกไปเลย)
+ } 
 
 // 🌟 ฟังก์ชันเซฟตารางจำลองแบบไร้รอยต่อ (ไม่แสดงปุ่ม)
 function saveSandboxScheduleSilent() {
