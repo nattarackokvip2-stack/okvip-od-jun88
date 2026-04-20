@@ -2066,15 +2066,24 @@
   const offDutyStamps = ['X', 'XX', 'TX', 'PN', 'KP', 'KL', 'X4'];
 
   const mealTimeBlocks = [
-      { name: "OD ปอยเปต / ODOL (รอบ 1) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD_POIPET" },
-      { name: "OD ปอยเปต / ODOL (รอบ 2) [07:00-10:00]", start: "07:00", end: "10:00", type: "OD_POIPET" },
-      { name: "OD ปอยเปต / ODOL (รอบ 3) [12:00-14:00]", start: "12:00", end: "14:00", type: "OD_POIPET" },
-      { name: "OD ปอยเปต / ODOL (รอบ 4) [16:30-18:30]", start: "16:30", end: "18:30", type: "OD_POIPET" },
-      { name: "OD ปอยเปต / ODOL (รอบ 5) [21:00-23:00]", start: "21:00", end: "23:00", type: "OD_POIPET" },
-      { name: "OD ลาว (รอบ 1) [04:00-07:00]", start: "04:00", end: "07:00", type: "OD_LAOS" },
-      { name: "OD ลาว (รอบ 2) [10:00-13:00]", start: "10:00", end: "13:00", type: "OD_LAOS" },
-      { name: "OD ลาว (รอบ 3) [16:00-18:00]", start: "16:00", end: "18:00", type: "OD_LAOS" },
-      { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD_LAOS" }
+      // ====== 🔵 ของแผนก OD ======
+      { name: "OD (รอบ 1) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD" },
+      { name: "OD (รอบ 2) [07:00-10:00]", start: "07:00", end: "10:00", type: "OD" },
+      { name: "OD (รอบ 3) [12:00-14:00]", start: "12:00", end: "14:00", type: "OD" },
+      { name: "OD (รอบ 4) [16:30-18:30]", start: "16:30", end: "18:30", type: "OD" },
+      { name: "OD (รอบ 5) [21:00-23:00]", start: "21:00", end: "23:00", type: "OD" },
+      { name: "OD ลาว (รอบ 1) [04:00-07:00]", start: "04:00", end: "07:00", type: "OD" },
+      { name: "OD ลาว (รอบ 2) [10:00-13:00]", start: "10:00", end: "13:00", type: "OD" },
+      { name: "OD ลาว (รอบ 3) [16:00-18:00]", start: "16:00", end: "18:00", type: "OD" },
+      { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD" },
+
+      // ====== 🟠 ของแผนก ODOL ======
+      // (แอดมินสามารถเปลี่ยนเวลา Start/End ด้านล่างนี้ ให้ไม่ตรงกับ OD ได้เลยครับ)
+      { name: "ODOL (รอบ 1) [03:00-05:00]", start: "03:00", end: "05:00", type: "ODOL" },
+      { name: "ODOL (รอบ 2) [08:00-11:00]", start: "08:00", end: "11:00", type: "ODOL" },
+      { name: "ODOL (รอบ 3) [13:00-15:00]", start: "13:00", end: "15:00", type: "ODOL" },
+      { name: "ODOL (รอบ 4) [17:30-19:30]", start: "17:30", end: "19:30", type: "ODOL" },
+      { name: "ODOL (รอบ 5) [22:00-23:59]", start: "22:00", end: "23:59", type: "ODOL" }
   ];
 
   // 🌟 ระบบ Export to Excel 🌟
@@ -4652,14 +4661,13 @@ function saveSandboxScheduleSilent() {
         groupHtmlD += `</optgroup>`; 
         groupHtmlN += `</optgroup>`; 
 
-        if (block.type === 'OD_POIPET') { 
-            if (hasD) { optionsForODOL_D += groupHtmlD; optionsForOD_D += groupHtmlD; }
-            if (hasN) { optionsForODOL_N += groupHtmlN; optionsForOD_N += groupHtmlN; }
-        } else if (block.type === 'OD_LAOS') { 
+        if (block.type === 'OD') { 
             if (hasD) optionsForOD_D += groupHtmlD; 
             if (hasN) optionsForOD_N += groupHtmlN; 
+        } else if (block.type === 'ODOL') { 
+            if (hasD) optionsForODOL_D += groupHtmlD; 
+            if (hasN) optionsForODOL_N += groupHtmlN; 
         }
-    });
     
     workingUsers.forEach(u => {
         let stampBadge = `<span class="badge bg-dark border">${u.stamp}</span>`; 
@@ -4801,12 +4809,12 @@ function autoBalanceMeals() {
                     let mins = (sh || 0) * 60 + (sm || 0);
                     let isDaySlot = (mins >= 480 && mins < 1200); // 08:00 ถึง 19:30
                     
-                    if (b.type === 'OD_POIPET') {
-                        if (isDaySlot) { dSlotsODOL.push(slot); dSlotsOD.push(slot); }
-                        else { nSlotsODOL.push(slot); nSlotsOD.push(slot); }
-                    } else if (b.type === 'OD_LAOS') {
+                    if (b.type === 'OD') {
                         if (isDaySlot) dSlotsOD.push(slot);
                         else nSlotsOD.push(slot);
+                    } else if (b.type === 'ODOL') {
+                        if (isDaySlot) dSlotsODOL.push(slot);
+                        else nSlotsODOL.push(slot);
                     }
                 } catch(e) {}
             });
