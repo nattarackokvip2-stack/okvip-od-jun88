@@ -2066,7 +2066,7 @@
   const offDutyStamps = ['X', 'XX', 'TX', 'PN', 'KP', 'KL', 'X4'];
 
   const mealTimeBlocks = [
-      // ====== 🔵 ของแผนก OD ======
+      // ====== 🔵 ของแผนก OD (ปล่อยไว้เหมือนเดิม) ======
       { name: "OD (รอบ 1) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD" },
       { name: "OD (รอบ 2) [07:00-10:00]", start: "07:00", end: "10:00", type: "OD" },
       { name: "OD (รอบ 3) [12:00-14:00]", start: "12:00", end: "14:00", type: "OD" },
@@ -2077,12 +2077,15 @@
       { name: "OD ลาว (รอบ 3) [16:00-18:00]", start: "16:00", end: "18:00", type: "OD" },
       { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD" },
 
-      // ====== 🟠 ของแผนก ODOL ======
-      { name: "ODOL (รอบ 1) [03:00-05:00]", start: "03:00", end: "05:00", type: "ODOL" },
-      { name: "ODOL (รอบ 2) [08:00-11:00]", start: "08:00", end: "11:00", type: "ODOL" },
-      { name: "ODOL (รอบ 3) [13:00-15:00]", start: "13:00", end: "15:00", type: "ODOL" },
-      { name: "ODOL (รอบ 4) [17:30-19:30]", start: "17:30", end: "19:30", type: "ODOL" },
-      { name: "ODOL (รอบ 5) [22:00-23:59]", start: "22:00", end: "23:59", type: "ODOL" }
+      // ====== 🟠 ของแผนก ODOL (เพิ่ม parameter 'period' และ 'shift' เพื่อแยกระบบ) ======
+      // กะเช้า (D)
+      { name: "ODOL เช้า (ช่วงที่ 1) [08:00-10:00]", start: "08:00", end: "10:00", type: "ODOL", period: "1", shift: "D" },
+      { name: "ODOL เช้า (ช่วงที่ 2) [12:00-14:00]", start: "12:00", end: "14:00", type: "ODOL", period: "2", shift: "D" },
+      { name: "ODOL เช้า (ช่วงที่ 3) [16:30-18:30]", start: "16:30", end: "18:30", type: "ODOL", period: "3", shift: "D" },
+      // กะดึก (N)
+      { name: "ODOL ดึก (ช่วงที่ 1) [21:00-23:00]", start: "21:00", end: "23:00", type: "ODOL", period: "1", shift: "N" },
+      { name: "ODOL ดึก (ช่วงที่ 2) [02:00-05:00]", start: "02:00", end: "05:00", type: "ODOL", period: "2", shift: "N" },
+      { name: "ODOL ดึก (ช่วงที่ 3) [07:00-08:00]", start: "07:00", end: "08:00", type: "ODOL", period: "3", shift: "N" }
   ];
 
   // 🌟 ระบบ Export to Excel 🌟
@@ -4643,6 +4646,7 @@ if (deptF === 'ALL') {
     mealTimeBlocks.forEach(block => { 
         let groupHtmlD = `<optgroup label="${block.name}">`; 
         let groupHtmlN = `<optgroup label="${block.name}">`; 
+        let groupHtmlODOL = `<optgroup label="${block.name}">`; 
         let hasD = false, hasN = false;
 
         let slots = generateTimeSlots(block.start, block.end); 
@@ -4653,25 +4657,31 @@ if (deptF === 'ALL') {
                 let mins = (sh || 0) * 60 + (sm || 0);
                 let isDaySlot = (mins >= 480 && mins < 1200);
 
-                if (isDaySlot) {
-                    groupHtmlD += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
-                    hasD = true;
-                } else {
-                    groupHtmlN += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
-                    hasN = true;
+                if (block.type === 'OD') {
+                    if (isDaySlot) {
+                        groupHtmlD += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
+                        hasD = true;
+                    } else {
+                        groupHtmlN += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
+                        hasN = true;
+                    }
+                } else if (block.type === 'ODOL') {
+                    // ยัดข้อมูล data-period เข้าไปเพื่อดักจับ
+                    groupHtmlODOL += `<option value="${slot}" data-type="${block.type}" data-period="${block.period}">${slot}</option>`;
                 }
             } catch(e) {}
         }); 
         
         groupHtmlD += `</optgroup>`; 
         groupHtmlN += `</optgroup>`; 
+        groupHtmlODOL += `</optgroup>`; 
 
         if (block.type === 'OD') { 
             if (hasD) optionsForOD_D += groupHtmlD; 
             if (hasN) optionsForOD_N += groupHtmlN; 
         } else if (block.type === 'ODOL') { 
-            if (hasD) optionsForODOL_D += groupHtmlD; 
-            if (hasN) optionsForODOL_N += groupHtmlN; 
+            if (block.shift === 'D') optionsForODOL_D += groupHtmlODOL; 
+            if (block.shift === 'N') optionsForODOL_N += groupHtmlODOL; 
         }
     });
     
@@ -4802,7 +4812,9 @@ function autoBalanceMeals() {
         let nUsers = users.filter(u => u.stamp === 'N'); 
         let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
         
-        let nSlotsODOL = [], dSlotsODOL = [], nSlotsOD = [], dSlotsOD = [];
+        let nSlotsOD = [], dSlotsOD = [];
+        let dSlotsODOL_P1 = [], dSlotsODOL_P2 = [], dSlotsODOL_P3 = [];
+        let nSlotsODOL_P1 = [], nSlotsODOL_P2 = [], nSlotsODOL_P3 = [];
         
         mealTimeBlocks.forEach(b => { 
             let slots = generateTimeSlots(b.start, b.end); 
@@ -4813,11 +4825,17 @@ function autoBalanceMeals() {
                     let isDaySlot = (mins >= 480 && mins < 1200);
                     
                     if (b.type === 'OD') {
-                        if (isDaySlot) dSlotsOD.push(slot);
-                        else nSlotsOD.push(slot);
+                        if (isDaySlot) dSlotsOD.push(slot); else nSlotsOD.push(slot);
                     } else if (b.type === 'ODOL') {
-                        if (isDaySlot) dSlotsODOL.push(slot);
-                        else nSlotsODOL.push(slot);
+                        if (b.shift === 'D') {
+                            if (b.period === '1') dSlotsODOL_P1.push(slot);
+                            if (b.period === '2') dSlotsODOL_P2.push(slot);
+                            if (b.period === '3') dSlotsODOL_P3.push(slot);
+                        } else if (b.shift === 'N') {
+                            if (b.period === '1') nSlotsODOL_P1.push(slot);
+                            if (b.period === '2') nSlotsODOL_P2.push(slot);
+                            if (b.period === '3') nSlotsODOL_P3.push(slot);
+                        }
                     }
                 } catch(e) {}
             });
@@ -4827,27 +4845,43 @@ function autoBalanceMeals() {
         dUsers.sort(() => Math.random() - 0.5);
         
         dUsers.forEach((u, i) => { 
-            let mySlots = u.isODOL ? dSlotsODOL : dSlotsOD;
             let sel1 = u.tr.querySelector('.sel-meal-1');
             let sel2 = u.tr.querySelector('.sel-meal-2');
-            if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
-                sel1.value = mySlots[i % mySlots.length] || ''; 
-                if (sel2) sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
+            if(sel1 && sel1.style.display !== 'none') { 
+                if (u.isODOL) {
+                    // ODOL บังคับจับคู่ช่วงที่ (1 คู่ 2) หรือ (2 คู่ 3) หรือ (1 คู่ 3)
+                    let pA = i % 2 === 0 ? dSlotsODOL_P1 : dSlotsODOL_P2;
+                    let pB = i % 2 === 0 ? dSlotsODOL_P2 : dSlotsODOL_P3;
+                    if(pA.length === 0) pA = dSlotsODOL_P3; // เผื่อฉุกเฉิน
+                    sel1.value = pA[i % pA.length] || ''; 
+                    if (sel2) sel2.value = pB[i % pB.length] || ''; 
+                } else {
+                    sel1.value = dSlotsOD[i % dSlotsOD.length] || ''; 
+                    if (sel2) sel2.value = dSlotsOD[(i + 3) % dSlotsOD.length] || ''; 
+                }
             } 
         });
         
         nUsers.forEach((u, i) => { 
-            let mySlots = u.isODOL ? nSlotsODOL : nSlotsOD;
             let sel1 = u.tr.querySelector('.sel-meal-1');
             let sel2 = u.tr.querySelector('.sel-meal-2');
-            if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
-                sel1.value = mySlots[i % mySlots.length] || ''; 
-                if (sel2) sel2.value = mySlots[(i + 3) % mySlots.length] || ''; 
+            if(sel1 && sel1.style.display !== 'none') { 
+                if (u.isODOL) {
+                    let pA = i % 2 === 0 ? nSlotsODOL_P1 : nSlotsODOL_P2;
+                    let pB = i % 2 === 0 ? nSlotsODOL_P2 : nSlotsODOL_P3;
+                    if(pA.length === 0) pA = nSlotsODOL_P3;
+                    sel1.value = pA[i % pA.length] || ''; 
+                    if (sel2) sel2.value = pB[i % pB.length] || ''; 
+                } else {
+                    sel1.value = nSlotsOD[i % nSlotsOD.length] || ''; 
+                    if (sel2) sel2.value = nSlotsOD[(i + 3) % nSlotsOD.length] || ''; 
+                }
             } 
         });
-        
+
+        // Other users (Fallback)
         otherUsers.forEach((u, i) => { 
-            let mySlots = u.isODOL ? dSlotsODOL.concat(nSlotsODOL) : dSlotsOD.concat(nSlotsOD);
+            let mySlots = u.isODOL ? dSlotsODOL_P1.concat(dSlotsODOL_P2) : dSlotsOD;
             let sel1 = u.tr.querySelector('.sel-meal-1');
             let sel2 = u.tr.querySelector('.sel-meal-2');
             if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
@@ -4903,56 +4937,62 @@ function autoBalanceMeals() {
     const rows = document.querySelectorAll('#mealTableBody tr');
     let siteGroups = {};
 
-    // 1. ล้างสีกรอบแดงออกก่อนทุกครั้งที่เริ่มเช็ค
     rows.forEach(tr => {
         const sel1 = tr.querySelector('.sel-meal-1');
         const sel2 = tr.querySelector('.sel-meal-2');
         if(sel1) sel1.style.borderColor = '';
         if(sel2) sel2.style.borderColor = '';
-    });
 
-    // 2. จัดกลุ่มคนตามเว็บไซต์และกะงาน
-    rows.forEach(tr => {
+        // 🌟 1. ดักจับ ODOL ห้ามเลือกเวลาใน "ช่วงเดียวกัน"
+        if (sel1 && sel2 && sel1.value && sel2.value) {
+            let opt1 = sel1.options[sel1.selectedIndex];
+            let opt2 = sel2.options[sel2.selectedIndex];
+
+            if (opt1 && opt2 && opt1.getAttribute('data-type') === 'ODOL' && opt2.getAttribute('data-type') === 'ODOL') {
+                let p1 = opt1.getAttribute('data-period');
+                let p2 = opt2.getAttribute('data-period');
+
+                if (p1 && p2 && p1 === p2) {
+                    Swal.fire({
+                        toast: true, position: 'top', icon: 'warning',
+                        title: 'เลือกเวลาซ้ำช่วงกัน!',
+                        text: `พนักงาน ODOL ห้ามเลือกเวลาใน "ช่วงที่ ${p1}" ซ้ำกันครับ กรุณาเลือกช่วงอื่น`,
+                        background: '#111', color: '#ffcc00', timer: 4000
+                    });
+                    sel2.value = ''; // รีเซ็ตช่อง 2 ให้ว่าง
+                    sel2.style.borderColor = '#ffcc00'; // ทำกรอบสีเหลืองแจ้งเตือน
+                }
+            }
+        }
+
+        // 🌟 2. ดักจับการกินข้าวพร้อมกันของคนทำเว็บเดียวกัน (โค้ดเดิม)
         const siteCell = tr.querySelector('.site-cell');
         if(!siteCell) return;
-        
         const siteText = siteCell.innerText;
         if(siteText === 'ยังไม่ระบุเว็บ') return;
 
-        // ดึงค่ากะมาเช็ค (เช้า/ดึก)
         const stampText = tr.querySelector('td:nth-child(3)').innerText;
         const shiftType = stampText.includes('เช้า') || stampText.includes('D') ? 'D' : (stampText.includes('ดึก') || stampText.includes('N') ? 'N' : 'OTHER');
 
-        const sel1 = tr.querySelector('.sel-meal-1');
-        const sel2 = tr.querySelector('.sel-meal-2');
         if(!sel1 || sel1.style.display === 'none') return;
 
-        // แยกเว็บหลัก-รอง ให้อยู่ใน Array
         let sites = siteText.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
 
         sites.forEach(site => {
-            const key = site + '_' + shiftType; // คีย์ = ชื่อเว็บ_กะ
+            const key = site + '_' + shiftType; 
             if(!siteGroups[key]) siteGroups[key] = [];
-            siteGroups[key].push({
-                tr: tr,
-                val1: sel1.value,
-                val2: sel2 ? sel2.value : '',
-                sel1: sel1,
-                sel2: sel2
-            });
+            siteGroups[key].push({ tr: tr, val1: sel1.value, val2: sel2 ? sel2.value : '', sel1: sel1, sel2: sel2 });
         });
     });
 
-    // 3. ตรวจสอบคนในกลุ่มเดียวกันว่าเวลาชนกันไหม (ถ้าชนให้เปลี่ยนขอบเป็นสีแดง)
     for(let key in siteGroups) {
         let users = siteGroups[key];
         for(let i = 0; i < users.length; i++) {
             for(let j = i + 1; j < users.length; j++) {
                 let u1 = users[i];
                 let u2 = users[j];
-
                 if(u1.val1 && (u1.val1 === u2.val1 || u1.val1 === u2.val2)) {
-                    u1.sel1.style.borderColor = '#ff3366'; // สีแดง
+                    u1.sel1.style.borderColor = '#ff3366'; 
                     if(u1.val1 === u2.val1) u2.sel1.style.borderColor = '#ff3366';
                     if(u1.val1 === u2.val2 && u2.sel2) u2.sel2.style.borderColor = '#ff3366';
                 }
