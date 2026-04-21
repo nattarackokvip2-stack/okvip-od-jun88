@@ -4758,19 +4758,24 @@ if (deptF === 'ALL') {
     if(actionBtnsContainer) {
         actionBtnsContainer.style.display = 'flex'; 
         
+        // 🌟 เพิ่มปุ่มตรวจสอบเวลาชนกัน (ให้ทุกคนเห็น)
+        let overlapBtn = `<button class="btn btn-outline-danger fw-bold d-flex align-items-center gap-1" onclick="showMealOverlapDetails()"><span style="font-size:1.1rem;">👁️</span> ตรวจสอบเวลาชนกัน</button>`;
+
         if (myRole === 'Member') {
             actionBtnsContainer.innerHTML = `
+                ${overlapBtn}
                 <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>
             `;
         } else {
             actionBtnsContainer.innerHTML = `
+                ${overlapBtn}
                 <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
                 <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
             `;
         }
     }
     setTimeout(checkMealOverlap, 500);
-  }
+}
 
 function autoBalanceMeals() {
     Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
@@ -5033,6 +5038,108 @@ function autoBalanceMeals() {
                 }
             }
         }
+    }
+}
+
+// 🌟 ฟังก์ชันใหม่: แสดง Popup สรุปรายชื่อคนที่เวลาพักชนกัน (กดปุ่มรูป 👁️)
+function showMealOverlapDetails() {
+    const rows = document.querySelectorAll('#mealTableBody tr');
+    let siteGroups = {};
+
+    // 1. จัดกลุ่มพนักงานตามเว็บและกะ
+    rows.forEach(tr => {
+        const nick = tr.getAttribute('data-nick');
+        if(!nick) return;
+
+        const siteCell = tr.querySelector('.site-cell');
+        if(!siteCell || siteCell.innerText === 'ยังไม่ระบุเว็บ') return;
+
+        const siteText = siteCell.innerText;
+        const stampText = tr.querySelector('td:nth-child(3)').innerText;
+        const shiftType = stampText.includes('เช้า') || stampText.includes('D') ? 'D' : (stampText.includes('ดึก') || stampText.includes('N') ? 'N' : 'OTHER');
+
+        const sel1 = tr.querySelector('.sel-meal-1');
+        const sel2 = tr.querySelector('.sel-meal-2');
+
+        let val1 = sel1 ? sel1.value : '';
+        let val2 = sel2 ? sel2.value : '';
+
+        if(!val1 && !val2) return; // ถ้ายังไม่เลือกเวลา ข้ามไปเลย
+
+        let sites = siteText.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+
+        sites.forEach(site => {
+            const key = site + '_' + shiftType; 
+            if(!siteGroups[key]) siteGroups[key] = [];
+            siteGroups[key].push({ nick, val1, val2 });
+        });
+    });
+
+    // 2. ประมวลผลหาคนซ้ำ
+    let hasOverlap = false;
+    let htmlContent = '<div style="text-align: left; font-size: 0.95rem; max-height: 50vh; overflow-y: auto; padding-right: 10px;">';
+
+    for(let key in siteGroups) {
+        let users = siteGroups[key];
+        let timeTracker = {}; 
+
+        // เอาเวลาทุกคนมากองรวมกันเพื่อนับ
+        users.forEach(u => {
+            if(u.val1) {
+                if(!timeTracker[u.val1]) timeTracker[u.val1] = [];
+                timeTracker[u.val1].push(u.nick);
+            }
+            if(u.val2 && u.val2 !== u.val1) {
+                if(!timeTracker[u.val2]) timeTracker[u.val2] = [];
+                timeTracker[u.val2].push(u.nick);
+            }
+        });
+
+        // สร้างหน้าตาแจ้งเตือนสำหรับเว็บที่มีปัญหา
+        let siteName = key.split('_')[0];
+        let shiftName = key.split('_')[1] === 'D' ? 'กะเช้า' : 'กะดึก';
+        let siteHasOverlap = false;
+        let siteHtml = `<div class="mb-3 p-3 rounded" style="background: rgba(255, 51, 102, 0.1); border: 1px solid rgba(255, 51, 102, 0.4);">
+                            <h6 class="fw-bold text-danger mb-2">🌐 เว็บ: ${siteName} <span class="text-warning small">(${shiftName})</span></h6>`;
+
+        for(let time in timeTracker) {
+            if(timeTracker[time].length > 1) { // ถ้ามีคนเลือกเวลานี้มากกว่า 1 คน = ชนกัน!
+                hasOverlap = true;
+                siteHasOverlap = true;
+                siteHtml += `<div class="mb-2 pb-2 border-bottom border-danger" style="border-opacity: 0.3;">
+                                <span class="text-warning">⏰ เวลา <b>${time}</b></span><br>
+                                <span class="text-white ms-3">👥 ชนกัน: <b class="text-danger">${timeTracker[time].join(', ')}</b></span>
+                             </div>`;
+            }
+        }
+        siteHtml += `</div>`;
+
+        if(siteHasOverlap) {
+            htmlContent += siteHtml;
+        }
+    }
+
+    htmlContent += '</div>';
+
+    // 3. แสดงผล Popup แจ้งเตือน
+    if(!hasOverlap) {
+        Swal.fire({
+            icon: 'success',
+            title: 'ยอดเยี่ยม!',
+            text: 'ไม่มีพนักงานที่ทำเว็บเดียวกัน ไปพักทานข้าวพร้อมกันเลยครับ ✅',
+            background: '#111', color: '#fff',
+            confirmButtonColor: '#00ff66'
+        });
+    } else {
+        Swal.fire({
+            icon: 'warning',
+            title: '⚠️ รายงานเวลาทานข้าวชนกัน',
+            html: htmlContent,
+            background: '#151518', color: '#fff',
+            confirmButtonColor: '#ffcc00',
+            confirmButtonText: 'รับทราบ',
+            width: '600px' // ปรับให้กว้างขึ้นเพื่ออ่านง่าย
+        });
     }
 }
   // ==========================================
