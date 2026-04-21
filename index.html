@@ -2066,26 +2066,27 @@
   const offDutyStamps = ['X', 'XX', 'TX', 'PN', 'KP', 'KL', 'X4'];
 
   const mealTimeBlocks = [
-      // ====== 🔵 ของแผนก OD (ปล่อยไว้เหมือนเดิม) ======
-      { name: "OD (รอบ 1) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD" },
-      { name: "OD (รอบ 2) [07:00-10:00]", start: "07:00", end: "10:00", type: "OD" },
-      { name: "OD (รอบ 3) [12:00-14:00]", start: "12:00", end: "14:00", type: "OD" },
-      { name: "OD (รอบ 4) [16:30-18:30]", start: "16:30", end: "18:30", type: "OD" },
-      { name: "OD (รอบ 5) [21:00-23:00]", start: "21:00", end: "23:00", type: "OD" },
-      { name: "OD ลาว (รอบ 1) [04:00-07:00]", start: "04:00", end: "07:00", type: "OD" },
-      { name: "OD ลาว (รอบ 2) [10:00-13:00]", start: "10:00", end: "13:00", type: "OD" },
-      { name: "OD ลาว (รอบ 3) [16:00-18:00]", start: "16:00", end: "18:00", type: "OD" },
-      { name: "OD ลาว (รอบ 4) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD" },
+      // ====== 🔵 ของแผนก OD (ปอยเปต) ======
+      { name: "OD ปอยเปต เช้า (ช่วงที่ 1) [08:00-10:00]", start: "08:00", end: "10:00", type: "OD", loc: "POIPET", period: "1", shift: "D" },
+      { name: "OD ปอยเปต เช้า (ช่วงที่ 2) [12:00-14:00]", start: "12:00", end: "14:00", type: "OD", loc: "POIPET", period: "2", shift: "D" },
+      { name: "OD ปอยเปต เช้า (ช่วงที่ 3) [16:30-18:30]", start: "16:30", end: "18:30", type: "OD", loc: "POIPET", period: "3", shift: "D" },
+      { name: "OD ปอยเปต ดึก (ช่วงที่ 1) [21:00-23:00]", start: "21:00", end: "23:00", type: "OD", loc: "POIPET", period: "1", shift: "N" },
+      { name: "OD ปอยเปต ดึก (ช่วงที่ 2) [02:00-04:00]", start: "02:00", end: "04:00", type: "OD", loc: "POIPET", period: "2", shift: "N" },
+      { name: "OD ปอยเปต ดึก (ช่วงที่ 3) [07:00-08:00]", start: "07:00", end: "08:00", type: "OD", loc: "POIPET", period: "3", shift: "N" },
 
-      // ====== 🟠 ของแผนก ODOL (เพิ่ม parameter 'period' และ 'shift' เพื่อแยกระบบ) ======
-      // กะเช้า (D)
-      { name: "ODOL เช้า (ช่วงที่ 1) [08:00-10:00]", start: "08:00", end: "10:00", type: "ODOL", period: "1", shift: "D" },
-      { name: "ODOL เช้า (ช่วงที่ 2) [12:00-14:00]", start: "12:00", end: "14:00", type: "ODOL", period: "2", shift: "D" },
-      { name: "ODOL เช้า (ช่วงที่ 3) [16:30-18:30]", start: "16:30", end: "18:30", type: "ODOL", period: "3", shift: "D" },
-      // กะดึก (N)
-      { name: "ODOL ดึก (ช่วงที่ 1) [21:00-23:00]", start: "21:00", end: "23:00", type: "ODOL", period: "1", shift: "N" },
-      { name: "ODOL ดึก (ช่วงที่ 2) [02:00-05:00]", start: "02:00", end: "05:00", type: "ODOL", period: "2", shift: "N" },
-      { name: "ODOL ดึก (ช่วงที่ 3) [07:00-08:00]", start: "07:00", end: "08:00", type: "ODOL", period: "3", shift: "N" }
+      // ====== 🟢 ของแผนก OD (ลาว) ======
+      { name: "OD ลาว เช้า (ช่วงที่ 1) [10:00-13:00]", start: "10:00", end: "13:00", type: "OD", loc: "LAOS", period: "1", shift: "D" },
+      { name: "OD ลาว เช้า (ช่วงที่ 2) [16:00-19:00]", start: "16:00", end: "19:00", type: "OD", loc: "LAOS", period: "2", shift: "D" },
+      { name: "OD ลาว ดึก (ช่วงที่ 1) [22:00-00:00]", start: "22:00", end: "24:00", type: "OD", loc: "LAOS", period: "1", shift: "N" },
+      { name: "OD ลาว ดึก (ช่วงที่ 2) [04:00-07:00]", start: "04:00", end: "07:00", type: "OD", loc: "LAOS", period: "2", shift: "N" },
+
+      // ====== 🟠 ของแผนก ODOL ======
+      { name: "ODOL เช้า (ช่วงที่ 1) [08:00-10:00]", start: "08:00", end: "10:00", type: "ODOL", loc: "ODOL", period: "1", shift: "D" },
+      { name: "ODOL เช้า (ช่วงที่ 2) [12:00-14:00]", start: "12:00", end: "14:00", type: "ODOL", loc: "ODOL", period: "2", shift: "D" },
+      { name: "ODOL เช้า (ช่วงที่ 3) [16:30-18:30]", start: "16:30", end: "18:30", type: "ODOL", loc: "ODOL", period: "3", shift: "D" },
+      { name: "ODOL ดึก (ช่วงที่ 1) [21:00-23:00]", start: "21:00", end: "23:00", type: "ODOL", loc: "ODOL", period: "1", shift: "N" },
+      { name: "ODOL ดึก (ช่วงที่ 2) [02:00-05:00]", start: "02:00", end: "05:00", type: "ODOL", loc: "ODOL", period: "2", shift: "N" },
+      { name: "ODOL ดึก (ช่วงที่ 3) [07:00-08:00]", start: "07:00", end: "08:00", type: "ODOL", loc: "ODOL", period: "3", shift: "N" }
   ];
 
   // 🌟 ระบบ Export to Excel 🌟
@@ -4644,44 +4645,24 @@ if (deptF === 'ALL') {
     let optionsForOD_N = `<option value="">-- เลือกเวลา (กะดึก) --</option>`;
 
     mealTimeBlocks.forEach(block => { 
-        let groupHtmlD = `<optgroup label="${block.name}">`; 
-        let groupHtmlN = `<optgroup label="${block.name}">`; 
-        let groupHtmlODOL = `<optgroup label="${block.name}">`; 
-        let hasD = false, hasN = false;
-
+        let groupHtml = `<optgroup label="${block.name}">`; 
+        
         let slots = generateTimeSlots(block.start, block.end); 
         slots.forEach(slot => { 
             try {
-                let timePart = slot.split('-')[0];
-                let [sh, sm] = timePart.split(':').map(Number);
-                let mins = (sh || 0) * 60 + (sm || 0);
-                let isDaySlot = (mins >= 480 && mins < 1200);
-
-                if (block.type === 'OD') {
-                    if (isDaySlot) {
-                        groupHtmlD += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
-                        hasD = true;
-                    } else {
-                        groupHtmlN += `<option value="${slot}" data-type="${block.type}">${slot}</option>`;
-                        hasN = true;
-                    }
-                } else if (block.type === 'ODOL') {
-                    // ยัดข้อมูล data-period เข้าไปเพื่อดักจับ
-                    groupHtmlODOL += `<option value="${slot}" data-type="${block.type}" data-period="${block.period}">${slot}</option>`;
-                }
+                // ฝังข้อมูลทั้งหมดลงไปในตัวเลือก เพื่อให้ระบบดักจับได้
+                groupHtml += `<option value="${slot}" data-type="${block.type}" data-loc="${block.loc}" data-period="${block.period}">${slot}</option>`;
             } catch(e) {}
         }); 
         
-        groupHtmlD += `</optgroup>`; 
-        groupHtmlN += `</optgroup>`; 
-        groupHtmlODOL += `</optgroup>`; 
+        groupHtml += `</optgroup>`; 
 
         if (block.type === 'OD') { 
-            if (hasD) optionsForOD_D += groupHtmlD; 
-            if (hasN) optionsForOD_N += groupHtmlN; 
+            if (block.shift === 'D') optionsForOD_D += groupHtml; 
+            if (block.shift === 'N') optionsForOD_N += groupHtml; 
         } else if (block.type === 'ODOL') { 
-            if (block.shift === 'D') optionsForODOL_D += groupHtmlODOL; 
-            if (block.shift === 'N') optionsForODOL_N += groupHtmlODOL; 
+            if (block.shift === 'D') optionsForODOL_D += groupHtml; 
+            if (block.shift === 'N') optionsForODOL_N += groupHtml; 
         }
     });
     
@@ -4812,29 +4793,46 @@ function autoBalanceMeals() {
         let nUsers = users.filter(u => u.stamp === 'N'); 
         let otherUsers = users.filter(u => u.stamp !== 'N' && u.stamp !== 'D');
         
-        let nSlotsOD = [], dSlotsOD = [];
-        let dSlotsODOL_P1 = [], dSlotsODOL_P2 = [], dSlotsODOL_P3 = [];
-        let nSlotsODOL_P1 = [], nSlotsODOL_P2 = [], nSlotsODOL_P3 = [];
+        let dSlotsOD_P_P1=[], dSlotsOD_P_P2=[], dSlotsOD_P_P3=[]; 
+        let nSlotsOD_P_P1=[], nSlotsOD_P_P2=[], nSlotsOD_P_P3=[]; 
+        let dSlotsOD_L_P1=[], dSlotsOD_L_P2=[]; 
+        let nSlotsOD_L_P1=[], nSlotsOD_L_P2=[]; 
+        let dSlotsODOL_P1=[], dSlotsODOL_P2=[], dSlotsODOL_P3=[];
+        let nSlotsODOL_P1=[], nSlotsODOL_P2=[], nSlotsODOL_P3=[];
         
         mealTimeBlocks.forEach(b => { 
             let slots = generateTimeSlots(b.start, b.end); 
             slots.forEach(slot => {
                 try {
-                    let [sh, sm] = slot.split('-')[0].split(':').map(Number);
-                    let mins = (sh || 0) * 60 + (sm || 0);
-                    let isDaySlot = (mins >= 480 && mins < 1200);
-                    
-                    if (b.type === 'OD') {
-                        if (isDaySlot) dSlotsOD.push(slot); else nSlotsOD.push(slot);
-                    } else if (b.type === 'ODOL') {
+                    if (b.type === 'ODOL') {
                         if (b.shift === 'D') {
                             if (b.period === '1') dSlotsODOL_P1.push(slot);
                             if (b.period === '2') dSlotsODOL_P2.push(slot);
                             if (b.period === '3') dSlotsODOL_P3.push(slot);
-                        } else if (b.shift === 'N') {
+                        } else {
                             if (b.period === '1') nSlotsODOL_P1.push(slot);
                             if (b.period === '2') nSlotsODOL_P2.push(slot);
                             if (b.period === '3') nSlotsODOL_P3.push(slot);
+                        }
+                    } else if (b.type === 'OD') {
+                        if (b.loc === 'POIPET') {
+                            if (b.shift === 'D') {
+                                if (b.period === '1') dSlotsOD_P_P1.push(slot);
+                                if (b.period === '2') dSlotsOD_P_P2.push(slot);
+                                if (b.period === '3') dSlotsOD_P_P3.push(slot);
+                            } else {
+                                if (b.period === '1') nSlotsOD_P_P1.push(slot);
+                                if (b.period === '2') nSlotsOD_P_P2.push(slot);
+                                if (b.period === '3') nSlotsOD_P_P3.push(slot);
+                            }
+                        } else if (b.loc === 'LAOS') {
+                            if (b.shift === 'D') {
+                                if (b.period === '1') dSlotsOD_L_P1.push(slot);
+                                if (b.period === '2') dSlotsOD_L_P2.push(slot);
+                            } else {
+                                if (b.period === '1') nSlotsOD_L_P1.push(slot);
+                                if (b.period === '2') nSlotsOD_L_P2.push(slot);
+                            }
                         }
                     }
                 } catch(e) {}
@@ -4849,15 +4847,23 @@ function autoBalanceMeals() {
             let sel2 = u.tr.querySelector('.sel-meal-2');
             if(sel1 && sel1.style.display !== 'none') { 
                 if (u.isODOL) {
-                    // ODOL บังคับจับคู่ช่วงที่ (1 คู่ 2) หรือ (2 คู่ 3) หรือ (1 คู่ 3)
                     let pA = i % 2 === 0 ? dSlotsODOL_P1 : dSlotsODOL_P2;
                     let pB = i % 2 === 0 ? dSlotsODOL_P2 : dSlotsODOL_P3;
-                    if(pA.length === 0) pA = dSlotsODOL_P3; // เผื่อฉุกเฉิน
+                    if(pA.length === 0) pA = dSlotsODOL_P3; 
                     sel1.value = pA[i % pA.length] || ''; 
                     if (sel2) sel2.value = pB[i % pB.length] || ''; 
                 } else {
-                    sel1.value = dSlotsOD[i % dSlotsOD.length] || ''; 
-                    if (sel2) sel2.value = dSlotsOD[(i + 3) % dSlotsOD.length] || ''; 
+                    let isPoipet = Math.random() > 0.4; // สุ่มให้ปอยเปต 60%
+                    if (isPoipet) {
+                        let pA = i % 2 === 0 ? dSlotsOD_P_P1 : dSlotsOD_P_P2;
+                        let pB = i % 2 === 0 ? dSlotsOD_P_P2 : dSlotsOD_P_P3;
+                        if(pA.length===0) pA = dSlotsOD_P_P3;
+                        sel1.value = pA[i % pA.length] || '';
+                        if (sel2) sel2.value = pB[i % pB.length] || '';
+                    } else {
+                        sel1.value = dSlotsOD_L_P1[i % dSlotsOD_L_P1.length] || '';
+                        if (sel2) sel2.value = dSlotsOD_L_P2[i % dSlotsOD_L_P2.length] || '';
+                    }
                 }
             } 
         });
@@ -4873,15 +4879,23 @@ function autoBalanceMeals() {
                     sel1.value = pA[i % pA.length] || ''; 
                     if (sel2) sel2.value = pB[i % pB.length] || ''; 
                 } else {
-                    sel1.value = nSlotsOD[i % nSlotsOD.length] || ''; 
-                    if (sel2) sel2.value = nSlotsOD[(i + 3) % nSlotsOD.length] || ''; 
+                    let isPoipet = Math.random() > 0.4;
+                    if (isPoipet) {
+                        let pA = i % 2 === 0 ? nSlotsOD_P_P1 : nSlotsOD_P_P2;
+                        let pB = i % 2 === 0 ? nSlotsOD_P_P2 : nSlotsOD_P_P3;
+                        if(pA.length===0) pA = nSlotsOD_P_P3;
+                        sel1.value = pA[i % pA.length] || '';
+                        if (sel2) sel2.value = pB[i % pB.length] || '';
+                    } else {
+                        sel1.value = nSlotsOD_L_P1[i % nSlotsOD_L_P1.length] || '';
+                        if (sel2) sel2.value = nSlotsOD_L_P2[i % nSlotsOD_L_P2.length] || '';
+                    }
                 }
             } 
         });
 
-        // Other users (Fallback)
         otherUsers.forEach((u, i) => { 
-            let mySlots = u.isODOL ? dSlotsODOL_P1.concat(dSlotsODOL_P2) : dSlotsOD;
+            let mySlots = u.isODOL ? dSlotsODOL_P1.concat(dSlotsODOL_P2) : dSlotsOD_P_P1.concat(dSlotsOD_P_P2);
             let sel1 = u.tr.querySelector('.sel-meal-1');
             let sel2 = u.tr.querySelector('.sel-meal-2');
             if(sel1 && sel1.style.display !== 'none' && mySlots.length > 0) { 
@@ -4943,24 +4957,40 @@ function autoBalanceMeals() {
         if(sel1) sel1.style.borderColor = '';
         if(sel2) sel2.style.borderColor = '';
 
-        // 🌟 1. ดักจับ ODOL ห้ามเลือกเวลาใน "ช่วงเดียวกัน"
+        // 🌟 1. ดักจับการเลือกเวลาซ้ำช่วง และการเลือกข้ามสถานที่
         if (sel1 && sel2 && sel1.value && sel2.value) {
             let opt1 = sel1.options[sel1.selectedIndex];
             let opt2 = sel2.options[sel2.selectedIndex];
 
-            if (opt1 && opt2 && opt1.getAttribute('data-type') === 'ODOL' && opt2.getAttribute('data-type') === 'ODOL') {
-                let p1 = opt1.getAttribute('data-period');
-                let p2 = opt2.getAttribute('data-period');
+            if (opt1 && opt2) {
+                let type1 = opt1.getAttribute('data-type');
+                let type2 = opt2.getAttribute('data-type');
+                
+                // ตรวจสอบเฉพาะแผนกเดียวกัน
+                if (type1 === type2) {
+                    let p1 = opt1.getAttribute('data-period');
+                    let p2 = opt2.getAttribute('data-period');
+                    let loc1 = opt1.getAttribute('data-loc');
+                    let loc2 = opt2.getAttribute('data-loc');
 
-                if (p1 && p2 && p1 === p2) {
-                    Swal.fire({
-                        toast: true, position: 'top', icon: 'warning',
-                        title: 'เลือกเวลาซ้ำช่วงกัน!',
-                        text: `พนักงาน ODOL ห้ามเลือกเวลาใน "ช่วงที่ ${p1}" ซ้ำกันครับ กรุณาเลือกช่วงอื่น`,
-                        background: '#111', color: '#ffcc00', timer: 4000
-                    });
-                    sel2.value = ''; // รีเซ็ตช่อง 2 ให้ว่าง
-                    sel2.style.borderColor = '#ffcc00'; // ทำกรอบสีเหลืองแจ้งเตือน
+                    // ผิดกฎ: เลือกข้ามสถานที่ (เช่น รอบแรกปอยเปต รอบสองลาว)
+                    if (loc1 !== loc2) {
+                        Swal.fire({
+                            toast: true, position: 'top', icon: 'error', title: 'เลือกสถานที่ขัดแย้งกัน!',
+                            text: `พนักงาน 1 คนต้องเลือกทานข้าวในสถานที่เดียวกัน (ปอยเปต หรือ ลาว) เท่านั้นครับ`,
+                            background: '#111', color: '#ff3366', timer: 4500
+                        });
+                        sel2.value = ''; sel2.style.borderColor = '#ff3366';
+                    } 
+                    // ผิดกฎ: เลือกเวลาช่วงเดียวกัน
+                    else if (p1 === p2) {
+                        Swal.fire({
+                            toast: true, position: 'top', icon: 'warning', title: 'เลือกเวลาซ้ำช่วงกัน!',
+                            text: `ห้ามเลือกเวลาใน "ช่วงที่ ${p1}" ซ้ำกันครับ กรุณาข้ามไปเลือกช่วงอื่น`,
+                            background: '#111', color: '#ffcc00', timer: 4500
+                        });
+                        sel2.value = ''; sel2.style.borderColor = '#ffcc00';
+                    }
                 }
             }
         }
