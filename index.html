@@ -479,6 +479,7 @@
         <div id="tabHrEval" class="dept-badge active" onclick="switchHrTab('eval')">📋 1. ประเมินการทำงานรายเดือน</div>
         <div id="tabHrBehavior" class="dept-badge admin-only-ui" onclick="switchHrTab('behavior')" style="display: none;">⚠️ 2. รายงานพฤติกรรมพนักงาน</div>
         <div id="tabHrProbation" class="dept-badge admin-only-ui" onclick="switchHrTab('probation')" style="display: none;">🎓 3. ข้อมูลการสอบประเมิน</div>
+        <div id="tabHrFeedback" class="dept-badge" onclick="switchHrTab('feedback')">🗣️ 4. ประเมินพี่เลี้ยง/หัวหน้า</div>
       </div>
 
       <div id="hrEvalArea">
@@ -581,6 +582,84 @@
       </div>
     </div>
 
+    <div id="hrFeedbackArea" style="display: none;">
+        <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="text-white small">📅 เดือน:</span>
+                <input type="month" id="hrFeedbackMonth" class="form-control text-center text-info shadow-none fw-bold bg-dark border-info" style="width: 140px; padding: 5px;" onchange="renderFeedbackList()">
+                
+                <span class="text-white small ms-2">📌 กรองดูรายชื่อ:</span>
+                <select id="filterFeedbackTarget" class="form-select bg-dark text-warning border-warning fw-bold" style="width: auto; min-width: 180px; padding: 5px;" onchange="renderFeedbackList()">
+                    <option value="ALL">-- ดูทุกคน --</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-info fw-bold text-dark" onclick="openFeedbackModal()" style="border-radius: 8px; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);">➕ ทำแบบประเมิน (ไม่ระบุตัวตน)</button>
+        </div>
+        <div class="table-responsive" style="background: #0a0a0c; border: 1px solid #333; border-radius: 12px; padding: 10px;">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="text-info">วันที่ประเมิน</th>
+                <th class="text-secondary">ผู้ประเมิน</th>
+                <th>ผู้ถูกประเมิน (เป้าหมาย)</th>
+                <th class="text-warning">ประเมินในฐานะ</th>
+                <th>คะแนนเฉลี่ย</th>
+                <th class="text-center">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="hrFeedbackTableBody">
+              <tr><td colspan="6" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+<div class="modal fade" id="feedbackModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border: 1px solid #00f0ff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-3 text-center text-info" id="feedbackModalTitle">🗣️ แบบประเมินพี่เลี้ยง / หัวหน้างาน</h4>
+        
+        <div class="alert alert-info border-info p-3 mb-4" style="background: rgba(0, 240, 255, 0.05); font-size: 0.85rem; line-height: 1.6;">
+            <b>ℹ️ ข้อมูลสำคัญก่อนประเมิน:</b> พนักงานสามารถเลือกประเมินผู้ดูแลและหัวหน้างานได้ทุกคน 
+            <span class="text-warning fw-bold">โดยข้อมูลที่พนักงานประเมินจะไม่ระบุตัวตน (Anonymous) ไม่มีใครทราบว่าแอคเคาท์ใดเป็นผู้ประเมิน และไม่มีผลกระทบต่อหน้าที่การทำงานของคุณ</span><br>
+            กรุณาประเมินตามความเป็นจริง ความคิดเห็นของคุณมีคุณค่าอย่างยิ่ง เพื่อให้พี่เลี้ยงและหัวหน้าได้ทราบพฤติกรรมและนำไปปรับปรุงแก้ไขตนเองต่อไปครับ
+        </div>
+
+        <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)">
+          <input type="hidden" id="editFeedbackId">
+          
+          <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                  <label class="small mb-1 text-white">1. ประเมินในฐานะ <span class="text-danger">*</span></label>
+                  <select id="fbRole" class="form-select bg-dark text-info border-info fw-bold" required onchange="updateFeedbackQuestions(); updateFeedbackUserSelect();">
+                      <option value="Supervisor">หัวหน้างาน (Supervisor)</option>
+                      <option value="Mentor">พี่เลี้ยงสอนงาน (Mentor)</option>
+                  </select>
+              </div>
+              <div class="col-md-6">
+                  <label class="small mb-1 text-white">2. ประเมินผู้สอนงาน <span class="text-danger">*</span></label>
+                  <select id="fbTargetNick" class="form-select bg-dark text-white border-secondary" required></select>
+              </div>
+          </div>
+
+          <div class="alert alert-dark border-secondary p-3 mb-3" style="background: #111;">
+              <div id="fbQuestionsArea"></div>
+          </div>
+
+          <label class="small mb-1 text-success fw-bold">👍 สิ่งที่ประทับใจ / ทำได้ดีอยู่แล้ว</label>
+          <textarea id="fbGood" class="form-control mb-3 bg-dark text-white border-success" rows="2" placeholder="ระบุสิ่งที่ชื่นชอบ..."></textarea>
+
+          <label class="small mb-1 text-warning fw-bold">💡 สิ่งที่ควรปรับปรุง / ข้อเสนอแนะ</label>
+          <textarea id="fbImprove" class="form-control mb-4 bg-dark text-white border-warning" rows="2" placeholder="ระบุสิ่งที่อยากให้พัฒนาเพิ่ม..."></textarea>
+
+          <button type="submit" id="btnSaveFeedback" class="btn btn-info w-100 py-2 fw-bold text-dark" style="border-radius: 8px;">🚀 ส่งแบบประเมิน (ไม่เปิดเผยชื่อ)</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div id="staffSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
@@ -4758,19 +4837,24 @@ if (deptF === 'ALL') {
     if(actionBtnsContainer) {
         actionBtnsContainer.style.display = 'flex'; 
         
+        // 🌟 เพิ่มปุ่มตรวจสอบเวลาชนกัน (ให้ทุกคนเห็น)
+        let overlapBtn = `<button class="btn btn-outline-danger fw-bold d-flex align-items-center gap-1" onclick="showMealOverlapDetails()"><span style="font-size:1.1rem;">👁️</span> ตรวจสอบเวลาชนกัน</button>`;
+
         if (myRole === 'Member') {
             actionBtnsContainer.innerHTML = `
+                ${overlapBtn}
                 <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>
             `;
         } else {
             actionBtnsContainer.innerHTML = `
+                ${overlapBtn}
                 <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
                 <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
             `;
         }
     }
     setTimeout(checkMealOverlap, 500);
-  }
+}
 
 function autoBalanceMeals() {
     Swal.fire({title:'กำลังคำนวณและกระจายรอบ...', timer:1000, didOpen:()=>Swal.showLoading()});
@@ -5033,6 +5117,108 @@ function autoBalanceMeals() {
                 }
             }
         }
+    }
+}
+
+// 🌟 ฟังก์ชันใหม่: แสดง Popup สรุปรายชื่อคนที่เวลาพักชนกัน (กดปุ่มรูป 👁️)
+function showMealOverlapDetails() {
+    const rows = document.querySelectorAll('#mealTableBody tr');
+    let siteGroups = {};
+
+    // 1. จัดกลุ่มพนักงานตามเว็บและกะ
+    rows.forEach(tr => {
+        const nick = tr.getAttribute('data-nick');
+        if(!nick) return;
+
+        const siteCell = tr.querySelector('.site-cell');
+        if(!siteCell || siteCell.innerText === 'ยังไม่ระบุเว็บ') return;
+
+        const siteText = siteCell.innerText;
+        const stampText = tr.querySelector('td:nth-child(3)').innerText;
+        const shiftType = stampText.includes('เช้า') || stampText.includes('D') ? 'D' : (stampText.includes('ดึก') || stampText.includes('N') ? 'N' : 'OTHER');
+
+        const sel1 = tr.querySelector('.sel-meal-1');
+        const sel2 = tr.querySelector('.sel-meal-2');
+
+        let val1 = sel1 ? sel1.value : '';
+        let val2 = sel2 ? sel2.value : '';
+
+        if(!val1 && !val2) return; // ถ้ายังไม่เลือกเวลา ข้ามไปเลย
+
+        let sites = siteText.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
+
+        sites.forEach(site => {
+            const key = site + '_' + shiftType; 
+            if(!siteGroups[key]) siteGroups[key] = [];
+            siteGroups[key].push({ nick, val1, val2 });
+        });
+    });
+
+    // 2. ประมวลผลหาคนซ้ำ
+    let hasOverlap = false;
+    let htmlContent = '<div style="text-align: left; font-size: 0.95rem; max-height: 50vh; overflow-y: auto; padding-right: 10px;">';
+
+    for(let key in siteGroups) {
+        let users = siteGroups[key];
+        let timeTracker = {}; 
+
+        // เอาเวลาทุกคนมากองรวมกันเพื่อนับ
+        users.forEach(u => {
+            if(u.val1) {
+                if(!timeTracker[u.val1]) timeTracker[u.val1] = [];
+                timeTracker[u.val1].push(u.nick);
+            }
+            if(u.val2 && u.val2 !== u.val1) {
+                if(!timeTracker[u.val2]) timeTracker[u.val2] = [];
+                timeTracker[u.val2].push(u.nick);
+            }
+        });
+
+        // สร้างหน้าตาแจ้งเตือนสำหรับเว็บที่มีปัญหา
+        let siteName = key.split('_')[0];
+        let shiftName = key.split('_')[1] === 'D' ? 'กะเช้า' : 'กะดึก';
+        let siteHasOverlap = false;
+        let siteHtml = `<div class="mb-3 p-3 rounded" style="background: rgba(255, 51, 102, 0.1); border: 1px solid rgba(255, 51, 102, 0.4);">
+                            <h6 class="fw-bold text-danger mb-2">🌐 เว็บ: ${siteName} <span class="text-warning small">(${shiftName})</span></h6>`;
+
+        for(let time in timeTracker) {
+            if(timeTracker[time].length > 1) { // ถ้ามีคนเลือกเวลานี้มากกว่า 1 คน = ชนกัน!
+                hasOverlap = true;
+                siteHasOverlap = true;
+                siteHtml += `<div class="mb-2 pb-2 border-bottom border-danger" style="border-opacity: 0.3;">
+                                <span class="text-warning">⏰ เวลา <b>${time}</b></span><br>
+                                <span class="text-white ms-3">👥 ชนกัน: <b class="text-danger">${timeTracker[time].join(', ')}</b></span>
+                             </div>`;
+            }
+        }
+        siteHtml += `</div>`;
+
+        if(siteHasOverlap) {
+            htmlContent += siteHtml;
+        }
+    }
+
+    htmlContent += '</div>';
+
+    // 3. แสดงผล Popup แจ้งเตือน
+    if(!hasOverlap) {
+        Swal.fire({
+            icon: 'success',
+            title: 'ยอดเยี่ยม!',
+            text: 'ไม่มีพนักงานที่ทำเว็บเดียวกัน ไปพักทานข้าวพร้อมกันเลยครับ ✅',
+            background: '#111', color: '#fff',
+            confirmButtonColor: '#00ff66'
+        });
+    } else {
+        Swal.fire({
+            icon: 'warning',
+            title: '⚠️ รายงานเวลาทานข้าวชนกัน',
+            html: htmlContent,
+            background: '#151518', color: '#fff',
+            confirmButtonColor: '#ffcc00',
+            confirmButtonText: 'รับทราบ',
+            width: '600px' // ปรับให้กว้างขึ้นเพื่ออ่านง่าย
+        });
     }
 }
   // ==========================================
@@ -6670,12 +6856,33 @@ async function updateInlineUser(selectEl, nickname, field) {
         Swal.fire('Error', 'เกิดข้อผิดพลาดในการอัปเดต', 'error');
     }
 }
-  // ==========================================
+  
+// ==========================================
 // 📊 ระบบข้อมูลการทำงาน (HR & Performance)
 // ==========================================
 let currentHrTab = 'eval';
 let currentHrEvalDept = 'ALL';
 let allBehaviorsData = []; // ตัวแปรสำหรับเก็บข้อมูลพฤติกรรม
+
+// 🌟 ฟังก์ชันใหม่: ดึงรายชื่อพี่เลี้ยง/หัวหน้า มาสร้างเป็น Dropdown ตัวกรอง
+function updateFeedbackFilterDropdown() {
+    const filterSelect = document.getElementById('filterFeedbackTarget');
+    if(!filterSelect) return;
+
+    let html = '<option value="ALL">-- ดูทุกคน --</option>';
+    allUsersData.forEach(u => {
+        const nick = u[1];
+        const role = u[6];
+        const status = u[7];
+
+        // เอาเฉพาะคนที่ Active และเป็นระดับ Admin / SuperAdmin
+        if (status === 'Active' && (role === 'SuperAdmin' || role === 'Admin')) {
+            let roleName = role === 'SuperAdmin' ? 'หัวหน้า' : 'พี่เลี้ยง';
+            html += `<option value="${nick}">${nick} (${roleName})</option>`;
+        }
+    });
+    filterSelect.innerHTML = html;
+}
 
 function switchHrTab(tab) {
     currentHrTab = tab;
@@ -6683,18 +6890,26 @@ function switchHrTab(tab) {
         b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
     });
     
-    let btnId = tab === 'eval' ? 'tabHrEval' : (tab === 'behavior' ? 'tabHrBehavior' : 'tabHrProbation');
+    let btnId = tab === 'eval' ? 'tabHrEval' : (tab === 'behavior' ? 'tabHrBehavior' : (tab === 'probation' ? 'tabHrProbation' : 'tabHrFeedback'));
     let btn = document.getElementById(btnId);
     if(btn) { btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; }
 
     document.getElementById('hrEvalArea').style.display = tab === 'eval' ? 'block' : 'none';
     document.getElementById('hrBehaviorArea').style.display = tab === 'behavior' ? 'block' : 'none';
     document.getElementById('hrProbationArea').style.display = tab === 'probation' ? 'block' : 'none';
+    document.getElementById('hrFeedbackArea').style.display = tab === 'feedback' ? 'block' : 'none';
     
     if(tab === 'eval') renderHrEvalList();
     if(tab === 'behavior') {
         if(allBehaviorsData.length === 0) loadSupabaseBehaviors();
         else renderBehaviorList();
+    }
+    if(tab === 'feedback') {
+        const now = new Date();
+        document.getElementById('hrFeedbackMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        updateFeedbackFilterDropdown(); // 👈 สั่งให้โหลดรายชื่อตอนเปิดแท็บ
+        renderFeedbackList();
     }
 }
 
@@ -7065,7 +7280,6 @@ function changeHrBehaviorMonth(offset) {
 function updateBehaviorUserSelect() {
     let html = '<option value="">-- เลือกพนักงาน --</option>'; 
     allUsersData.forEach(u => { 
-        // 🌟 แก้ไขตรงนี้: เพิ่มเงื่อนไขเช็คว่า department (u[3]) ต้องมีคำว่า ODOL
         const dept = u[3] ? u[3].toString() : '';
         if(u[7] === 'Active' && u[6] !== 'SuperAdmin' && dept.includes('ODOL')) { 
             html += `<option value="${u[1]}|${u[3]}">${u[1]} (${dept.split(' ')[0]})</option>`;
@@ -7189,6 +7403,326 @@ function deleteBehavior(id) {
     });
 }
 
+// ------------------------------------------
+// 🗣️ 4. ระบบประเมินพี่เลี้ยง / หัวหน้างาน
+// ------------------------------------------
+
+function updateFeedbackUserSelect() {
+    let html = '<option value="">-- เลือกรายชื่อ --</option>'; 
+    const myNick = localStorage.getItem('okvip_nick');
+    
+    const evalRole = document.getElementById('fbRole').value; 
+    
+    allUsersData.forEach(u => { 
+        const nick = u[1];
+        const dept = u[3] ? u[3].toString() : '';
+        const role = u[6] ? u[6].toString().trim() : ''; 
+        const status = u[7];
+
+        if(status === 'Active' && nick !== myNick) { 
+            
+            if (evalRole === 'Supervisor' && role === 'SuperAdmin') {
+                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
+            } 
+            else if (evalRole === 'Mentor' && role === 'Admin') {
+                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
+            }
+            
+        } 
+    }); 
+    
+    document.getElementById('fbTargetNick').innerHTML = html; 
+}
+
+function updateFeedbackQuestions() {
+    const role = document.getElementById('fbRole').value;
+    const area = document.getElementById('fbQuestionsArea');
+    
+    let questions = [];
+    if (role === 'Mentor') {
+        questions = [
+            "1. ความชัดเจน: อธิบายขั้นตอนการทำงาน กฎระเบียบ ได้เข้าใจง่าย",
+            "2. ทัศนคติ: มีความใจเย็น เป็นมิตร พร้อมสอนงานโดยไม่แสดงความหงุดหงิด",
+            "3. การซัพพอร์ต: เมื่อเกิดปัญหาพร้อมเข้ามาช่วยดูและให้คำปรึกษาทันที",
+            "4. การเปิดโอกาส (Coaching): ให้โอกาสลองทำจริง และคอยประกบดูความถูกต้อง"
+        ];
+    } else {
+        questions = [
+            "1. ความยุติธรรม: กระจายงาน จัดตารางพัก หรือแบ่งหน้าที่ได้อย่างเหมาะสม",
+            "2. การรับฟัง: เปิดใจรับฟังปัญหาหน้างาน หรือข้อเสนอแนะจากทีมงาน",
+            "3. การแก้ปัญหา: ช่วยตัดสินใจและแก้ปัญหาหน้างานได้อย่างเด็ดขาด",
+            "4. บรรยากาศ: สร้างสภาพแวดล้อมการทำงานที่ดี ไม่กดดันจนเกินไป"
+        ];
+    }
+
+    let html = '';
+    questions.forEach((q, idx) => {
+        html += `
+        <div class="mb-3">
+            <div class="text-white small mb-2">${q}</div>
+            <select class="form-select form-select-sm bg-black text-warning border-secondary fb-score-select" required>
+                <option value="" disabled selected>-- เลือกคะแนน (1-5) --</option>
+                <option value="5">⭐⭐⭐⭐⭐ (5) ดีเยี่ยม</option>
+                <option value="4">⭐⭐⭐⭐ (4) ดี</option>
+                <option value="3">⭐⭐⭐ (3) ปานกลาง</option>
+                <option value="2">⭐⭐ (2) ต้องปรับปรุง</option>
+                <option value="1">⭐ (1) แย่มาก</option>
+            </select>
+        </div>`;
+    });
+    area.innerHTML = html;
+}
+
+function openFeedbackModal() {
+    document.getElementById('feedbackForm').reset();
+    document.getElementById('editFeedbackId').value = '';
+    document.getElementById('feedbackModalTitle').innerText = '🗣️ แบบประเมินพี่เลี้ยง / หัวหน้างาน';
+    updateFeedbackUserSelect();
+    updateFeedbackQuestions();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).show();
+}
+
+async function handleFeedbackSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveFeedback');
+    btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
+    
+    try {
+        const targetNick = document.getElementById('fbTargetNick').value;
+        const evaluateRole = document.getElementById('fbRole').value;
+        const goodPoint = document.getElementById('fbGood').value;
+        const improvePoint = document.getElementById('fbImprove').value;
+        const editId = document.getElementById('editFeedbackId').value;
+        const myNick = localStorage.getItem('okvip_nick');
+        
+        let totalScore = 0;
+        let scores = [];
+        let missingScore = false;
+        
+        document.querySelectorAll('.fb-score-select').forEach(sel => {
+            if (!sel.value) { missingScore = true; } 
+            const val = parseInt(sel.value);
+            scores.push(val);
+            totalScore += val;
+        });
+        
+        if (missingScore) throw new Error("กรุณาให้คะแนน (ดาว) ให้ครบทุกข้อครับ");
+        if (!targetNick) throw new Error("กรุณาเลือกผู้ถูกประเมินครับ");
+
+        const avgScore = (totalScore / scores.length).toFixed(2);
+
+        const payload = {
+            target_user: targetNick,
+            eval_role: evaluateRole,
+            avg_score: avgScore,
+            scores: JSON.stringify(scores),
+            good_point: goodPoint,
+            improve_point: improvePoint,
+            sender_nick: myNick 
+        };
+
+        if (editId) {
+            const { error } = await supabaseClient.from('hr_feedbacks').update(payload).eq('id', editId);
+            if (error) throw error;
+        } else {
+            payload.created_at = new Date().toISOString();
+            const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
+            if (error) throw error;
+            
+            if (typeof sendSystemNoti === 'function') {
+                let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
+                let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
+                sendSystemNoti(targetNick, '🚨 รายงานพฤติกรรม (แบบประเมินใหม่)', notiMsg);
+            }
+        }
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).hide();
+        Swal.fire({toast:true, position:'top', title:'บันทึกสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+        
+        renderFeedbackList(); 
+
+    } catch(err) {
+        Swal.fire({toast:true, position:'top', title:'เกิดข้อผิดพลาด', text: err.message, icon:'warning', timer:3000, showConfirmButton:false, background:'#111', color:'#fff'});
+    } finally {
+        btn.disabled = false; btn.innerText = '🚀 บันทึกแบบประเมิน';
+    }
+}
+
+async function renderFeedbackList() {
+    const tbody = document.getElementById('hrFeedbackTableBody');
+    if(!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-warning">⏳ กำลังดึงข้อมูล...</td></tr>';
+
+    const monthInput = document.getElementById('hrFeedbackMonth');
+    const month = monthInput ? monthInput.value : '';
+    const myNick = localStorage.getItem('okvip_nick');
+    
+    const filterTarget = document.getElementById('filterFeedbackTarget') ? document.getElementById('filterFeedbackTarget').value : 'ALL';
+    
+    try {
+        const { data, error } = await supabaseClient.from('hr_feedbacks').select('*').order('created_at', { ascending: false });
+        if(error) throw error;
+
+        let filteredData = (data || []).filter(item => {
+            let matchMonth = item.created_at.startsWith(month);
+            let matchTarget = true;
+            if (filterTarget !== 'ALL') {
+                matchTarget = (item.target_user === filterTarget);
+            }
+            return matchMonth && matchTarget;
+        });
+
+        // 🌟 กรองข้อมูลตามสิทธิ์ (RBAC 3 ระดับ แบบที่คุณต้องการเป๊ะๆ)
+        filteredData = filteredData.filter(item => {
+            // หาว่าคนที่ถูกประเมิน (Target) มียศอะไรในระบบ
+            const targetUserObj = allUsersData.find(u => u[1] === item.target_user);
+            const targetRole = targetUserObj ? targetUserObj[6] : '';
+
+            if (myRole === 'Member') {
+                // 1. MEMBER: เห็นเฉพาะที่ตัวเองเป็นคนส่งเท่านั้น
+                return item.sender_nick === myNick;
+            } 
+            else if (myRole === 'Admin') {
+                // 2. ADMIN: เห็นเฉพาะที่ตัวเองส่ง หรือ ที่ตัวเองเป็นผู้ถูกประเมินเท่านั้น
+                return item.sender_nick === myNick || item.target_user === myNick;
+            } 
+            else if (myRole === 'SuperAdmin') {
+                // 3. SUPERADMIN: เห็นที่ตัวเองส่ง, ที่ตัวเองถูกประเมิน, และเห็นของ Admin
+                if (item.sender_nick === myNick) return true; // ที่ตัวเองเป็นคนส่ง
+                if (item.target_user === myNick) return true; // ที่ตัวเองถูกประเมิน
+                if (targetRole === 'SuperAdmin') return false; // 🚫 ปิดบังของ SuperAdmin ระดับเดียวกันคนอื่น
+                return true; // อนุญาตให้เห็นของ Admin
+            }
+            return false;
+        });
+
+        if(filteredData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบข้อมูลการประเมิน หรือคุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้</td></tr>';
+            return;
+        }
+
+        let html = '';
+        filteredData.forEach(item => {
+            const dateStr = new Date(item.created_at).toLocaleDateString('th-TH');
+            const roleBadge = item.eval_role === 'Mentor' 
+                ? '<span class="badge bg-dark border border-info text-info">พี่เลี้ยง (Mentor)</span>'
+                : '<span class="badge bg-dark border border-warning text-warning">หัวหน้า (Supervisor)</span>';
+            
+            let starCount = Math.round(item.avg_score);
+            let stars = '⭐'.repeat(starCount) + '<span style="opacity:0.2">' + '⭐'.repeat(5-starCount) + '</span>';
+
+            // จัดการเรื่องการปิดบังชื่อ (Anonymous)
+            let senderDisplay = '<span class="text-muted small">🔒 ปกปิดชื่อ</span>';
+            if (item.sender_nick === myNick) {
+                senderDisplay = '<span class="text-success fw-bold">คุณ (ผู้ส่ง)</span>';
+            }
+
+            let viewBtn = `<button class="btn btn-sm btn-outline-info fw-bold px-2 py-1 m-1" onclick="viewFeedbackDetail('${item.id}')" title="ดูข้อมูล">🔍</button>`;
+            let editBtn = '';
+            let delBtn = '';
+
+            // 🌟 ให้สิทธิ์แก้ไข/ลบ ได้เฉพาะเจ้าของบัญชีที่ "เป็นคนส่ง" เท่านั้น!
+            if (item.sender_nick === myNick) {
+                editBtn = `<button class="btn btn-sm btn-outline-warning fw-bold px-2 py-1 m-1" onclick="editFeedback('${item.id}')" title="แก้ไข">✏️</button>`;
+                delBtn = `<button class="btn btn-sm btn-outline-danger fw-bold px-2 py-1 m-1" onclick="deleteFeedback('${item.id}')" title="ลบ">✖</button>`;
+            }
+
+            html += `<tr>
+                <td class="text-white-50 small">${dateStr}</td>
+                <td class="text-center">${senderDisplay}</td>
+                <td class="fw-bold text-white" style="font-size: 1.05rem;">${item.target_user}</td>
+                <td>${roleBadge}</td>
+                <td><span class="text-info fw-bold">${item.avg_score}</span> <br><span style="font-size:0.8rem">${stars}</span></td>
+                <td class="text-center"><div class="d-flex justify-content-center align-items-center flex-wrap">${viewBtn}${editBtn}${delBtn}</div></td>
+            </tr>`;
+        });
+        
+        tbody.innerHTML = html;
+        window.currentFeedbackData = filteredData; 
+
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Error: ${e.message}</td></tr>`;
+    }
+}
+function editFeedback(id) {
+    const item = window.currentFeedbackData.find(x => x.id.toString() === id.toString());
+    if(!item) return;
+
+    document.getElementById('editFeedbackId').value = item.id;
+    document.getElementById('fbRole').value = item.eval_role;
+    updateFeedbackUserSelect();
+    
+    setTimeout(() => { document.getElementById('fbTargetNick').value = item.target_user; }, 100);
+    
+    updateFeedbackQuestions();
+
+    let scores = [];
+    try { scores = JSON.parse(item.scores); } catch(e){}
+    const selects = document.querySelectorAll('.fb-score-select');
+    scores.forEach((sc, i) => { if(selects[i]) selects[i].value = sc; });
+
+    document.getElementById('fbGood').value = item.good_point;
+    document.getElementById('fbImprove').value = item.improve_point;
+    
+    document.getElementById('feedbackModalTitle').innerText = '✏️ แก้ไขแบบประเมิน';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).show();
+}
+
+function deleteFeedback(id) {
+    Swal.fire({
+        title: 'ต้องการลบการประเมินนี้?',
+        text: 'ข้อมูลนี้จะถูกลบถาวร ไม่สามารถกู้คืนได้',
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+    }).then(async r => {
+        if(r.isConfirmed) {
+            Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()});
+            try {
+                await supabaseClient.from('hr_feedbacks').delete().eq('id', id);
+                Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+                renderFeedbackList();
+            } catch(e) {
+                Swal.fire('Error', e.message, 'error');
+            }
+        }
+    });
+}
+
+function viewFeedbackDetail(id) {
+    const item = window.currentFeedbackData.find(x => x.id.toString() === id.toString());
+    if(!item) return;
+
+    let scores = [];
+    try { scores = JSON.parse(item.scores); } catch(e){}
+
+    let qHtml = '';
+    scores.forEach((sc, idx) => {
+        qHtml += `<div class="d-flex justify-content-between border-bottom border-secondary mb-2 pb-1">
+                    <span class="text-white-50 small">ข้อที่ ${idx+1}</span>
+                    <span class="text-warning fw-bold">${sc} ดาว</span>
+                  </div>`;
+    });
+
+    Swal.fire({
+        title: `รีวิวการประเมิน: ${item.target_user}`,
+        html: `
+            <div class="text-start" style="font-size: 0.95rem;">
+                <div class="mb-3 p-3 rounded" style="background: #111; border: 1px solid #333;">
+                    <div class="text-info fw-bold mb-2">📊 คะแนนแต่ละข้อ</div>
+                    ${qHtml}
+                </div>
+                <div class="mb-3 p-3 rounded" style="background: rgba(0,255,102,0.1); border: 1px solid rgba(0,255,102,0.3);">
+                    <div class="text-success fw-bold mb-1">👍 สิ่งที่ประทับใจ / ทำได้ดี</div>
+                    <div class="text-white" style="white-space: pre-wrap;">${item.good_point || '-'}</div>
+                </div>
+                <div class="p-3 rounded" style="background: rgba(255,204,0,0.1); border: 1px solid rgba(255,204,0,0.3);">
+                    <div class="text-warning fw-bold mb-1">💡 สิ่งที่ควรพัฒนา</div>
+                    <div class="text-white" style="white-space: pre-wrap;">${item.improve_point || '-'}</div>
+                </div>
+            </div>
+        `,
+        background: '#151518', color: '#fff', confirmButtonColor: '#00f0ff', confirmButtonText: 'ปิดหน้าต่าง'
+    });
+}
 // 🌟 ฟังก์ชันซ่อน/โชว์แผงตรายางมินิ
   function toggleStampBox() {
       const wrapper = document.getElementById('stampToolboxWrapper');
