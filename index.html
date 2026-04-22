@@ -7389,15 +7389,19 @@ function updateFeedbackUserSelect() {
         const dept = u[3] ? u[3].toString() : '';
         const role = u[6]; // เช็คระดับสิทธิ์ของพนักงาน
         const status = u[7];
+        
+        // 🌟 ดึงข้อมูลสิทธิ์จากระบบตั้งค่า ว่าคนนี้โดนซ่อน (EXCLUDE_DUTY) หรือไม่
+        const capable = sysSettings.userSites[nick] || [];
+        const isExcluded = capable.includes('EXCLUDE_DUTY');
 
-        // ต้องเป็นคนที่ Active อยู่ และห้ามประเมินตัวเอง
-        if(status === 'Active' && nick !== myNick) { 
+        // ต้องเป็นคนที่ Active, ไม่ใช่ชื่อตัวเอง และ "ไม่โดนซ่อนจากตารางงาน"
+        if(status === 'Active' && nick !== myNick && !isExcluded) { 
             
-            // 🌟 1. ถ้าเลือกประเมิน "หัวหน้างาน" จะดึงมาเฉพาะคนที่เป็น SuperAdmin
+            // 1. ถ้าเลือกประเมิน "หัวหน้างาน" จะดึงมาเฉพาะคนที่เป็น SuperAdmin
             if (evalRole === 'Supervisor' && role === 'SuperAdmin') {
                 html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
             } 
-            // 🌟 2. ถ้าเลือกประเมิน "พี่เลี้ยง" จะดึงมาเฉพาะคนที่เป็น Admin
+            // 2. ถ้าเลือกประเมิน "พี่เลี้ยง" จะดึงมาเฉพาะคนที่เป็น Admin
             else if (evalRole === 'Mentor' && role === 'Admin') {
                 html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
             }
