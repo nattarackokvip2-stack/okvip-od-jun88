@@ -7440,24 +7440,14 @@ async function handleFeedbackSubmit(e) {
         
         let totalScore = 0;
         let scores = [];
-        let missingScore = false;
-        
         document.querySelectorAll('.fb-score-select').forEach(sel => {
-            if (!sel.value) { missingScore = true; } // ดักจับถ้าลืมให้ดาว
             const val = parseInt(sel.value);
             scores.push(val);
             totalScore += val;
         });
-        
-        if (missingScore) {
-            throw new Error("กรุณาให้คะแนน (ดาว) ให้ครบทุกข้อครับ");
-        }
-        if (!targetNick) {
-            throw new Error("กรุณาเลือกผู้ถูกประเมินครับ");
-        }
-
         const avgScore = (totalScore / scores.length).toFixed(2);
 
+        // หมายเหตุ: โค้ดนี้เตรียมไว้เซฟลงฐานข้อมูล ถ้ามีการสร้างตาราง hr_feedbacks แล้ว
         const payload = {
             target_user: targetNick,
             eval_role: evaluateRole,
@@ -7469,124 +7459,23 @@ async function handleFeedbackSubmit(e) {
             // 💡 เราเจตนาไม่เก็บค่าคนประเมิน (sender) เพื่อให้เป็น Anonymous (ความลับ)
         };
 
-        // 🌟 บันทึกข้อมูลลงฐานข้อมูล
-        const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
-        if (error) throw error;
+        // TODO: หากสร้างตาราง hr_feedbacks ใน Supabase แล้ว ให้ปลดคอมเมนต์ด้านล่าง
+        // await supabaseClient.from('hr_feedbacks').insert([payload]);
 
         bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).hide();
         Swal.fire({toast:true, position:'top', title:'ส่งแบบประเมินเรียบร้อย ขอบคุณครับ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
-        
-        // โหลดรายการใหม่ทันทีถ้าแอดมินดูอยู่
-        if (myRole !== 'Member') {
-            renderFeedbackList();
-        }
-
     } catch(err) {
-        Swal.fire({toast:true, position:'top', title:'เกิดข้อผิดพลาด', text: err.message, icon:'warning', timer:3000, showConfirmButton:false, background:'#111', color:'#fff'});
+        Swal.fire('Error', err.message, 'error');
     } finally {
         btn.disabled = false; btn.innerText = '🚀 ส่งแบบประเมิน (ไม่เปิดเผยชื่อ)';
     }
 }
 
-// 🌟 2. ดึงข้อมูลแบบประเมินมาแสดงในตาราง (เห็นเฉพาะแอดมิน)
-async function renderFeedbackList() {
+function renderFeedbackList() {
+    // ฟังก์ชันนี้จะดึงข้อมูลมาโชว์ในตารางแอดมิน (รอการสร้างตารางบนฐานข้อมูลก่อนถึงจะดึงจริงได้)
     const tbody = document.getElementById('hrFeedbackTableBody');
-    if(!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-warning">⏳ กำลังดึงข้อมูล...</td></tr>';
-
-    const monthInput = document.getElementById('hrFeedbackMonth');
-    const month = monthInput ? monthInput.value : '';
-    
-    try {
-        const { data, error } = await supabaseClient
-            .from('hr_feedbacks')
-            .select('*')
-            .order('created_at', { ascending: false });
-        
-        if(error) throw error;
-
-        // กรองเฉพาะเดือนที่เลือก
-        let filteredData = (data || []).filter(item => {
-            return item.created_at.startsWith(month);
-        });
-
-        if(filteredData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">ยังไม่มีข้อมูลการประเมินในเดือนนี้</td></tr>';
-            return;
-        }
-
-        let html = '';
-        filteredData.forEach(item => {
-            const dateStr = new Date(item.created_at).toLocaleDateString('th-TH');
-            const roleBadge = item.eval_role === 'Mentor' 
-                ? '<span class="badge bg-dark border border-info text-info">พี่เลี้ยง (Mentor)</span>'
-                : '<span class="badge bg-dark border border-warning text-warning">หัวหน้า (Supervisor)</span>';
-            
-            let starCount = Math.round(item.avg_score);
-            let stars = '⭐'.repeat(starCount) + '<span style="opacity:0.2">' + '⭐'.repeat(5-starCount) + '</span>';
-
-            const viewBtn = `<button class="btn btn-sm btn-outline-info fw-bold px-3" onclick="viewFeedbackDetail('${item.id}')">🔍 ดูรีวิว</button>`;
-
-            html += `<tr>
-                <td class="text-white-50 small">${dateStr}</td>
-                <td class="fw-bold text-white" style="font-size: 1.05rem;">${item.target_user}</td>
-                <td>${roleBadge}</td>
-                <td><span class="text-info fw-bold">${item.avg_score}</span> <br><span style="font-size:0.8rem">${stars}</span></td>
-                <td class="text-center">${viewBtn}</td>
-            </tr>`;
-        });
-        
-        // 🔒 ซ่อนข้อมูลถ้าเป็นแค่ Member
-        if (myRole === 'Member') {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">คุณไม่มีสิทธิ์ดูผลประเมิน (สามารถกดส่งประเมินได้อย่างเดียวครับ)</td></tr>';
-        } else {
-            tbody.innerHTML = html;
-        }
-        
-        window.currentFeedbackData = filteredData; 
-
-    } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger">Error: ${e.message}</td></tr>`;
-    }
-}
-
-// 🌟 3. หน้าต่าง Popup เวลาแอดมินกด "ดูรีวิว"
-function viewFeedbackDetail(id) {
-    const item = window.currentFeedbackData.find(x => x.id.toString() === id.toString());
-    if(!item) return;
-
-    let scores = [];
-    try { scores = JSON.parse(item.scores); } catch(e){}
-
-    let qHtml = '';
-    scores.forEach((sc, idx) => {
-        qHtml += `<div class="d-flex justify-content-between border-bottom border-secondary mb-2 pb-1">
-                    <span class="text-white-50 small">ข้อที่ ${idx+1}</span>
-                    <span class="text-warning fw-bold">${sc} ดาว</span>
-                  </div>`;
-    });
-
-    Swal.fire({
-        title: `รีวิวการประเมิน: ${item.target_user}`,
-        html: `
-            <div class="text-start" style="font-size: 0.95rem;">
-                <div class="mb-3 p-3 rounded" style="background: #111; border: 1px solid #333;">
-                    <div class="text-info fw-bold mb-2">📊 คะแนนแต่ละข้อ</div>
-                    ${qHtml}
-                </div>
-                <div class="mb-3 p-3 rounded" style="background: rgba(0,255,102,0.1); border: 1px solid rgba(0,255,102,0.3);">
-                    <div class="text-success fw-bold mb-1">👍 สิ่งที่ประทับใจ / ทำได้ดี</div>
-                    <div class="text-white" style="white-space: pre-wrap;">${item.good_point || '-'}</div>
-                </div>
-                <div class="p-3 rounded" style="background: rgba(255,204,0,0.1); border: 1px solid rgba(255,204,0,0.3);">
-                    <div class="text-warning fw-bold mb-1">💡 สิ่งที่ควรพัฒนา</div>
-                    <div class="text-white" style="white-space: pre-wrap;">${item.improve_point || '-'}</div>
-                </div>
-            </div>
-        `,
-        background: '#151518', color: '#fff', confirmButtonColor: '#00f0ff', confirmButtonText: 'ปิดหน้าต่าง'
-    });
-}
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">พร้อมใช้งาน! (รอผู้ดูแลระบบเปิดตาราง Database เพื่อบันทึกข้อมูล)</td></tr>';
+} 
 // 🌟 ฟังก์ชันซ่อน/โชว์แผงตรายางมินิ
   function toggleStampBox() {
       const wrapper = document.getElementById('stampToolboxWrapper');
