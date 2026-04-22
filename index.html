@@ -1989,6 +1989,122 @@ function handleLogout() {
     if(loginBtn) { loginBtn.disabled = false; loginBtn.innerText = 'เข้าสู่ระบบ'; } 
 }
 
+// ==========================================
+// 🔐 นำฟังก์ชัน Login และ Verify กลับมา
+// ==========================================
+async function handleLogin() {
+    const u = document.getElementById('user').value.trim();
+    const p = document.getElementById('pass').value.trim();
+    const btn = document.getElementById('loginBtn');
+
+    if(!u || !p) { 
+        Swal.fire({title:'เตือน', text:'กรอกข้อมูลให้ครบ', icon:'warning', background:'#111', color:'#fff'}); 
+        return; 
+    }
+
+    btn.disabled = true; 
+    btn.innerText = '🔐 กำลังยืนยันตัวตน...';
+
+    try {
+        // 1. ล็อกอินผ่าน Supabase Auth
+        const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+            email: usernameToEmail(u),
+            password: p
+        });
+
+        if (authError) throw authError;
+
+        // 2. ดึงข้อมูลโปรไฟล์จากตาราง public.users
+        const { data: profile, error: profileError } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('auth_id', authData.user.id)
+            .single();
+
+        if (profileError || !profile) throw new Error("ไม่พบข้อมูลพนักงานในระบบโปรไฟล์");
+        if (profile.status === 'Blocked') throw new Error("บัญชีนี้ถูกระงับการใช้งาน");
+
+        // 3. เก็บ Session สำหรับใช้งานต่อ
+        localStorage.setItem('okvip_user', u); 
+        localStorage.setItem('okvip_role', profile.role); 
+        localStorage.setItem('okvip_nick', profile.nickname); 
+        localStorage.setItem('okvip_time', new Date().getTime().toString());
+        currentUsername = u; 
+
+        document.getElementById('loginPage').style.display = 'none'; 
+        document.getElementById('mainDashboard').style.display = 'block';
+        
+        // โหลดข้อมูลตามสิทธิ์
+        verifyUserStatus(u, profile.nickname, profile.role, true); 
+
+    } catch (err) { 
+        console.error("Login Error:", err);
+        let msg = "ยูสเซอร์เนมหรือรหัสผ่านไม่ถูกต้อง";
+        if(err.message.includes("Email not confirmed")) msg = "บัญชีนี้ยังไม่ได้ยืนยันอีเมล (โปรดตั้งค่าปิดการ Confirm ใน Supabase)";
+        
+        Swal.fire({title:'Error', text: msg, icon:'error', background:'#111', color:'#fff'}); 
+    } finally {
+        btn.disabled = false; 
+        btn.innerText = 'เข้าสู่ระบบ'; 
+    }
+}
+
+function verifyUserStatus(user, nick, role, isLoginEvent = false) {
+    const cleanRole = role ? role.toString().trim() : "";
+    myRole = cleanRole; 
+    currentUsername = user; 
+    
+    document.getElementById('userDisplay').innerText = nick; 
+    document.getElementById('roleLabel').innerText = cleanRole; 
+    document.getElementById('roleLabel').className = `role-${cleanRole}`;
+    
+    const isSA = (myRole === 'SuperAdmin');
+
+    if(myRole !== 'Member') { 
+        document.getElementById('dashboardWidgets').style.setProperty('display', 'flex', 'important');
+        document.getElementById('addBtn').style.display = 'block';
+        document.getElementById('addManualBtn').style.display = 'block';
+        document.getElementById('btnJobSettings').style.display = 'block';
+        
+        if (isSA) { 
+            document.getElementById('addPenaltyBtn').style.display = 'block';
+            document.getElementById('penaltySearchInput').style.display = 'block';
+            document.getElementById('btnExportPenalty').style.display = 'inline-block';
+            document.getElementById('thPenaltyDetail').style.display = 'table-cell';
+            document.getElementById('thPenaltyManage').style.display = 'table-cell';
+        } else { 
+            document.getElementById('addPenaltyBtn').style.display = 'none';
+            document.getElementById('penaltySearchInput').style.display = 'none';
+            document.getElementById('btnExportPenalty').style.display = 'none';
+            document.getElementById('thPenaltyDetail').style.display = 'none';
+            document.getElementById('thPenaltyManage').style.display = 'none';
+        } 
+    }
+    
+    document.getElementById('btnClearSchedule').style.display = isSA ? 'inline-block' : 'none'; 
+    document.getElementById('btnAssignShift').style.display = isSA ? 'inline-block' : 'none'; 
+    document.getElementById('btnQuotaSettings').style.display = isSA ? 'inline-block' : 'none'; 
+    if(document.getElementById('btnRunAISwap')) document.getElementById('btnRunAISwap').style.display = isSA ? 'inline-block' : 'none';
+    if(document.getElementById('btnClearSandbox')) document.getElementById('btnClearSandbox').style.display = isSA ? 'inline-block' : 'none';
+    
+    renderStampPalette(); 
+    
+    let targetTab = 'hubSection'; 
+    if (!isLoginEvent && localStorage.getItem('okvip_current_tab')) {
+        targetTab = localStorage.getItem('okvip_current_tab');
+    }
+    switchMainTab(targetTab);
+
+    if (targetTab === 'hrSection') {
+        let hrSubTab = localStorage.getItem('okvip_hr_subtab') || 'eval';
+        switchHrTab(hrSubTab);
+    }
+
+    refreshData(document.getElementById('refreshBtn'), isLoginEvent);
+    initChatAndNoti();
+}
+// ==========================================
+
 function switchMainTab(sectionId) { 
     try {
         if (typeof unsavedChanges !== 'undefined' && Object.keys(unsavedChanges).length > 0 && sectionId !== 'holidaySection' && sectionId !== 'hubSection') { 
