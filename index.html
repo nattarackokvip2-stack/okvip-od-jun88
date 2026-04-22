@@ -479,6 +479,7 @@
         <div id="tabHrEval" class="dept-badge active" onclick="switchHrTab('eval')">📋 1. ประเมินการทำงานรายเดือน</div>
         <div id="tabHrBehavior" class="dept-badge admin-only-ui" onclick="switchHrTab('behavior')" style="display: none;">⚠️ 2. รายงานพฤติกรรมพนักงาน</div>
         <div id="tabHrProbation" class="dept-badge admin-only-ui" onclick="switchHrTab('probation')" style="display: none;">🎓 3. ข้อมูลการสอบประเมิน</div>
+        <div id="tabHrFeedback" class="dept-badge" onclick="switchHrTab('feedback')">🗣️ 4. ประเมินพี่เลี้ยง/หัวหน้า</div>
       </div>
 
       <div id="hrEvalArea">
@@ -581,6 +582,69 @@
       </div>
     </div>
 
+    <div id="hrFeedbackArea" style="display: none;">
+        <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-white small">📅 เดือน:</span>
+                <input type="month" id="hrFeedbackMonth" class="form-control text-center text-info shadow-none fw-bold bg-dark border-info" style="width: 140px; padding: 5px;" onchange="renderFeedbackList()">
+            </div>
+            <button class="btn btn-info fw-bold text-dark" onclick="openFeedbackModal()" style="border-radius: 8px; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);">➕ ทำแบบประเมิน (ไม่ระบุตัวตน)</button>
+        </div>
+        <div class="table-responsive" style="background: #0a0a0c; border: 1px solid #333; border-radius: 12px; padding: 10px;">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th class="text-info">วันที่ประเมิน</th>
+                <th>ผู้ถูกประเมิน (เป้าหมาย)</th>
+                <th class="text-warning">ประเมินในฐานะ</th>
+                <th>คะแนนเฉลี่ย</th>
+                <th class="text-center">ดูรายละเอียด</th>
+              </tr>
+            </thead>
+            <tbody id="hrFeedbackTableBody">
+              <tr><td colspan="5" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+<div class="modal fade" id="feedbackModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border: 1px solid #00f0ff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-4 text-center text-info" id="feedbackModalTitle">🗣️ แบบประเมินพี่เลี้ยง / หัวหน้างาน</h4>
+        <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)">
+          
+          <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                  <label class="small mb-1 text-white">1. เลือกผู้ถูกประเมิน <span class="text-danger">*</span></label>
+                  <select id="fbTargetNick" class="form-select bg-dark text-white border-secondary" required></select>
+              </div>
+              <div class="col-md-6">
+                  <label class="small mb-1 text-white">2. ประเมินในฐานะ <span class="text-danger">*</span></label>
+                  <select id="fbRole" class="form-select bg-dark text-info border-info fw-bold" required onchange="updateFeedbackQuestions()">
+                      <option value="Mentor">พี่เลี้ยงสอนงาน (Mentor)</option>
+                      <option value="Supervisor">หัวหน้างาน (Supervisor)</option>
+                  </select>
+              </div>
+          </div>
+
+          <div class="alert alert-dark border-secondary p-3 mb-3" style="background: #111;">
+              <div id="fbQuestionsArea"></div>
+          </div>
+
+          <label class="small mb-1 text-success fw-bold">👍 สิ่งที่ประทับใจ / ทำได้ดีอยู่แล้ว</label>
+          <textarea id="fbGood" class="form-control mb-3 bg-dark text-white border-success" rows="2" placeholder="ระบุสิ่งที่ชื่นชอบ..."></textarea>
+
+          <label class="small mb-1 text-warning fw-bold">💡 สิ่งที่ควรปรับปรุง / ข้อเสนอแนะ</label>
+          <textarea id="fbImprove" class="form-control mb-4 bg-dark text-white border-warning" rows="2" placeholder="ระบุสิ่งที่อยากให้พัฒนาเพิ่ม..."></textarea>
+
+          <button type="submit" id="btnSaveFeedback" class="btn btn-info w-100 py-2 fw-bold text-dark" style="border-radius: 8px;">🚀 ส่งแบบประเมิน (ไม่เปิดเผยชื่อ)</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
     <div id="staffSection" class="content-section">
       <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
@@ -6790,18 +6854,24 @@ function switchHrTab(tab) {
         b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
     });
     
-    let btnId = tab === 'eval' ? 'tabHrEval' : (tab === 'behavior' ? 'tabHrBehavior' : 'tabHrProbation');
+    let btnId = tab === 'eval' ? 'tabHrEval' : (tab === 'behavior' ? 'tabHrBehavior' : (tab === 'probation' ? 'tabHrProbation' : 'tabHrFeedback'));
     let btn = document.getElementById(btnId);
     if(btn) { btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; }
 
     document.getElementById('hrEvalArea').style.display = tab === 'eval' ? 'block' : 'none';
     document.getElementById('hrBehaviorArea').style.display = tab === 'behavior' ? 'block' : 'none';
     document.getElementById('hrProbationArea').style.display = tab === 'probation' ? 'block' : 'none';
+    document.getElementById('hrFeedbackArea').style.display = tab === 'feedback' ? 'block' : 'none';
     
     if(tab === 'eval') renderHrEvalList();
     if(tab === 'behavior') {
         if(allBehaviorsData.length === 0) loadSupabaseBehaviors();
         else renderBehaviorList();
+    }
+    if(tab === 'feedback') {
+        const now = new Date();
+        document.getElementById('hrFeedbackMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        renderFeedbackList();
     }
 }
 
@@ -7296,6 +7366,116 @@ function deleteBehavior(id) {
     });
 }
 
+// ------------------------------------------
+// 🗣️ 4. ระบบประเมินพี่เลี้ยง / หัวหน้างาน
+// ------------------------------------------
+
+function updateFeedbackUserSelect() {
+    let html = '<option value="">-- เลือกพี่เลี้ยง/หัวหน้า --</option>'; 
+    const myNick = localStorage.getItem('okvip_nick');
+    allUsersData.forEach(u => { 
+        if(u[7] === 'Active' && u[1] !== myNick) { 
+            html += `<option value="${u[1]}">${u[1]} (${u[3].split(' ')[0]})</option>`;
+        } 
+    }); 
+    document.getElementById('fbTargetNick').innerHTML = html; 
+}
+
+function updateFeedbackQuestions() {
+    const role = document.getElementById('fbRole').value;
+    const area = document.getElementById('fbQuestionsArea');
+    
+    let questions = [];
+    if (role === 'Mentor') {
+        questions = [
+            "1. ความชัดเจน: อธิบายขั้นตอนการทำงาน กฎระเบียบ ได้เข้าใจง่าย",
+            "2. ทัศนคติ: มีความใจเย็น เป็นมิตร พร้อมสอนงานโดยไม่แสดงความหงุดหงิด",
+            "3. การซัพพอร์ต: เมื่อเกิดปัญหาพร้อมเข้ามาช่วยดูและให้คำปรึกษาทันที",
+            "4. การเปิดโอกาส (Coaching): ให้โอกาสลองทำจริง และคอยประกบดูความถูกต้อง"
+        ];
+    } else {
+        questions = [
+            "1. ความยุติธรรม: กระจายงาน จัดตารางพัก หรือแบ่งหน้าที่ได้อย่างเหมาะสม",
+            "2. การรับฟัง: เปิดใจรับฟังปัญหาหน้างาน หรือข้อเสนอแนะจากทีมงาน",
+            "3. การแก้ปัญหา: ช่วยตัดสินใจและแก้ปัญหาหน้างานได้อย่างเด็ดขาด",
+            "4. บรรยากาศ: สร้างสภาพแวดล้อมการทำงานที่ดี ไม่กดดันจนเกินไป"
+        ];
+    }
+
+    let html = '';
+    questions.forEach((q, idx) => {
+        html += `
+        <div class="mb-3">
+            <div class="text-white small mb-2">${q}</div>
+            <select class="form-select form-select-sm bg-black text-warning border-secondary fb-score-select" required>
+                <option value="" disabled selected>-- เลือกคะแนน (1-5) --</option>
+                <option value="5">⭐⭐⭐⭐⭐ (5) ดีเยี่ยม</option>
+                <option value="4">⭐⭐⭐⭐ (4) ดี</option>
+                <option value="3">⭐⭐⭐ (3) ปานกลาง</option>
+                <option value="2">⭐⭐ (2) ต้องปรับปรุง</option>
+                <option value="1">⭐ (1) แย่มาก</option>
+            </select>
+        </div>`;
+    });
+    area.innerHTML = html;
+}
+
+function openFeedbackModal() {
+    document.getElementById('feedbackForm').reset();
+    updateFeedbackUserSelect();
+    updateFeedbackQuestions();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).show();
+}
+
+async function handleFeedbackSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveFeedback');
+    btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
+    
+    try {
+        const targetNick = document.getElementById('fbTargetNick').value;
+        const evaluateRole = document.getElementById('fbRole').value;
+        const goodPoint = document.getElementById('fbGood').value;
+        const improvePoint = document.getElementById('fbImprove').value;
+        
+        let totalScore = 0;
+        let scores = [];
+        document.querySelectorAll('.fb-score-select').forEach(sel => {
+            const val = parseInt(sel.value);
+            scores.push(val);
+            totalScore += val;
+        });
+        const avgScore = (totalScore / scores.length).toFixed(2);
+
+        // หมายเหตุ: โค้ดนี้เตรียมไว้เซฟลงฐานข้อมูล ถ้ามีการสร้างตาราง hr_feedbacks แล้ว
+        const payload = {
+            target_user: targetNick,
+            eval_role: evaluateRole,
+            avg_score: avgScore,
+            scores: JSON.stringify(scores),
+            good_point: goodPoint,
+            improve_point: improvePoint,
+            created_at: new Date().toISOString()
+            // 💡 เราเจตนาไม่เก็บค่าคนประเมิน (sender) เพื่อให้เป็น Anonymous (ความลับ)
+        };
+
+        // TODO: หากสร้างตาราง hr_feedbacks ใน Supabase แล้ว ให้ปลดคอมเมนต์ด้านล่าง
+        // await supabaseClient.from('hr_feedbacks').insert([payload]);
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).hide();
+        Swal.fire({toast:true, position:'top', title:'ส่งแบบประเมินเรียบร้อย ขอบคุณครับ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+    } catch(err) {
+        Swal.fire('Error', err.message, 'error');
+    } finally {
+        btn.disabled = false; btn.innerText = '🚀 ส่งแบบประเมิน (ไม่เปิดเผยชื่อ)';
+    }
+}
+
+function renderFeedbackList() {
+    // ฟังก์ชันนี้จะดึงข้อมูลมาโชว์ในตารางแอดมิน (รอการสร้างตารางบนฐานข้อมูลก่อนถึงจะดึงจริงได้)
+    const tbody = document.getElementById('hrFeedbackTableBody');
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">พร้อมใช้งาน! (รอผู้ดูแลระบบเปิดตาราง Database เพื่อบันทึกข้อมูล)</td></tr>';
+} 
 // 🌟 ฟังก์ชันซ่อน/โชว์แผงตรายางมินิ
   function toggleStampBox() {
       const wrapper = document.getElementById('stampToolboxWrapper');
