@@ -612,20 +612,27 @@
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content" style="border: 1px solid #00f0ff; box-shadow: 0 0 20px rgba(0, 240, 255, 0.2);">
       <div class="modal-body p-4">
-        <h4 class="fw-bold mb-4 text-center text-info" id="feedbackModalTitle">🗣️ แบบประเมินพี่เลี้ยง / หัวหน้างาน</h4>
+        <h4 class="fw-bold mb-3 text-center text-info" id="feedbackModalTitle">🗣️ แบบประเมินพี่เลี้ยง / หัวหน้างาน</h4>
+        
+        <div class="alert alert-info border-info p-3 mb-4" style="background: rgba(0, 240, 255, 0.05); font-size: 0.85rem; line-height: 1.6;">
+            <b>ℹ️ ข้อมูลสำคัญก่อนประเมิน:</b> พนักงานสามารถเลือกประเมินผู้ดูแลและหัวหน้างานได้ทุกคน 
+            <span class="text-warning fw-bold">โดยข้อมูลที่พนักงานประเมินจะไม่ระบุตัวตน (Anonymous) ไม่มีใครทราบว่าแอคเคาท์ใดเป็นผู้ประเมิน และไม่มีผลกระทบต่อหน้าที่การทำงานของคุณ</span><br>
+            กรุณาประเมินตามความเป็นจริง ความคิดเห็นของคุณมีคุณค่าอย่างยิ่ง เพื่อให้พี่เลี้ยงและหัวหน้าได้ทราบพฤติกรรมและนำไปปรับปรุงแก้ไขตนเองต่อไปครับ
+        </div>
+
         <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)">
           
           <div class="row g-3 mb-3">
               <div class="col-md-6">
-                  <label class="small mb-1 text-white">1. เลือกผู้ถูกประเมิน <span class="text-danger">*</span></label>
-                  <select id="fbTargetNick" class="form-select bg-dark text-white border-secondary" required></select>
-              </div>
-              <div class="col-md-6">
-                  <label class="small mb-1 text-white">2. ประเมินในฐานะ <span class="text-danger">*</span></label>
+                  <label class="small mb-1 text-white">1. ประเมินในฐานะ <span class="text-danger">*</span></label>
                   <select id="fbRole" class="form-select bg-dark text-info border-info fw-bold" required onchange="updateFeedbackQuestions()">
                       <option value="Mentor">พี่เลี้ยงสอนงาน (Mentor)</option>
                       <option value="Supervisor">หัวหน้างาน (Supervisor)</option>
                   </select>
+              </div>
+              <div class="col-md-6">
+                  <label class="small mb-1 text-white">2. ประเมินผู้สอนงาน <span class="text-danger">*</span></label>
+                  <select id="fbTargetNick" class="form-select bg-dark text-white border-secondary" required></select>
               </div>
           </div>
 
@@ -7373,11 +7380,22 @@ function deleteBehavior(id) {
 function updateFeedbackUserSelect() {
     let html = '<option value="">-- เลือกพี่เลี้ยง/หัวหน้า --</option>'; 
     const myNick = localStorage.getItem('okvip_nick');
+    
     allUsersData.forEach(u => { 
-        if(u[7] === 'Active' && u[1] !== myNick) { 
-            html += `<option value="${u[1]}">${u[1]} (${u[3].split(' ')[0]})</option>`;
+        const nick = u[1];
+        const dept = u[3] ? u[3].toString() : '';
+        const role = u[6];
+        const status = u[7];
+
+        // ต้องเป็นคนที่ Active อยู่ และไม่ใช่ชื่อตัวเอง
+        if(status === 'Active' && nick !== myNick) { 
+            // 🌟 เงื่อนไขตัวกรอง: ต้องเป็นแผนก ออดิท (OD) หรือเป็นระดับ Admin / SuperAdmin เท่านั้น
+            if (dept.includes('OD') || role === 'Admin' || role === 'SuperAdmin') {
+                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
+            }
         } 
     }); 
+    
     document.getElementById('fbTargetNick').innerHTML = html; 
 }
 
