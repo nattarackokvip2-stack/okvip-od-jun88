@@ -6870,17 +6870,37 @@ function updateFeedbackFilterDropdown() {
     if(!filterSelect) return;
 
     let html = '<option value="ALL">-- ดูทุกคน --</option>';
+    const myNick = localStorage.getItem('okvip_nick'); // ดึงชื่อตัวเองมาเช็ค
+
     allUsersData.forEach(u => {
         const nick = u[1];
         const role = u[6];
         const status = u[7];
 
-        // เอาเฉพาะคนที่ Active และเป็นระดับ Admin / SuperAdmin
-        if (status === 'Active' && (role === 'SuperAdmin' || role === 'Admin')) {
-            let roleName = role === 'SuperAdmin' ? 'หัวหน้า' : 'พี่เลี้ยง';
-            html += `<option value="${nick}">${nick} (${roleName})</option>`;
+        if (status === 'Active') {
+            let canSeeInDropdown = false;
+
+            if (myRole === 'Member') {
+                // Member ให้เห็นตัวเลือกทั้ง Admin และ SuperAdmin (แต่ตอนค้นหาตารางจะโชว์แค่ที่ตัวเองส่งอยู่ดี)
+                if (role === 'Admin' || role === 'SuperAdmin') canSeeInDropdown = true;
+            } 
+            else if (myRole === 'Admin') {
+                // 🛑 Admin: เห็นเฉพาะรายชื่อระดับ Admin (พี่เลี้ยง) เท่านั้น จะไม่เห็นรายชื่อหัวหน้า
+                if (role === 'Admin') canSeeInDropdown = true;
+            } 
+            else if (myRole === 'SuperAdmin') {
+                // 🛑 SuperAdmin: เห็น Admin ทุกคน และเห็น SuperAdmin "เฉพาะแค่ชื่อตัวเอง"
+                if (role === 'Admin') canSeeInDropdown = true;
+                if (role === 'SuperAdmin' && nick === myNick) canSeeInDropdown = true;
+            }
+
+            if (canSeeInDropdown) {
+                let roleName = role === 'SuperAdmin' ? 'หัวหน้า' : 'พี่เลี้ยง';
+                html += `<option value="${nick}">${nick} (${roleName})</option>`;
+            }
         }
     });
+    
     filterSelect.innerHTML = html;
 }
 
