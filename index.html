@@ -7387,15 +7387,11 @@ function updateFeedbackUserSelect() {
     allUsersData.forEach(u => { 
         const nick = u[1];
         const dept = u[3] ? u[3].toString() : '';
-        const role = u[6]; // เช็คระดับสิทธิ์ของพนักงาน
+        const role = u[6] ? u[6].toString().trim() : ''; // เช็คระดับสิทธิ์ของพนักงาน
         const status = u[7];
-        
-        // 🌟 ดึงข้อมูลสิทธิ์จากระบบตั้งค่า ว่าคนนี้โดนซ่อน (EXCLUDE_DUTY) หรือไม่
-        const capable = sysSettings.userSites[nick] || [];
-        const isExcluded = capable.includes('EXCLUDE_DUTY');
 
-        // ต้องเป็นคนที่ Active, ไม่ใช่ชื่อตัวเอง และ "ไม่โดนซ่อนจากตารางงาน"
-        if(status === 'Active' && nick !== myNick && !isExcluded) { 
+        // ต้องเป็นคนที่ Active อยู่ และไม่ใช่ชื่อตัวเอง (เอาเงื่อนไข EXCLUDE_DUTY ออกไปแล้ว)
+        if(status === 'Active' && nick !== myNick) { 
             
             // 1. ถ้าเลือกประเมิน "หัวหน้างาน" จะดึงมาเฉพาะคนที่เป็น SuperAdmin
             if (evalRole === 'Supervisor' && role === 'SuperAdmin') {
