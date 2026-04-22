@@ -7496,18 +7496,9 @@ async function handleFeedbackSubmit(e) {
             // 💡 เราเจตนาไม่เก็บค่าคนประเมิน (sender) เพื่อให้เป็น Anonymous (ความลับ)
         };
 
-        // 🌟 1. บันทึกข้อมูลลงฐานข้อมูล
+        // 🌟 บันทึกข้อมูลลงฐานข้อมูล
         const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
         if (error) throw error;
-
-        // 🔔 2. ยิงกระดิ่งแจ้งเตือนไปยังผู้ถูกประเมิน
-        if (typeof sendSystemNoti === 'function') {
-            let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
-            let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
-            
-            // ใช้คำว่า "พฤติกรรม" ใน Title เพื่อให้ข้อความวิ่งเข้าหมวดหมู่ "🚨 รายงานพฤติกรรม" อัตโนมัติ
-            sendSystemNoti(targetNick, '🚨 รายงานพฤติกรรม (แบบประเมินใหม่)', notiMsg);
-        }
 
         bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).hide();
         Swal.fire({toast:true, position:'top', title:'ส่งแบบประเมินเรียบร้อย ขอบคุณครับ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
