@@ -6796,13 +6796,16 @@ let currentHrTab = 'eval';
 let currentHrEvalDept = 'ALL';
 let allBehaviorsData = []; // ตัวแปรสำหรับเก็บข้อมูลพฤติกรรม
 
-// 🌟 ฟังก์ชันใหม่: ดึงรายชื่อพี่เลี้ยง/หัวหน้า มาสร้างเป็น Dropdown ตัวกรอง
+// ==========================================
+// 🗣️ ระบบประเมินพี่เลี้ยง / หัวหน้างาน (HR Feedback)
+// ==========================================
+
 function updateFeedbackFilterDropdown() {
     const filterSelect = document.getElementById('filterFeedbackTarget');
     if(!filterSelect) return;
 
     let html = '<option value="ALL">-- ดูทุกคน --</option>';
-    const myNick = localStorage.getItem('okvip_nick'); // ดึงชื่อตัวเองมาเช็ค
+    const myNick = localStorage.getItem('okvip_nick');
 
     allUsersData.forEach(u => {
         const nick = u[1];
@@ -6811,17 +6814,13 @@ function updateFeedbackFilterDropdown() {
 
         if (status === 'Active') {
             let canSeeInDropdown = false;
-
             if (myRole === 'Member') {
-                // Member ให้เห็นตัวเลือกทั้ง Admin และ SuperAdmin (แต่ตอนค้นหาตารางจะโชว์แค่ที่ตัวเองส่งอยู่ดี)
                 if (role === 'Admin' || role === 'SuperAdmin') canSeeInDropdown = true;
             } 
             else if (myRole === 'Admin') {
-                // 🛑 Admin: เห็นเฉพาะรายชื่อระดับ Admin (พี่เลี้ยง) เท่านั้น จะไม่เห็นรายชื่อหัวหน้า
                 if (role === 'Admin') canSeeInDropdown = true;
             } 
             else if (myRole === 'SuperAdmin') {
-                // 🛑 SuperAdmin: เห็น Admin ทุกคน และเห็น SuperAdmin "เฉพาะแค่ชื่อตัวเอง"
                 if (role === 'Admin') canSeeInDropdown = true;
                 if (role === 'SuperAdmin' && nick === myNick) canSeeInDropdown = true;
             }
@@ -6832,565 +6831,14 @@ function updateFeedbackFilterDropdown() {
             }
         }
     });
-    
     filterSelect.innerHTML = html;
-}
-
-function switchHrTab(tab) {
-    currentHrTab = tab;
-    document.querySelectorAll('#hrSection .dept-badge').forEach(b => {
-        b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
-    });
-    
-    let btnId = tab === 'eval' ? 'tabHrEval' : (tab === 'behavior' ? 'tabHrBehavior' : (tab === 'probation' ? 'tabHrProbation' : 'tabHrFeedback'));
-    let btn = document.getElementById(btnId);
-    if(btn) { btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; }
-
-    document.getElementById('hrEvalArea').style.display = tab === 'eval' ? 'block' : 'none';
-    document.getElementById('hrBehaviorArea').style.display = tab === 'behavior' ? 'block' : 'none';
-    document.getElementById('hrProbationArea').style.display = tab === 'probation' ? 'block' : 'none';
-    document.getElementById('hrFeedbackArea').style.display = tab === 'feedback' ? 'block' : 'none';
-    
-    if(tab === 'eval') renderHrEvalList();
-    if(tab === 'behavior') {
-        if(allBehaviorsData.length === 0) loadSupabaseBehaviors();
-        else renderBehaviorList();
-    }
-    if(tab === 'feedback') {
-        const now = new Date();
-        document.getElementById('hrFeedbackMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-        
-        updateFeedbackFilterDropdown(); // 👈 สั่งให้โหลดรายชื่อตอนเปิดแท็บ
-        renderFeedbackList();
-    }
-}
-
-function filterHrEvalDept(dept, btn) {
-    currentHrEvalDept = dept;
-    document.querySelectorAll('#hrEvalDeptFilter .dept-badge').forEach(b => {
-        b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
-    });
-    btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff";
-    renderHrEvalList();
-}
-
-function applyHrPermissions() {
-    const isAdmin = (myRole === 'SuperAdmin' || myRole === 'Admin');
-    document.querySelectorAll('.admin-only-ui').forEach(el => {
-        el.style.display = isAdmin ? 'block' : 'none';
-    });
-}
-
-// ------------------------------------------
-// 📝 1. ระบบประเมินการทำงานรายเดือน
-// ------------------------------------------
-async function renderHrEvalList() {
-    applyHrPermissions(); 
-    const tbody = document.getElementById('hrEvalTableBody');
-    tbody.innerHTML = '<tr><td colspan="7" class="text-center py-5 text-warning">⏳ กำลังดึงข้อมูล...</td></tr>';
-    
-    const myNick = localStorage.getItem('okvip_nick');
-    const isSuperAdmin = myRole === 'SuperAdmin';
-    const isAdmin = myRole === 'Admin';
-    const isMember = myRole === 'Member';
-    const month = document.getElementById('hrEvalMonth').value;
-
-    const { data: evals } = await supabaseClient.from('hr_evaluations').select('*').eq('month', month);
-    const evalMap = {};
-    if(evals) evals.forEach(e => evalMap[e.nickname] = e);
-
-    let filteredUsers = allUsersData.filter(u => {
-        if (!u || u[7] !== 'Active') return false;
-        if (u[6] === 'SuperAdmin') return false; 
-        
-        const nick = u[1];
-        const dept = u[3] ? u[3].toString() : '';
-        const targetRole = u[6]; 
-        
-        if (isMember && nick !== myNick) return false;
-        
-        if (isAdmin) { 
-            if (nick !== myNick && !dept.includes('ODOL') && targetRole !== 'Member') return false; 
-        }
-        
-        if (currentHrEvalDept !== 'ALL') {
-           if (currentHrEvalDept === 'OD' && (!dept.includes('OD') || dept.includes('ODOL'))) return false;
-           if (currentHrEvalDept === 'ODOL' && !dept.includes('ODOL')) return false;
-        }
-        
-        const searchT = document.getElementById('searchHrEval') ? document.getElementById('searchHrEval').value.toLowerCase().trim() : '';
-        if (searchT && !nick.toLowerCase().includes(searchT)) return false;
-
-        return true;
-    });
-
-    tbody.innerHTML = '';
-    if (filteredUsers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-muted">ไม่พบรายชื่อที่เข้าถึงได้</td></tr>`;
-        return;
-    }
-
-    filteredUsers.forEach(u => {
-        const nick = u[1];
-        const dept = u[3].split(' ')[0];
-        const targetRole = u[6]; 
-        
-        let canEdit = false;
-        if (nick === myNick) {
-            canEdit = false;
-        } else if (isSuperAdmin) {
-            canEdit = true;
-        } else if (isAdmin) {
-            if (targetRole === 'Member') canEdit = true;
-            else canEdit = false;
-        }
-
-        const evData = evalMap[nick];
-        let statusBadge = `<span class="badge" style="background:#ff9900; color:#000; font-size:0.85rem;">⏳ รอประเมิน</span>`;
-        let starHtml = '<span class="text-muted small">-</span>';
-        let scoreText = '<span class="text-muted small">-</span>';
-        let evaluatorText = '<span class="text-muted small">-</span>';
-        let deleteBtn = '';
-        
-        if (evData) {
-            statusBadge = `<span class="badge bg-success border border-success" style="font-size:0.85rem;">✅ ประเมินแล้ว</span>`;
-            let pct = evData.kpi_percent || 0;
-            scoreText = `<span class="text-info">${pct.toFixed(2)} %</span>`;
-            
-            let starCount = 1; let colorStyle = 'color:#ff3333;'; 
-            if(pct > 90) { starCount = 5; colorStyle = 'color:#00ff66; text-shadow: 0 0 8px #00ff66;'; } 
-            else if(pct > 80) { starCount = 4; colorStyle = 'color:#aaffaa; text-shadow: 0 0 8px #aaffaa;'; } 
-            else if(pct > 70) { starCount = 3; colorStyle = 'color:#00f0ff; text-shadow: 0 0 8px #00f0ff;'; } 
-            else if(pct > 60) { starCount = 2; colorStyle = 'color:#ffcc00; text-shadow: 0 0 8px #ffcc00;'; } 
-            
-            starHtml = `<span style="${colorStyle} font-size:1.2rem;">${'⭐'.repeat(starCount)}<span style="opacity:0.2;">${'⭐'.repeat(5-starCount)}</span></span>`;
-            
-            let evNames = evData.evaluator_nick ? evData.evaluator_nick.split('|') : [];
-            let validNames = evNames.filter(n => n.trim() !== '');
-            if(validNames.length > 0) evaluatorText = validNames.join(' <span class="text-secondary">และ</span> ');
-
-            if (isSuperAdmin) {
-                deleteBtn = `<button class="btn btn-sm btn-outline-danger fw-bold ms-1" style="border-radius:6px;" onclick="deleteHrEvaluation('${nick}', '${month}')">🗑️ ล้าง</button>`;
-            }
-        }
-
-        let btnText = canEdit ? '📝 ผลการประเมิน' : '🔍 ผลการประเมิน';
-        let btnClass = canEdit ? 'btn-outline-warning' : 'btn-outline-info';
-
-        tbody.innerHTML += `
-          <tr>
-            <td class="fw-bold text-white">${nick} ${nick === myNick ? '<span class="text-warning small">(คุณ)</span>' : ''}</td>
-            <td class="text-muted small">${dept}</td>
-            <td class="text-center">${starHtml}</td>
-            <td class="text-center fw-bold">${scoreText}</td>
-            <td class="text-center text-warning small fw-bold">${evaluatorText}</td>
-            <td class="text-center">${statusBadge}</td>
-            <td class="text-center">
-                <div class="d-flex justify-content-center align-items-center">
-                    <button class="btn btn-sm ${btnClass} fw-bold" style="border-radius:6px;" onclick="openEvaluationForm('${nick}', ${canEdit})">${btnText}</button>
-                    ${deleteBtn}
-                </div>
-            </td>
-          </tr>
-        `;
-    });
-}
-
-function deleteHrEvaluation(nick, month) {
-    Swal.fire({
-        title: `ลบผลประเมินของ ${nick}?`,
-        text: `ข้อมูลคะแนนทั้งหมดของเดือน ${month} จะถูกลบทิ้งถาวร!`,
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#ff3366',
-        background: '#111', color: '#fff',
-        confirmButtonText: 'ใช่, ลบทิ้งเลย'
-    }).then(async r => {
-        if(r.isConfirmed) {
-            Swal.fire({title:'กำลังล้างข้อมูล...', didOpen:()=>Swal.showLoading()});
-            try {
-                const { error } = await supabaseClient.from('hr_evaluations').delete().eq('nickname', nick).eq('month', month);
-                if (error) throw error;
-                Swal.fire({toast:true, position:'top-end', title:'ล้างผลประเมินสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-                renderHrEvalList(); 
-            } catch (e) {
-                console.error(e); Swal.fire('Error', 'ไม่สามารถลบข้อมูลได้: ' + e.message, 'error');
-            }
-        }
-    });
-}
-
-function changeHrEvalMonth(offset) {
-    const p = document.getElementById('hrEvalMonth');
-    if(!p.value) return;
-    let [y, m] = p.value.split('-').map(Number);
-    m += offset;
-    if (m > 12) { m = 1; y++; } else if (m < 1) { m = 12; y--; }
-    p.value = `${y}-${String(m).padStart(2, '0')}`;
-    renderHrEvalList();
-}
-
-function initEvalAutoCalculate() {
-    const tableBody = document.getElementById('evalFormBody');
-    if(!tableBody) return;
-    
-    tableBody.addEventListener('input', () => {
-        let grandTotalSum = 0;
-        const calcSection = (startRow, endRow, secId) => {
-            let sum1 = 0, sum2 = 0, sumAvg = 0;
-            for(let i = startRow; i <= endRow; i++) {
-                const input1 = document.getElementById(`q${i}_1`);
-                const input2 = document.getElementById(`q${i}_2`);
-                const inputAvg = document.getElementById(`q${i}_avg`);
-
-                let val1 = input1 && input1.value !== '' ? parseFloat(input1.value) : null;
-                let val2 = input2 && input2.value !== '' ? parseFloat(input2.value) : null;
-                
-                if(val1 > 100) { val1 = 100; input1.value = 100; }
-                if(val2 > 100) { val2 = 100; input2.value = 100; }
-
-                let avg = 0;
-                if (val1 !== null && val2 !== null) avg = (val1 + val2) / 2;
-                else if (val1 !== null) avg = val1;
-                else if (val2 !== null) avg = val2;
-
-                if(inputAvg) inputAvg.value = avg > 0 ? avg : '';
-                sum1 += val1 || 0; sum2 += val2 || 0; sumAvg += avg;
-            }
-            document.getElementById(`sumSec${secId}_1`).innerText = sum1;
-            document.getElementById(`sumSec${secId}_2`).innerText = sum2;
-            document.getElementById(`sumSec${secId}_total`).innerText = sumAvg;
-            grandTotalSum += sumAvg;
-        };
-
-        calcSection(1, 6, 1); calcSection(7, 10, 2); calcSection(11, 15, 3);
-        document.getElementById('grandTotalScore').innerText = grandTotalSum;
-        
-        let percent = (grandTotalSum / 1500) * 100;
-        let percentDisplay = document.getElementById('grandTotalPercent');
-        percentDisplay.innerText = percent.toFixed(2) + ' %';
-        
-        percentDisplay.style.color = "#000"; 
-        if(percent > 90) { percentDisplay.style.backgroundColor = "#00ff66"; } 
-        else if(percent > 80) { percentDisplay.style.backgroundColor = "#aaffaa"; } 
-        else if(percent > 70) { percentDisplay.style.backgroundColor = "#00f0ff"; } 
-        else if(percent > 60) { percentDisplay.style.backgroundColor = "#ffcc00"; } 
-        else { percentDisplay.style.backgroundColor = "#ff3366"; percentDisplay.style.color = "#fff"; } 
-    });
-}
-
-function signMyName(colIndex) {
-    const myNick = localStorage.getItem('okvip_nick');
-    document.getElementById(`evaluatorName${colIndex}`).value = myNick;
-    document.querySelectorAll(`.sc${colIndex}`).forEach(inp => inp.disabled = false);
-    document.getElementById(`btnSign${colIndex}`).classList.add('d-none');
-    document.getElementById('evalFormBody').dispatchEvent(new Event('input', { bubbles: true }));
-}
-
-async function openEvaluationForm(targetNick, canEdit) {
-    document.getElementById('evalTargetName').innerText = targetNick;
-    const month = document.getElementById('hrEvalMonth').value;
-    const myNick = localStorage.getItem('okvip_nick');
-    
-    const alertBox = document.getElementById('evalPermissionAlert');
-    const btnSave = document.getElementById('btnSaveEval');
-    
-    document.querySelectorAll('.eval-input:not(.eval-sum), #evaluatorName1, #evaluatorName2').forEach(inp => inp.value = '');
-    document.querySelectorAll('.eval-sum, .eval-sum-box').forEach(el => { if(el.tagName === 'INPUT') el.value = ''; else el.innerText = '0'; });
-    const pDisplay = document.getElementById('grandTotalPercent');
-    pDisplay.innerText = '0%'; pDisplay.style.backgroundColor = "#33cccc"; pDisplay.style.color = "#000";
-    
-    document.getElementById('btnSign1').classList.add('d-none'); document.getElementById('btnSign2').classList.add('d-none');
-
-    if (!canEdit) { alertBox.classList.remove('d-none'); btnSave.style.display = 'none'; } 
-    else { alertBox.classList.add('d-none'); btnSave.style.display = 'inline-block'; }
-
-    const inputs1 = document.querySelectorAll('.sc1'); const inputs2 = document.querySelectorAll('.sc2');
-    inputs1.forEach(inp => inp.disabled = true); inputs2.forEach(inp => inp.disabled = true);
-
-    Swal.fire({title: 'กำลังดึงข้อมูล...', didOpen: () => Swal.showLoading()});
-    const { data } = await supabaseClient.from('hr_evaluations').select('*').eq('nickname', targetNick).eq('month', month).maybeSingle();
-    Swal.close();
-
-    let ev1 = '', ev2 = '';
-
-    if (data) {
-        if (data.evaluator_nick) {
-            const evNames = data.evaluator_nick.split('|');
-            ev1 = evNames[0] || ''; ev2 = evNames[1] || '';
-            document.getElementById('evaluatorName1').value = ev1; document.getElementById('evaluatorName2').value = ev2;
-        }
-        
-        if (canEdit) {
-            if (ev1 === '') document.getElementById('btnSign1').classList.remove('d-none');
-            else if (ev1 === myNick) inputs1.forEach(inp => inp.disabled = false);
-
-            if (ev2 === '') {
-                if (ev1 !== '' && ev1 !== myNick) document.getElementById('btnSign2').classList.remove('d-none');
-            } else if (ev2 === myNick) inputs2.forEach(inp => inp.disabled = false);
-        }
-        
-        if (data.scores) {
-            let parsedScores = data.scores;
-            if (typeof parsedScores === 'string') { try { parsedScores = JSON.parse(parsedScores); } catch(e) { parsedScores = {}; } }
-            for (let i = 1; i <= 15; i++) {
-                if (parsedScores[`q${i}`]) {
-                    const [sc1, sc2] = parsedScores[`q${i}`];
-                    const in1 = document.getElementById(`q${i}_1`); const in2 = document.getElementById(`q${i}_2`);
-                    if (in1 && sc1 !== null && sc1 !== '') in1.value = sc1;
-                    if (in2 && sc2 !== null && sc2 !== '') in2.value = sc2;
-                }
-            }
-        }
-    } else {
-        if (canEdit) document.getElementById('btnSign1').classList.remove('d-none');
-    }
-
-    document.getElementById('evalFormBody').dispatchEvent(new Event('input', { bubbles: true }));
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).show();
-}
-
-async function saveEvaluation() {
-    const nick = document.getElementById('evalTargetName').innerText;
-    const month = document.getElementById('hrEvalMonth').value;
-    
-    const evName1 = document.getElementById('evaluatorName1').value.trim();
-    const evName2 = document.getElementById('evaluatorName2').value.trim();
-    const combinedEvaluators = [evName1, evName2].join('|');
-    
-    if(!month) return Swal.fire('เตือน', 'กรุณาเลือกเดือนที่ประเมินด้วยครับ', 'warning');
-    if(!evName1 && !evName2) return Swal.fire('เตือน', 'กรุณาลงชื่อผู้ประเมินอย่างน้อย 1 คน', 'warning');
-
-    Swal.fire({ title: 'กำลังบันทึกข้อมูล...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-
-    let scoresData = {};
-    const rows = document.querySelectorAll('#evalFormBody tr:not(.eval-bg-teal)');
-    rows.forEach((row) => {
-        if (row.classList.contains('eval-row-sum') || row.querySelector('th')) return;
-        const sc1Input = row.querySelector('.sc1'); const sc2Input = row.querySelector('.sc2');
-        if (sc1Input && sc2Input) {
-            const qIdMatch = sc1Input.id.match(/\d+/); 
-            if (qIdMatch) {
-                const qNum = parseInt(qIdMatch[0]);
-                const sc1 = sc1Input.value !== '' ? parseFloat(sc1Input.value) : null;
-                const sc2 = sc2Input.value !== '' ? parseFloat(sc2Input.value) : null;
-                if (sc1 !== null || sc2 !== null) scoresData[`q${qNum}`] = [sc1, sc2];
-            }
-        }
-    });
-
-    const rawTotal = document.getElementById('grandTotalScore').innerText;
-    const rawPercent = document.getElementById('grandTotalPercent').innerText.replace('%', '').trim();
-
-    const payload = {
-        nickname: nick, month: month,
-        department: allUsersData.find(u => u[1] === nick)[3] || '', 
-        scores: JSON.stringify(scoresData), 
-        total_score: parseFloat(rawTotal) || 0,
-        kpi_percent: parseFloat(rawPercent) || 0,
-        evaluator_nick: combinedEvaluators
-    };
-
-    try {
-        const { error } = await supabaseClient.from('hr_evaluations').upsert(payload, { onConflict: 'nickname, month' });
-        if (error) {
-            const { data: existCheck } = await supabaseClient.from('hr_evaluations').select('id').eq('nickname', nick).eq('month', month).maybeSingle();
-            if (existCheck) { await supabaseClient.from('hr_evaluations').update(payload).eq('id', existCheck.id); } 
-            else { await supabaseClient.from('hr_evaluations').insert([payload]); }
-        }
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('evalFormModal')).hide();
-        Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'บันทึกคะแนนเรียบร้อย', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff' });
-        renderHrEvalList(); 
-    } catch (err) {
-        console.error(err); Swal.fire('Error', 'ไม่สามารถบันทึกได้: ' + err.message, 'error');
-    }
-}
-
-
-// ------------------------------------------
-// 🚨 2. ระบบรายงานพฤติกรรมพนักงาน
-// ------------------------------------------
-
-async function loadSupabaseBehaviors() {
-    try {
-        const { data } = await supabaseClient.from('hr_behaviors').select('*').order('record_date', { ascending: false });
-        allBehaviorsData = data || [];
-        if (currentHrTab === 'behavior') renderBehaviorList();
-    } catch(e) { console.error("Behavior Load Error:", e); }
-}
-
-function changeHrBehaviorMonth(offset) {
-    const p = document.getElementById('hrBehaviorMonth');
-    if(!p.value) return;
-    let [y, m] = p.value.split('-').map(Number);
-    m += offset;
-    if (m > 12) { m = 1; y++; } else if (m < 1) { m = 12; y--; }
-    p.value = `${y}-${String(m).padStart(2, '0')}`;
-    renderBehaviorList();
-}
-
-function updateBehaviorUserSelect() {
-    let html = '<option value="">-- เลือกพนักงาน --</option>'; 
-    allUsersData.forEach(u => { 
-        const dept = u[3] ? u[3].toString() : '';
-        if(u[7] === 'Active' && u[6] !== 'SuperAdmin' && dept.includes('ODOL')) { 
-            html += `<option value="${u[1]}|${u[3]}">${u[1]} (${dept.split(' ')[0]})</option>`;
-        } 
-    }); 
-    document.getElementById('behNick').innerHTML = html; 
-}
-
-function openBehaviorModal() {
-    document.getElementById('behaviorForm').reset();
-    document.getElementById('editBehaviorId').value = '';
-    document.getElementById('behaviorModalTitle').innerText = '⚠️ บันทึกพฤติกรรมใหม่';
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    document.getElementById('behDate').value = now.toISOString().split('T')[0];
-    updateBehaviorUserSelect();
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('behaviorModal')).show();
-}
-
-function openEditBehavior(id) {
-    const b = allBehaviorsData.find(x => x.id.toString() === id.toString());
-    if(!b) return;
-    updateBehaviorUserSelect();
-    document.getElementById('editBehaviorId').value = b.id;
-    document.getElementById('behNick').value = `${b.nickname}|${b.department}`;
-    document.getElementById('behDate').value = b.record_date;
-    document.getElementById('behTopic').value = b.topic;
-    document.getElementById('behDetails').value = b.details;
-    document.getElementById('behaviorModalTitle').innerText = '✏️ แก้ไขบันทึกพฤติกรรม';
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('behaviorModal')).show();
-}
-
-async function handleBehaviorSubmit(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnSaveBehavior');
-    btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
-    try {
-        const id = document.getElementById('editBehaviorId').value;
-        const nickVal = document.getElementById('behNick').value.split('|');
-        const record_date = document.getElementById('behDate').value;
-        const topic = document.getElementById('behTopic').value;
-        const details = document.getElementById('behDetails').value;
-        if(!nickVal[0]) throw new Error("กรุณาเลือกพนักงาน");
-
-        const month = record_date.substring(0, 7);
-        const myNick = localStorage.getItem('okvip_nick');
-
-        const payload = { nickname: nickVal[0], department: nickVal[1], record_date: record_date, month: month, topic: topic, details: details, recorded_by: myNick };
-
-        if(id) await supabaseClient.from('hr_behaviors').update(payload).eq('id', id);
-        else await supabaseClient.from('hr_behaviors').insert([payload]);
-
-        allUsersData.forEach(u => {
-            if (u[7] === 'Active' && (u[6] === 'SuperAdmin' || u[6] === 'Admin')) {
-                sendSystemNoti(u[1], '🚨 รายงานพฤติกรรมใหม่', `มีการบันทึกพฤติกรรมของ ${nickVal[0]} (หัวข้อ: ${topic}) โดย ${myNick}`);
-            }
-        });
-
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('behaviorModal')).hide();
-        Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-        
-        await loadSupabaseBehaviors();
-        document.getElementById('hrBehaviorMonth').value = month; 
-        renderBehaviorList();
-    } catch(err) { Swal.fire('Error', err.message, 'error'); } 
-    finally { btn.disabled = false; btn.innerText = '💾 บันทึกข้อมูลลงระบบ'; }
-}
-
-function renderBehaviorList() {
-    const tbody = document.getElementById('hrBehaviorTableBody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    
-    const monthPicker = document.getElementById('hrBehaviorMonth');
-    if(!monthPicker.value) {
-        const now = new Date();
-        monthPicker.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    }
-    const targetMonth = monthPicker.value;
-    let filtered = allBehaviorsData.filter(b => b.month === targetMonth);
-    
-    if(filtered.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">🎉 ไม่มีบันทึกพฤติกรรมในเดือนนี้</td></tr>';
-        return;
-    }
-
-    filtered.forEach(b => {
-        const dateStr = new Date(b.record_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-        const adminBtns = (myRole === 'SuperAdmin' || myRole === 'Admin') ? `
-            <div class="d-flex justify-content-center gap-1">
-                <button class="btn btn-sm btn-outline-info py-0 px-2" onclick="openEditBehavior('${b.id}')">✏️</button>
-                <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteBehavior('${b.id}')">✖</button>
-            </div>
-        ` : '-';
-
-        tbody.innerHTML += `
-            <tr>
-                <td class="text-info fw-bold">${dateStr}</td>
-                <td class="fw-bold text-white" style="font-size: 1.05rem;">${b.nickname} <br><span class="badge bg-secondary border border-secondary mt-1">${b.department.split(' ')[0]}</span></td>
-                <td class="text-warning fw-bold">${b.topic}</td>
-                <td class="small text-light" style="max-width: 300px; white-space: normal; line-height: 1.5;">${b.details}</td>
-                <td class="text-muted small">${b.recorded_by}</td>
-                <td class="text-center">${adminBtns}</td>
-            </tr>
-        `;
-    });
-}
-
-function deleteBehavior(id) {
-    Swal.fire({
-        title: 'ลบบันทึกนี้?',
-        text: 'ข้อมูลพฤติกรรมนี้จะถูกลบถาวร',
-        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
-    }).then(async r => {
-        if(r.isConfirmed) {
-            Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()});
-            await supabaseClient.from('hr_behaviors').delete().eq('id', id);
-            await loadSupabaseBehaviors();
-            Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
-        }
-    });
-}
-
-// ------------------------------------------
-// 🗣️ 4. ระบบประเมินพี่เลี้ยง / หัวหน้างาน
-// ------------------------------------------
-
-function updateFeedbackUserSelect() {
-    let html = '<option value="">-- เลือกรายชื่อ --</option>'; 
-    const myNick = localStorage.getItem('okvip_nick');
-    
-    const evalRole = document.getElementById('fbRole').value; 
-    
-    allUsersData.forEach(u => { 
-        const nick = u[1];
-        const dept = u[3] ? u[3].toString() : '';
-        const role = u[6] ? u[6].toString().trim() : ''; 
-        const status = u[7];
-
-        if(status === 'Active' && nick !== myNick) { 
-            
-            if (evalRole === 'Supervisor' && role === 'SuperAdmin') {
-                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
-            } 
-            else if (evalRole === 'Mentor' && role === 'Admin') {
-                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
-            }
-            
-        } 
-    }); 
-    
-    document.getElementById('fbTargetNick').innerHTML = html; 
 }
 
 function updateFeedbackQuestions() {
     const role = document.getElementById('fbRole').value;
     const area = document.getElementById('fbQuestionsArea');
-    
     let questions = [];
+    
     if (role === 'Mentor') {
         questions = [
             "1. ความชัดเจน: อธิบายขั้นตอนการทำงาน กฎระเบียบ ได้เข้าใจง่าย",
@@ -7423,6 +6871,29 @@ function updateFeedbackQuestions() {
         </div>`;
     });
     area.innerHTML = html;
+}
+
+function updateFeedbackUserSelect() {
+    let html = '<option value="">-- เลือกรายชื่อ --</option>'; 
+    const myNick = localStorage.getItem('okvip_nick');
+    const evalRole = document.getElementById('fbRole').value; 
+    
+    allUsersData.forEach(u => { 
+        const nick = u[1];
+        const dept = u[3] ? u[3].toString() : '';
+        const role = u[6] ? u[6].toString().trim() : ''; 
+        const status = u[7];
+
+        if(status === 'Active' && nick !== myNick) { 
+            if (evalRole === 'Supervisor' && role === 'SuperAdmin') {
+                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
+            } 
+            else if (evalRole === 'Mentor' && role === 'Admin') {
+                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
+            }
+        } 
+    }); 
+    document.getElementById('fbTargetNick').innerHTML = html; 
 }
 
 function openFeedbackModal() {
@@ -7483,8 +6954,8 @@ async function handleFeedbackSubmit(e) {
             
             if (typeof sendSystemNoti === 'function') {
                 let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
-                let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
-                sendSystemNoti(targetNick, '🚨 รายงานพฤติกรรม (แบบประเมินใหม่)', notiMsg);
+                let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว`;
+                sendSystemNoti(targetNick, '🚨 แบบประเมินใหม่', notiMsg);
             }
         }
 
@@ -7496,7 +6967,7 @@ async function handleFeedbackSubmit(e) {
     } catch(err) {
         Swal.fire({toast:true, position:'top', title:'เกิดข้อผิดพลาด', text: err.message, icon:'warning', timer:3000, showConfirmButton:false, background:'#111', color:'#fff'});
     } finally {
-        btn.disabled = false; btn.innerText = '🚀 บันทึกแบบประเมิน';
+        btn.disabled = false; btn.innerText = '🚀 ส่งแบบประเมิน';
     }
 }
 
@@ -7508,7 +6979,6 @@ async function renderFeedbackList() {
     const monthInput = document.getElementById('hrFeedbackMonth');
     const month = monthInput ? monthInput.value : '';
     const myNick = localStorage.getItem('okvip_nick');
-    
     const filterTarget = document.getElementById('filterFeedbackTarget') ? document.getElementById('filterFeedbackTarget').value : 'ALL';
     
     try {
@@ -7524,26 +6994,17 @@ async function renderFeedbackList() {
             return matchMonth && matchTarget;
         });
 
-        // 🌟 กรองข้อมูลตามสิทธิ์ (RBAC 3 ระดับ แบบที่คุณต้องการเป๊ะๆ)
         filteredData = filteredData.filter(item => {
-            // หาว่าคนที่ถูกประเมิน (Target) มียศอะไรในระบบ
             const targetUserObj = allUsersData.find(u => u[1] === item.target_user);
             const targetRole = targetUserObj ? targetUserObj[6] : '';
 
-            if (myRole === 'Member') {
-                // 1. MEMBER: เห็นเฉพาะที่ตัวเองเป็นคนส่งเท่านั้น
-                return item.sender_nick === myNick;
-            } 
-            else if (myRole === 'Admin') {
-                // 2. ADMIN: เห็นเฉพาะที่ตัวเองส่ง หรือ ที่ตัวเองเป็นผู้ถูกประเมินเท่านั้น
-                return item.sender_nick === myNick || item.target_user === myNick;
-            } 
+            if (myRole === 'Member') return item.sender_nick === myNick;
+            else if (myRole === 'Admin') return item.sender_nick === myNick || item.target_user === myNick;
             else if (myRole === 'SuperAdmin') {
-                // 3. SUPERADMIN: เห็นที่ตัวเองส่ง, ที่ตัวเองถูกประเมิน, และเห็นของ Admin
-                if (item.sender_nick === myNick) return true; // ที่ตัวเองเป็นคนส่ง
-                if (item.target_user === myNick) return true; // ที่ตัวเองถูกประเมิน
-                if (targetRole === 'SuperAdmin') return false; // 🚫 ปิดบังของ SuperAdmin ระดับเดียวกันคนอื่น
-                return true; // อนุญาตให้เห็นของ Admin
+                if (item.sender_nick === myNick) return true;
+                if (item.target_user === myNick) return true;
+                if (targetRole === 'SuperAdmin') return false;
+                return true;
             }
             return false;
         });
@@ -7563,7 +7024,6 @@ async function renderFeedbackList() {
             let starCount = Math.round(item.avg_score);
             let stars = '⭐'.repeat(starCount) + '<span style="opacity:0.2">' + '⭐'.repeat(5-starCount) + '</span>';
 
-            // จัดการเรื่องการปิดบังชื่อ (Anonymous)
             let senderDisplay = '<span class="text-muted small">🔒 ปกปิดชื่อ</span>';
             if (item.sender_nick === myNick) {
                 senderDisplay = '<span class="text-success fw-bold">คุณ (ผู้ส่ง)</span>';
@@ -7573,7 +7033,6 @@ async function renderFeedbackList() {
             let editBtn = '';
             let delBtn = '';
 
-            // 🌟 ให้สิทธิ์แก้ไข/ลบ ได้เฉพาะเจ้าของบัญชีที่ "เป็นคนส่ง" เท่านั้น!
             if (item.sender_nick === myNick) {
                 editBtn = `<button class="btn btn-sm btn-outline-warning fw-bold px-2 py-1 m-1" onclick="editFeedback('${item.id}')" title="แก้ไข">✏️</button>`;
                 delBtn = `<button class="btn btn-sm btn-outline-danger fw-bold px-2 py-1 m-1" onclick="deleteFeedback('${item.id}')" title="ลบ">✖</button>`;
@@ -7596,6 +7055,7 @@ async function renderFeedbackList() {
         tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Error: ${e.message}</td></tr>`;
     }
 }
+
 function editFeedback(id) {
     const item = window.currentFeedbackData.find(x => x.id.toString() === id.toString());
     if(!item) return;
@@ -7675,6 +7135,7 @@ function viewFeedbackDetail(id) {
         background: '#151518', color: '#fff', confirmButtonColor: '#00f0ff', confirmButtonText: 'ปิดหน้าต่าง'
     });
 }
+  
 // 🌟 ฟังก์ชันซ่อน/โชว์แผงตรายางมินิ
   function toggleStampBox() {
       const wrapper = document.getElementById('stampToolboxWrapper');
