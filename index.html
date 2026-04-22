@@ -625,9 +625,9 @@
           <div class="row g-3 mb-3">
               <div class="col-md-6">
                   <label class="small mb-1 text-white">1. ประเมินในฐานะ <span class="text-danger">*</span></label>
-                  <select id="fbRole" class="form-select bg-dark text-info border-info fw-bold" required onchange="updateFeedbackQuestions()">
-                      <option value="Mentor">พี่เลี้ยงสอนงาน (Mentor)</option>
+                  <select id="fbRole" class="form-select bg-dark text-info border-info fw-bold" required onchange="updateFeedbackQuestions(); updateFeedbackUserSelect();">
                       <option value="Supervisor">หัวหน้างาน (Supervisor)</option>
+                      <option value="Mentor">พี่เลี้ยงสอนงาน (Mentor)</option>
                   </select>
               </div>
               <div class="col-md-6">
@@ -7378,21 +7378,30 @@ function deleteBehavior(id) {
 // ------------------------------------------
 
 function updateFeedbackUserSelect() {
-    let html = '<option value="">-- เลือกพี่เลี้ยง/หัวหน้า --</option>'; 
+    let html = '<option value="">-- เลือกรายชื่อ --</option>'; 
     const myNick = localStorage.getItem('okvip_nick');
+    
+    // ดึงค่าว่าตอนนี้กำลังเลือกประเมินใคร (Supervisor หรือ Mentor)
+    const evalRole = document.getElementById('fbRole').value; 
     
     allUsersData.forEach(u => { 
         const nick = u[1];
         const dept = u[3] ? u[3].toString() : '';
-        const role = u[6];
+        const role = u[6]; // เช็คระดับสิทธิ์ของพนักงาน
         const status = u[7];
 
-        // ต้องเป็นคนที่ Active อยู่ และไม่ใช่ชื่อตัวเอง
+        // ต้องเป็นคนที่ Active อยู่ และห้ามประเมินตัวเอง
         if(status === 'Active' && nick !== myNick) { 
-            // 🌟 เงื่อนไขตัวกรอง: ต้องเป็นแผนก ออดิท (OD) หรือเป็นระดับ Admin / SuperAdmin เท่านั้น
-            if (dept.includes('OD') || role === 'Admin' || role === 'SuperAdmin') {
+            
+            // 🌟 1. ถ้าเลือกประเมิน "หัวหน้างาน" จะดึงมาเฉพาะคนที่เป็น SuperAdmin
+            if (evalRole === 'Supervisor' && role === 'SuperAdmin') {
+                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
+            } 
+            // 🌟 2. ถ้าเลือกประเมิน "พี่เลี้ยง" จะดึงมาเฉพาะคนที่เป็น Admin
+            else if (evalRole === 'Mentor' && role === 'Admin') {
                 html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
             }
+            
         } 
     }); 
     
