@@ -584,10 +584,14 @@
 
     <div id="hrFeedbackArea" style="display: none;">
         <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
-            <div class="d-flex align-items-center gap-2">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="text-white small">📅 เดือน:</span>
                 <input type="month" id="hrFeedbackMonth" class="form-control text-center text-info shadow-none fw-bold bg-dark border-info" style="width: 140px; padding: 5px;" onchange="renderFeedbackList()">
+                
+                <span class="text-white small ms-2">🔍 ค้นหา (ผู้ถูกประเมิน):</span>
+                <input type="text" id="searchFeedbackTarget" class="form-control bg-dark text-white border-secondary" placeholder="พิมพ์ชื่อผู้ถูกประเมิน..." style="width: 180px; padding: 5px;" oninput="renderFeedbackList()">
             </div>
+            
             <button class="btn btn-info fw-bold text-dark" onclick="openFeedbackModal()" style="border-radius: 8px; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);">➕ ทำแบบประเมิน (ไม่ระบุตัวตน)</button>
         </div>
         <div class="table-responsive" style="background: #0a0a0c; border: 1px solid #333; border-radius: 12px; padding: 10px;">
@@ -7535,11 +7539,25 @@ async function renderFeedbackList() {
     const month = monthInput ? monthInput.value : '';
     const myNick = localStorage.getItem('okvip_nick');
     
+    // 🌟 ดึงค่าจากช่องค้นหา
+    const searchTarget = document.getElementById('searchFeedbackTarget') ? document.getElementById('searchFeedbackTarget').value.toLowerCase().trim() : '';
+    
     try {
         const { data, error } = await supabaseClient.from('hr_feedbacks').select('*').order('created_at', { ascending: false });
         if(error) throw error;
 
-        let filteredData = (data || []).filter(item => item.created_at.startsWith(month));
+        let filteredData = (data || []).filter(item => {
+            // 1. กรองตามเดือน
+            let matchMonth = item.created_at.startsWith(month);
+            
+            // 2. กรองตามชื่อผู้ถูกประเมิน (ถ้ามีการพิมพ์ค้นหา)
+            let matchSearch = true;
+            if (searchTarget !== '') {
+                matchSearch = item.target_user.toLowerCase().includes(searchTarget);
+            }
+
+            return matchMonth && matchSearch;
+        });
 
         // 🌟 กรองข้อมูลตามสิทธิ์
         if (myRole === 'Member') {
@@ -7548,7 +7566,7 @@ async function renderFeedbackList() {
         }
 
         if(filteredData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ยังไม่มีข้อมูลในเดือนนี้</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบข้อมูลการประเมินตามเงื่อนไขที่ค้นหา</td></tr>';
             return;
         }
 
