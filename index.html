@@ -588,8 +588,10 @@
                 <span class="text-white small">📅 เดือน:</span>
                 <input type="month" id="hrFeedbackMonth" class="form-control text-center text-info shadow-none fw-bold bg-dark border-info" style="width: 140px; padding: 5px;" onchange="renderFeedbackList()">
                 
-                <span class="text-white small ms-2">🔍 ค้นหา (ผู้ถูกประเมิน):</span>
-                <input type="text" id="searchFeedbackTarget" class="form-control bg-dark text-white border-secondary" placeholder="พิมพ์ชื่อผู้ถูกประเมิน..." style="width: 180px; padding: 5px;" oninput="renderFeedbackList()">
+                <span class="text-white small ms-2">📌 กรองดูรายชื่อ:</span>
+                <select id="filterFeedbackTarget" class="form-select bg-dark text-warning border-warning fw-bold" style="width: auto; min-width: 180px; padding: 5px;" onchange="renderFeedbackList()">
+                    <option value="ALL">-- ดูทุกคน --</option>
+                </select>
             </div>
             
             <button class="btn btn-info fw-bold text-dark" onclick="openFeedbackModal()" style="border-radius: 8px; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);">➕ ทำแบบประเมิน (ไม่ระบุตัวตน)</button>
@@ -6854,12 +6856,33 @@ async function updateInlineUser(selectEl, nickname, field) {
         Swal.fire('Error', 'เกิดข้อผิดพลาดในการอัปเดต', 'error');
     }
 }
-  // ==========================================
+  
+// ==========================================
 // 📊 ระบบข้อมูลการทำงาน (HR & Performance)
 // ==========================================
 let currentHrTab = 'eval';
 let currentHrEvalDept = 'ALL';
 let allBehaviorsData = []; // ตัวแปรสำหรับเก็บข้อมูลพฤติกรรม
+
+// 🌟 ฟังก์ชันใหม่: ดึงรายชื่อพี่เลี้ยง/หัวหน้า มาสร้างเป็น Dropdown ตัวกรอง
+function updateFeedbackFilterDropdown() {
+    const filterSelect = document.getElementById('filterFeedbackTarget');
+    if(!filterSelect) return;
+
+    let html = '<option value="ALL">-- ดูทุกคน --</option>';
+    allUsersData.forEach(u => {
+        const nick = u[1];
+        const role = u[6];
+        const status = u[7];
+
+        // เอาเฉพาะคนที่ Active และเป็นระดับ Admin / SuperAdmin
+        if (status === 'Active' && (role === 'SuperAdmin' || role === 'Admin')) {
+            let roleName = role === 'SuperAdmin' ? 'หัวหน้า' : 'พี่เลี้ยง';
+            html += `<option value="${nick}">${nick} (${roleName})</option>`;
+        }
+    });
+    filterSelect.innerHTML = html;
+}
 
 function switchHrTab(tab) {
     currentHrTab = tab;
@@ -6884,6 +6907,8 @@ function switchHrTab(tab) {
     if(tab === 'feedback') {
         const now = new Date();
         document.getElementById('hrFeedbackMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        
+        updateFeedbackFilterDropdown(); // 👈 สั่งให้โหลดรายชื่อตอนเปิดแท็บ
         renderFeedbackList();
     }
 }
@@ -7255,7 +7280,6 @@ function changeHrBehaviorMonth(offset) {
 function updateBehaviorUserSelect() {
     let html = '<option value="">-- เลือกพนักงาน --</option>'; 
     allUsersData.forEach(u => { 
-        // 🌟 แก้ไขตรงนี้: เพิ่มเงื่อนไขเช็คว่า department (u[3]) ต้องมีคำว่า ODOL
         const dept = u[3] ? u[3].toString() : '';
         if(u[7] === 'Active' && u[6] !== 'SuperAdmin' && dept.includes('ODOL')) { 
             html += `<option value="${u[1]}|${u[3]}">${u[1]} (${dept.split(' ')[0]})</option>`;
@@ -7387,23 +7411,19 @@ function updateFeedbackUserSelect() {
     let html = '<option value="">-- เลือกรายชื่อ --</option>'; 
     const myNick = localStorage.getItem('okvip_nick');
     
-    // ดึงค่าว่าตอนนี้กำลังเลือกประเมินใคร (Supervisor หรือ Mentor)
     const evalRole = document.getElementById('fbRole').value; 
     
     allUsersData.forEach(u => { 
         const nick = u[1];
         const dept = u[3] ? u[3].toString() : '';
-        const role = u[6] ? u[6].toString().trim() : ''; // เช็คระดับสิทธิ์ของพนักงาน
+        const role = u[6] ? u[6].toString().trim() : ''; 
         const status = u[7];
 
-        // ต้องเป็นคนที่ Active อยู่ และไม่ใช่ชื่อตัวเอง (เอาเงื่อนไข EXCLUDE_DUTY ออกไปแล้ว)
         if(status === 'Active' && nick !== myNick) { 
             
-            // 1. ถ้าเลือกประเมิน "หัวหน้างาน" จะดึงมาเฉพาะคนที่เป็น SuperAdmin
             if (evalRole === 'Supervisor' && role === 'SuperAdmin') {
                 html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
             } 
-            // 2. ถ้าเลือกประเมิน "พี่เลี้ยง" จะดึงมาเฉพาะคนที่เป็น Admin
             else if (evalRole === 'Mentor' && role === 'Admin') {
                 html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
             }
@@ -7498,15 +7518,13 @@ async function handleFeedbackSubmit(e) {
             scores: JSON.stringify(scores),
             good_point: goodPoint,
             improve_point: improvePoint,
-            sender_nick: myNick // 🌟 แอบเก็บชื่อคนส่งไว้ แต่ไม่แสดงให้หัวหน้าเห็น
+            sender_nick: myNick 
         };
 
         if (editId) {
-            // โหมดแก้ไข
             const { error } = await supabaseClient.from('hr_feedbacks').update(payload).eq('id', editId);
             if (error) throw error;
         } else {
-            // โหมดส่งใหม่
             payload.created_at = new Date().toISOString();
             const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
             if (error) throw error;
@@ -7521,7 +7539,7 @@ async function handleFeedbackSubmit(e) {
         bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).hide();
         Swal.fire({toast:true, position:'top', title:'บันทึกสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
         
-        renderFeedbackList(); // รีเฟรชตาราง
+        renderFeedbackList(); 
 
     } catch(err) {
         Swal.fire({toast:true, position:'top', title:'เกิดข้อผิดพลาด', text: err.message, icon:'warning', timer:3000, showConfirmButton:false, background:'#111', color:'#fff'});
@@ -7539,34 +7557,29 @@ async function renderFeedbackList() {
     const month = monthInput ? monthInput.value : '';
     const myNick = localStorage.getItem('okvip_nick');
     
-    // 🌟 ดึงค่าจากช่องค้นหา
-    const searchTarget = document.getElementById('searchFeedbackTarget') ? document.getElementById('searchFeedbackTarget').value.toLowerCase().trim() : '';
+    const filterTarget = document.getElementById('filterFeedbackTarget') ? document.getElementById('filterFeedbackTarget').value : 'ALL';
     
     try {
         const { data, error } = await supabaseClient.from('hr_feedbacks').select('*').order('created_at', { ascending: false });
         if(error) throw error;
 
         let filteredData = (data || []).filter(item => {
-            // 1. กรองตามเดือน
             let matchMonth = item.created_at.startsWith(month);
             
-            // 2. กรองตามชื่อผู้ถูกประเมิน (ถ้ามีการพิมพ์ค้นหา)
-            let matchSearch = true;
-            if (searchTarget !== '') {
-                matchSearch = item.target_user.toLowerCase().includes(searchTarget);
+            let matchTarget = true;
+            if (filterTarget !== 'ALL') {
+                matchTarget = (item.target_user === filterTarget);
             }
 
-            return matchMonth && matchSearch;
+            return matchMonth && matchTarget;
         });
 
-        // 🌟 กรองข้อมูลตามสิทธิ์
         if (myRole === 'Member') {
-            // Member เห็นเฉพาะ "ของตัวเองที่ส่งไป" เท่านั้น
             filteredData = filteredData.filter(item => item.sender_nick === myNick);
         }
 
         if(filteredData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบข้อมูลการประเมินตามเงื่อนไขที่ค้นหา</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบข้อมูลการประเมินตามเงื่อนไขที่เลือก</td></tr>';
             return;
         }
 
@@ -7580,18 +7593,15 @@ async function renderFeedbackList() {
             let starCount = Math.round(item.avg_score);
             let stars = '⭐'.repeat(starCount) + '<span style="opacity:0.2">' + '⭐'.repeat(5-starCount) + '</span>';
 
-            // จัดการเรื่องการปิดบังชื่อ (Anonymous)
             let senderDisplay = '<span class="text-muted small">🔒 ปกปิดชื่อ</span>';
             if (item.sender_nick === myNick) {
                 senderDisplay = '<span class="text-success fw-bold">คุณ (ผู้ส่ง)</span>';
             }
 
-            // ปุ่มจัดการ
             let viewBtn = `<button class="btn btn-sm btn-outline-info fw-bold px-2 py-1 m-1" onclick="viewFeedbackDetail('${item.id}')" title="ดูข้อมูล">🔍</button>`;
             let editBtn = '';
             let delBtn = '';
 
-            // 🌟 ให้สิทธิ์แก้ไข/ลบ ได้เฉพาะเจ้าของบัญชีผู้ส่งเท่านั้น!
             if (item.sender_nick === myNick) {
                 editBtn = `<button class="btn btn-sm btn-outline-warning fw-bold px-2 py-1 m-1" onclick="editFeedback('${item.id}')" title="แก้ไข">✏️</button>`;
                 delBtn = `<button class="btn btn-sm btn-outline-danger fw-bold px-2 py-1 m-1" onclick="deleteFeedback('${item.id}')" title="ลบ">✖</button>`;
@@ -7623,7 +7633,6 @@ function editFeedback(id) {
     document.getElementById('fbRole').value = item.eval_role;
     updateFeedbackUserSelect();
     
-    // หน่วงเวลาให้ Select วาดตัวเลือกเสร็จก่อนแล้วค่อยกำหนดค่า
     setTimeout(() => { document.getElementById('fbTargetNick').value = item.target_user; }, 100);
     
     updateFeedbackQuestions();
