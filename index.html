@@ -7475,6 +7475,354 @@ function deleteBehavior(id) {
           }
       });
   }
+
+  // ==========================================
+// 🗣️ 4. ระบบประเมินพี่เลี้ยง / หัวหน้างาน
+// ==========================================
+
+function updateFeedbackFilterDropdown() {
+    const filterSelect = document.getElementById('filterFeedbackTarget');
+    if(!filterSelect) return;
+
+    let html = '<option value="ALL">-- ดูทุกคน --</option>';
+    const myNick = localStorage.getItem('okvip_nick'); 
+
+    allUsersData.forEach(u => {
+        const nick = u[1];
+        const role = u[6];
+        const status = u[7];
+
+        if (status === 'Active') {
+            let canSeeInDropdown = false;
+
+            if (myRole === 'Member') {
+                if (role === 'Admin' || role === 'SuperAdmin') canSeeInDropdown = true;
+            } 
+            else if (myRole === 'Admin') {
+                if (role === 'Admin') canSeeInDropdown = true;
+            } 
+            else if (myRole === 'SuperAdmin') {
+                if (role === 'Admin') canSeeInDropdown = true;
+                if (role === 'SuperAdmin' && nick === myNick) canSeeInDropdown = true;
+            }
+
+            if (canSeeInDropdown) {
+                let roleName = role === 'SuperAdmin' ? 'หัวหน้า' : 'พี่เลี้ยง';
+                html += `<option value="${nick}">${nick} (${roleName})</option>`;
+            }
+        }
+    });
+    
+    filterSelect.innerHTML = html;
+}
+
+function updateFeedbackUserSelect() {
+    let html = '<option value="">-- เลือกรายชื่อ --</option>'; 
+    const myNick = localStorage.getItem('okvip_nick');
+    const evalRole = document.getElementById('fbRole').value; 
+    
+    allUsersData.forEach(u => { 
+        const nick = u[1];
+        const dept = u[3] ? u[3].toString() : '';
+        const role = u[6] ? u[6].toString().trim() : ''; 
+        const status = u[7];
+
+        if(status === 'Active' && nick !== myNick) { 
+            if (evalRole === 'Supervisor' && role === 'SuperAdmin') {
+                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
+            } 
+            else if (evalRole === 'Mentor' && role === 'Admin') {
+                html += `<option value="${nick}">${nick} (${dept.split(' ')[0]})</option>`;
+            }
+        } 
+    }); 
+    
+    document.getElementById('fbTargetNick').innerHTML = html; 
+}
+
+function updateFeedbackQuestions() {
+    const role = document.getElementById('fbRole').value;
+    const area = document.getElementById('fbQuestionsArea');
+    
+    let questions = [];
+    if (role === 'Mentor') {
+        questions = [
+            "1. ความชัดเจน: อธิบายขั้นตอนการทำงาน กฎระเบียบ ได้เข้าใจง่าย",
+            "2. ทัศนคติ: มีความใจเย็น เป็นมิตร พร้อมสอนงานโดยไม่แสดงความหงุดหงิด",
+            "3. การซัพพอร์ต: เมื่อเกิดปัญหาพร้อมเข้ามาช่วยดูและให้คำปรึกษาทันที",
+            "4. การเปิดโอกาส (Coaching): ให้โอกาสลองทำจริง และคอยประกบดูความถูกต้อง"
+        ];
+    } else {
+        questions = [
+            "1. ความยุติธรรม: กระจายงาน จัดตารางพัก หรือแบ่งหน้าที่ได้อย่างเหมาะสม",
+            "2. การรับฟัง: เปิดใจรับฟังปัญหาหน้างาน หรือข้อเสนอแนะจากทีมงาน",
+            "3. การแก้ปัญหา: ช่วยตัดสินใจและแก้ปัญหาหน้างานได้อย่างเด็ดขาด",
+            "4. บรรยากาศ: สร้างสภาพแวดล้อมการทำงานที่ดี ไม่กดดันจนเกินไป"
+        ];
+    }
+
+    let html = '';
+    questions.forEach((q, idx) => {
+        html += `
+        <div class="mb-3">
+            <div class="text-white small mb-2">${q}</div>
+            <select class="form-select form-select-sm bg-black text-warning border-secondary fb-score-select" required>
+                <option value="" disabled selected>-- เลือกคะแนน (1-5) --</option>
+                <option value="5">⭐⭐⭐⭐⭐ (5) ดีเยี่ยม</option>
+                <option value="4">⭐⭐⭐⭐ (4) ดี</option>
+                <option value="3">⭐⭐⭐ (3) ปานกลาง</option>
+                <option value="2">⭐⭐ (2) ต้องปรับปรุง</option>
+                <option value="1">⭐ (1) แย่มาก</option>
+            </select>
+        </div>`;
+    });
+    area.innerHTML = html;
+}
+
+function openFeedbackModal() {
+    document.getElementById('feedbackForm').reset();
+    document.getElementById('editFeedbackId').value = '';
+    document.getElementById('feedbackModalTitle').innerText = '🗣️ แบบประเมินพี่เลี้ยง / หัวหน้างาน';
+    updateFeedbackUserSelect();
+    updateFeedbackQuestions();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).show();
+}
+
+async function handleFeedbackSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveFeedback');
+    btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
+    
+    try {
+        const targetNick = document.getElementById('fbTargetNick').value;
+        const evaluateRole = document.getElementById('fbRole').value;
+        const goodPoint = document.getElementById('fbGood').value;
+        const improvePoint = document.getElementById('fbImprove').value;
+        const editId = document.getElementById('editFeedbackId').value;
+        const myNick = localStorage.getItem('okvip_nick');
+        
+        let totalScore = 0;
+        let scores = [];
+        let missingScore = false;
+        
+        document.querySelectorAll('.fb-score-select').forEach(sel => {
+            if (!sel.value) { missingScore = true; } 
+            const val = parseInt(sel.value);
+            scores.push(val);
+            totalScore += val;
+        });
+        
+        if (missingScore) throw new Error("กรุณาให้คะแนน (ดาว) ให้ครบทุกข้อครับ");
+        if (!targetNick) throw new Error("กรุณาเลือกผู้ถูกประเมินครับ");
+
+        const avgScore = (totalScore / scores.length).toFixed(2);
+
+        const payload = {
+            target_user: targetNick,
+            eval_role: evaluateRole,
+            avg_score: avgScore,
+            scores: JSON.stringify(scores),
+            good_point: goodPoint,
+            improve_point: improvePoint,
+            sender_nick: myNick 
+        };
+
+        if (editId) {
+            const { error } = await supabaseClient.from('hr_feedbacks').update(payload).eq('id', editId);
+            if (error) throw error;
+        } else {
+            payload.created_at = new Date().toISOString();
+            const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
+            if (error) throw error;
+            
+            if (typeof sendSystemNoti === 'function') {
+                let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
+                let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
+                sendSystemNoti(targetNick, '🚨 รายงานพฤติกรรม (แบบประเมินใหม่)', notiMsg);
+            }
+        }
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).hide();
+        Swal.fire({toast:true, position:'top', title:'บันทึกสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+        
+        renderFeedbackList(); 
+
+    } catch(err) {
+        Swal.fire({toast:true, position:'top', title:'เกิดข้อผิดพลาด', text: err.message, icon:'warning', timer:3000, showConfirmButton:false, background:'#111', color:'#fff'});
+    } finally {
+        btn.disabled = false; btn.innerText = '🚀 ส่งแบบประเมิน (ไม่เปิดเผยชื่อ)';
+    }
+}
+
+async function renderFeedbackList() {
+    const tbody = document.getElementById('hrFeedbackTableBody');
+    if(!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-warning">⏳ กำลังดึงข้อมูล...</td></tr>';
+
+    const monthInput = document.getElementById('hrFeedbackMonth');
+    const month = monthInput ? monthInput.value : '';
+    const myNick = localStorage.getItem('okvip_nick');
+    
+    const filterTarget = document.getElementById('filterFeedbackTarget') ? document.getElementById('filterFeedbackTarget').value : 'ALL';
+    
+    try {
+        const { data, error } = await supabaseClient.from('hr_feedbacks').select('*').order('created_at', { ascending: false });
+        if(error) throw error;
+
+        let filteredData = (data || []).filter(item => {
+            let matchMonth = item.created_at.startsWith(month);
+            let matchTarget = true;
+            if (filterTarget !== 'ALL') {
+                matchTarget = (item.target_user === filterTarget);
+            }
+            return matchMonth && matchTarget;
+        });
+
+        filteredData = filteredData.filter(item => {
+            const targetUserObj = allUsersData.find(u => u[1] === item.target_user);
+            const targetRole = targetUserObj ? targetUserObj[6] : '';
+
+            if (myRole === 'Member') {
+                return item.sender_nick === myNick;
+            } 
+            else if (myRole === 'Admin') {
+                return item.sender_nick === myNick || item.target_user === myNick;
+            } 
+            else if (myRole === 'SuperAdmin') {
+                if (item.sender_nick === myNick) return true;
+                if (item.target_user === myNick) return true;
+                if (targetRole === 'SuperAdmin') return false; 
+                return true;
+            }
+            return false;
+        });
+
+        if(filteredData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ไม่พบข้อมูลการประเมิน หรือคุณไม่มีสิทธิ์เข้าถึงข้อมูลนี้</td></tr>';
+            return;
+        }
+
+        let html = '';
+        filteredData.forEach(item => {
+            const dateStr = new Date(item.created_at).toLocaleDateString('th-TH');
+            const roleBadge = item.eval_role === 'Mentor' 
+                ? '<span class="badge bg-dark border border-info text-info">พี่เลี้ยง (Mentor)</span>'
+                : '<span class="badge bg-dark border border-warning text-warning">หัวหน้า (Supervisor)</span>';
+            
+            let starCount = Math.round(item.avg_score);
+            let stars = '⭐'.repeat(starCount) + '<span style="opacity:0.2">' + '⭐'.repeat(5-starCount) + '</span>';
+
+            let senderDisplay = '<span class="text-muted small">🔒 ปกปิดชื่อ</span>';
+            if (item.sender_nick === myNick) {
+                senderDisplay = '<span class="text-success fw-bold">คุณ (ผู้ส่ง)</span>';
+            }
+
+            let viewBtn = `<button class="btn btn-sm btn-outline-info fw-bold px-2 py-1 m-1" onclick="viewFeedbackDetail('${item.id}')" title="ดูข้อมูล">🔍</button>`;
+            let editBtn = '';
+            let delBtn = '';
+
+            if (item.sender_nick === myNick) {
+                editBtn = `<button class="btn btn-sm btn-outline-warning fw-bold px-2 py-1 m-1" onclick="editFeedback('${item.id}')" title="แก้ไข">✏️</button>`;
+                delBtn = `<button class="btn btn-sm btn-outline-danger fw-bold px-2 py-1 m-1" onclick="deleteFeedback('${item.id}')" title="ลบ">✖</button>`;
+            }
+
+            html += `<tr>
+                <td class="text-white-50 small">${dateStr}</td>
+                <td class="text-center">${senderDisplay}</td>
+                <td class="fw-bold text-white" style="font-size: 1.05rem;">${item.target_user}</td>
+                <td>${roleBadge}</td>
+                <td><span class="text-info fw-bold">${item.avg_score}</span> <br><span style="font-size:0.8rem">${stars}</span></td>
+                <td class="text-center"><div class="d-flex justify-content-center align-items-center flex-wrap">${viewBtn}${editBtn}${delBtn}</div></td>
+            </tr>`;
+        });
+        
+        tbody.innerHTML = html;
+        window.currentFeedbackData = filteredData; 
+
+    } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Error: ${e.message}</td></tr>`;
+    }
+}
+
+function editFeedback(id) {
+    const item = window.currentFeedbackData.find(x => x.id.toString() === id.toString());
+    if(!item) return;
+
+    document.getElementById('editFeedbackId').value = item.id;
+    document.getElementById('fbRole').value = item.eval_role;
+    updateFeedbackUserSelect();
+    
+    setTimeout(() => { document.getElementById('fbTargetNick').value = item.target_user; }, 100);
+    
+    updateFeedbackQuestions();
+
+    let scores = [];
+    try { scores = JSON.parse(item.scores); } catch(e){}
+    const selects = document.querySelectorAll('.fb-score-select');
+    scores.forEach((sc, i) => { if(selects[i]) selects[i].value = sc; });
+
+    document.getElementById('fbGood').value = item.good_point;
+    document.getElementById('fbImprove').value = item.improve_point;
+    
+    document.getElementById('feedbackModalTitle').innerText = '✏️ แก้ไขแบบประเมิน';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).show();
+}
+
+function deleteFeedback(id) {
+    Swal.fire({
+        title: 'ต้องการลบการประเมินนี้?',
+        text: 'ข้อมูลนี้จะถูกลบถาวร ไม่สามารถกู้คืนได้',
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+    }).then(async r => {
+        if(r.isConfirmed) {
+            Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()});
+            try {
+                await supabaseClient.from('hr_feedbacks').delete().eq('id', id);
+                Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+                renderFeedbackList();
+            } catch(e) {
+                Swal.fire('Error', e.message, 'error');
+            }
+        }
+    });
+}
+
+function viewFeedbackDetail(id) {
+    const item = window.currentFeedbackData.find(x => x.id.toString() === id.toString());
+    if(!item) return;
+
+    let scores = [];
+    try { scores = JSON.parse(item.scores); } catch(e){}
+
+    let qHtml = '';
+    scores.forEach((sc, idx) => {
+        qHtml += `<div class="d-flex justify-content-between border-bottom border-secondary mb-2 pb-1">
+                    <span class="text-white-50 small">ข้อที่ ${idx+1}</span>
+                    <span class="text-warning fw-bold">${sc} ดาว</span>
+                  </div>`;
+    });
+
+    Swal.fire({
+        title: `รีวิวการประเมิน: ${item.target_user}`,
+        html: `
+            <div class="text-start" style="font-size: 0.95rem;">
+                <div class="mb-3 p-3 rounded" style="background: #111; border: 1px solid #333;">
+                    <div class="text-info fw-bold mb-2">📊 คะแนนแต่ละข้อ</div>
+                    ${qHtml}
+                </div>
+                <div class="mb-3 p-3 rounded" style="background: rgba(0,255,102,0.1); border: 1px solid rgba(0,255,102,0.3);">
+                    <div class="text-success fw-bold mb-1">👍 สิ่งที่ประทับใจ / ทำได้ดี</div>
+                    <div class="text-white" style="white-space: pre-wrap;">${item.good_point || '-'}</div>
+                </div>
+                <div class="p-3 rounded" style="background: rgba(255,204,0,0.1); border: 1px solid rgba(255,204,0,0.3);">
+                    <div class="text-warning fw-bold mb-1">💡 สิ่งที่ควรพัฒนา</div>
+                    <div class="text-white" style="white-space: pre-wrap;">${item.improve_point || '-'}</div>
+                </div>
+            </div>
+        `,
+        background: '#151518', color: '#fff', confirmButtonColor: '#00f0ff', confirmButtonText: 'ปิดหน้าต่าง'
+    });
+}
 </script>
 </body>
 </html>
