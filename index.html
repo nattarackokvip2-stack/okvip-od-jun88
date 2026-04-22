@@ -446,7 +446,7 @@
       </div>
 
       <div id="hrProbationArea" style="display: none;">
-        <div class="alert border-success text-success small mb-3" style="background: #000000; border: 1px solid #00ff66;">
+        <div class="alert alert-dark border-success text-success small mb-3" style="background: rgba(0, 255, 102, 0.05);">
             <b>🎓 ขั้นตอนและเงื่อนไขการสอบประเมินผ่านโปร:</b><br>
             1. พนักงานต้องมีอายุงานตามที่กำหนดและไม่มีประวัติพฤติกรรมร้ายแรง<br>
             2. ผู้สอบ (Admin/SuperAdmin) เป็นผู้บันทึกผลการทดสอบและข้อเสนอแนะ<br>
@@ -462,8 +462,36 @@
           </table>
         </div>
       </div>
-  </div>
-      <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
+
+      <div id="hrFeedbackArea" style="display: none;">
+          <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
+              <div class="d-flex align-items-center gap-2">
+                  <span class="text-white small">📅 เดือน:</span>
+                  <input type="month" id="hrFeedbackMonth" class="form-control text-center text-info shadow-none fw-bold bg-dark border-info" style="width: 140px; padding: 5px;" onchange="renderFeedbackList()">
+              </div>
+              <button class="btn btn-info fw-bold text-dark" onclick="openFeedbackModal()" style="border-radius: 8px; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);">➕ ทำแบบประเมิน (ไม่ระบุตัวตน)</button>
+          </div>
+          <div class="table-responsive" style="background: #0a0a0c; border: 1px solid #333; border-radius: 12px; padding: 10px;">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th class="text-info">วันที่ประเมิน</th>
+                  <th>ผู้ถูกประเมิน (เป้าหมาย)</th>
+                  <th class="text-warning">ประเมินในฐานะ</th>
+                  <th>คะแนนเฉลี่ย</th>
+                  <th class="text-center">ดูรายละเอียด</th>
+                </tr>
+              </thead>
+              <tbody id="hrFeedbackTableBody">
+                <tr><td colspan="5" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td></tr>
+              </tbody>
+            </table>
+          </div>
+      </div>
+      </div> <div id="announceSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
+        <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
       </div>
       <div class="table-responsive">
         <table class="table table-hover align-middle">
@@ -471,7 +499,7 @@
           <tbody id="announceTableBody"></tbody>
         </table>
       </div>
-    </div>
+  </div>
 
   </div> </div> <div class="modal fade" id="announceModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-body p-4">
