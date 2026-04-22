@@ -568,8 +568,21 @@
           </table>
         </div>
       </div>
+  </div> 
+     <div id="announceSection" class="content-section">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
+        <button id="addAnnounceBtn" class="btn btn-warning px-4 fw-bold" style="display:none; border-radius:10px;" onclick="openAnnounceModal()">➕ สร้างประกาศ</button>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>สถานะ</th><th>หัวข้อประกาศ</th><th>เนื้อหา</th><th class="text-center" id="thAnnounceManage">จัดการ</th></tr></thead>
+          <tbody id="announceTableBody"></tbody>
+        </table>
+      </div>
+    </div>
 
-      <div id="hrFeedbackArea" style="display: none;">
+    <div id="hrFeedbackArea" style="display: none;">
         <div class="d-flex justify-content-between mb-3 flex-wrap gap-2">
             <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="text-white small">📅 เดือน:</span>
@@ -601,10 +614,6 @@
           </table>
         </div>
       </div>
-
-    </div> <div id="announceSection" class="content-section">
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4 class="fw-bold mb-0" style="color: #ff9900;">📢 ประกาศข่าวสารระบบ</h4>
 
 <div class="modal fade" id="feedbackModal" tabindex="-1" data-bs-theme="dark">
   <div class="modal-dialog modal-dialog-centered modal-lg">
@@ -2638,9 +2647,9 @@ async function handleRegSubmit(e) {
   const btn = document.getElementById('btnSubmitReg'); 
   const idx = document.getElementById('editUserIdx').value;
   
-  const uName = document.getElementById('uName').value.trim();
-  const pWord = document.getElementById('uPass').value.trim();
-  const nickname = document.getElementById('nick').value.trim();
+  const uName = document.getElementById('uName').value;
+  const pWord = document.getElementById('uPass').value;
+  const nickname = document.getElementById('nick').value;
   const department = document.getElementById('dept').value;
   const role = document.getElementById('uRole').value;
   const shiftSet = document.getElementById('uSet').value;
@@ -2651,21 +2660,14 @@ async function handleRegSubmit(e) {
 
   try {
       if (idx !== "") { 
-          // 📝 กรณีแก้ไขข้อมูล
           const userId = allUsersData[idx][0]; 
           const updatePayload = { nickname, workGroup, department, role, shiftSet };
           
           const { error } = await supabaseClient.from('users').update(updatePayload).eq('id', userId);
           if (error) throw error;
       } else { 
-          // ➕ กรณีเพิ่มผู้ใช้ใหม่
           if(!pWord) throw new Error("กรุณาตั้งรหัสผ่านให้พนักงานใหม่");
 
-          // 🌟 เช็คก่อนว่า ยูสเซอร์นี้มีคนใช้ไปแล้วหรือยัง ในระบบของเรา
-          const isExist = allUsersData.some(u => u[4].toLowerCase() === uName.toLowerCase());
-          if(isExist) throw new Error("ยูสเซอร์เนมนี้มีคนใช้งานแล้ว กรุณาเปลี่ยนใหม่ครับ");
-
-          // สร้างบัญชีใน Supabase Auth
           const { data: authUser, error: authError } = await supabaseClient.auth.signUp({
               email: usernameToEmail(uName),
               password: pWord,
@@ -2674,11 +2676,7 @@ async function handleRegSubmit(e) {
               }
           });
 
-          // ดัก Error จาก Supabase 
-          if (authError) {
-              if (authError.message.includes('already registered')) throw new Error("ยูสเซอร์เนมนี้ซ้ำกับในระบบหลังบ้าน กรุณาเปลี่ยนใหม่ครับ");
-              throw authError;
-          }
+          if (authError) throw authError;
           if (!authUser.user) throw new Error("ไม่สามารถสร้างบัญชีผู้ใช้ได้");
 
           const profilePayload = {
