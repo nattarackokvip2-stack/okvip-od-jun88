@@ -595,14 +595,15 @@
             <thead>
               <tr>
                 <th class="text-info">วันที่ประเมิน</th>
+                <th class="text-secondary">ผู้ประเมิน</th>
                 <th>ผู้ถูกประเมิน (เป้าหมาย)</th>
                 <th class="text-warning">ประเมินในฐานะ</th>
                 <th>คะแนนเฉลี่ย</th>
-                <th class="text-center">ดูรายละเอียด</th>
+                <th class="text-center">จัดการ</th>
               </tr>
             </thead>
             <tbody id="hrFeedbackTableBody">
-              <tr><td colspan="5" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td></tr>
+              <tr><td colspan="6" class="text-center py-5 text-muted">กำลังโหลดข้อมูล...</td></tr>
             </tbody>
           </table>
         </div>
@@ -621,6 +622,7 @@
         </div>
 
         <form id="feedbackForm" onsubmit="handleFeedbackSubmit(event)">
+          <input type="hidden" id="editFeedbackId">
           
           <div class="row g-3 mb-3">
               <div class="col-md-6">
@@ -7449,6 +7451,8 @@ function updateFeedbackQuestions() {
 
 function openFeedbackModal() {
     document.getElementById('feedbackForm').reset();
+    document.getElementById('editFeedbackId').value = '';
+    document.getElementById('feedbackModalTitle').innerText = '🗣️ แบบประเมินพี่เลี้ยง / หัวหน้างาน';
     updateFeedbackUserSelect();
     updateFeedbackQuestions();
     bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).show();
@@ -7464,24 +7468,22 @@ async function handleFeedbackSubmit(e) {
         const evaluateRole = document.getElementById('fbRole').value;
         const goodPoint = document.getElementById('fbGood').value;
         const improvePoint = document.getElementById('fbImprove').value;
+        const editId = document.getElementById('editFeedbackId').value;
+        const myNick = localStorage.getItem('okvip_nick');
         
         let totalScore = 0;
         let scores = [];
         let missingScore = false;
         
         document.querySelectorAll('.fb-score-select').forEach(sel => {
-            if (!sel.value) { missingScore = true; } // ดักจับถ้าลืมให้ดาว
+            if (!sel.value) { missingScore = true; } 
             const val = parseInt(sel.value);
             scores.push(val);
             totalScore += val;
         });
         
-        if (missingScore) {
-            throw new Error("กรุณาให้คะแนน (ดาว) ให้ครบทุกข้อครับ");
-        }
-        if (!targetNick) {
-            throw new Error("กรุณาเลือกผู้ถูกประเมินครับ");
-        }
+        if (missingScore) throw new Error("กรุณาให้คะแนน (ดาว) ให้ครบทุกข้อครับ");
+        if (!targetNick) throw new Error("กรุณาเลือกผู้ถูกประเมินครับ");
 
         const avgScore = (totalScore / scores.length).toFixed(2);
 
@@ -7492,62 +7494,61 @@ async function handleFeedbackSubmit(e) {
             scores: JSON.stringify(scores),
             good_point: goodPoint,
             improve_point: improvePoint,
-            created_at: new Date().toISOString()
-            // 💡 เราเจตนาไม่เก็บค่าคนประเมิน (sender) เพื่อให้เป็น Anonymous (ความลับ)
+            sender_nick: myNick // 🌟 แอบเก็บชื่อคนส่งไว้ แต่ไม่แสดงให้หัวหน้าเห็น
         };
 
-        // 🌟 1. บันทึกข้อมูลลงฐานข้อมูล
-        const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
-        if (error) throw error;
-
-        // 🔔 2. ยิงกระดิ่งแจ้งเตือนไปยังผู้ถูกประเมิน
-        if (typeof sendSystemNoti === 'function') {
-            let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
-            let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
+        if (editId) {
+            // โหมดแก้ไข
+            const { error } = await supabaseClient.from('hr_feedbacks').update(payload).eq('id', editId);
+            if (error) throw error;
+        } else {
+            // โหมดส่งใหม่
+            payload.created_at = new Date().toISOString();
+            const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
+            if (error) throw error;
             
-            // ใช้คำว่า "พฤติกรรม" ใน Title เพื่อให้ข้อความวิ่งเข้าหมวดหมู่ "🚨 รายงานพฤติกรรม" อัตโนมัติ
-            sendSystemNoti(targetNick, '🚨 รายงานพฤติกรรม (แบบประเมินใหม่)', notiMsg);
+            if (typeof sendSystemNoti === 'function') {
+                let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
+                let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
+                sendSystemNoti(targetNick, '🚨 รายงานพฤติกรรม (แบบประเมินใหม่)', notiMsg);
+            }
         }
 
         bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).hide();
-        Swal.fire({toast:true, position:'top', title:'ส่งแบบประเมินเรียบร้อย ขอบคุณครับ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
+        Swal.fire({toast:true, position:'top', title:'บันทึกสำเร็จ!', icon:'success', timer:2500, showConfirmButton:false, background:'#111', color:'#fff'});
         
-        // โหลดรายการใหม่ทันทีถ้าแอดมินดูอยู่
-        if (myRole !== 'Member') {
-            renderFeedbackList();
-        }
+        renderFeedbackList(); // รีเฟรชตาราง
 
     } catch(err) {
         Swal.fire({toast:true, position:'top', title:'เกิดข้อผิดพลาด', text: err.message, icon:'warning', timer:3000, showConfirmButton:false, background:'#111', color:'#fff'});
     } finally {
-        btn.disabled = false; btn.innerText = '🚀 ส่งแบบประเมิน (ไม่เปิดเผยชื่อ)';
+        btn.disabled = false; btn.innerText = '🚀 บันทึกแบบประเมิน';
     }
 }
 
-// 🌟 2. ดึงข้อมูลแบบประเมินมาแสดงในตาราง (เห็นเฉพาะแอดมิน)
 async function renderFeedbackList() {
     const tbody = document.getElementById('hrFeedbackTableBody');
     if(!tbody) return;
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-warning">⏳ กำลังดึงข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-warning">⏳ กำลังดึงข้อมูล...</td></tr>';
 
     const monthInput = document.getElementById('hrFeedbackMonth');
     const month = monthInput ? monthInput.value : '';
+    const myNick = localStorage.getItem('okvip_nick');
     
     try {
-        const { data, error } = await supabaseClient
-            .from('hr_feedbacks')
-            .select('*')
-            .order('created_at', { ascending: false });
-        
+        const { data, error } = await supabaseClient.from('hr_feedbacks').select('*').order('created_at', { ascending: false });
         if(error) throw error;
 
-        // กรองเฉพาะเดือนที่เลือก
-        let filteredData = (data || []).filter(item => {
-            return item.created_at.startsWith(month);
-        });
+        let filteredData = (data || []).filter(item => item.created_at.startsWith(month));
+
+        // 🌟 กรองข้อมูลตามสิทธิ์
+        if (myRole === 'Member') {
+            // Member เห็นเฉพาะ "ของตัวเองที่ส่งไป" เท่านั้น
+            filteredData = filteredData.filter(item => item.sender_nick === myNick);
+        }
 
         if(filteredData.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">ยังไม่มีข้อมูลการประเมินในเดือนนี้</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">ยังไม่มีข้อมูลในเดือนนี้</td></tr>';
             return;
         }
 
@@ -7561,32 +7562,85 @@ async function renderFeedbackList() {
             let starCount = Math.round(item.avg_score);
             let stars = '⭐'.repeat(starCount) + '<span style="opacity:0.2">' + '⭐'.repeat(5-starCount) + '</span>';
 
-            const viewBtn = `<button class="btn btn-sm btn-outline-info fw-bold px-3" onclick="viewFeedbackDetail('${item.id}')">🔍 ดูรีวิว</button>`;
+            // จัดการเรื่องการปิดบังชื่อ (Anonymous)
+            let senderDisplay = '<span class="text-muted small">🔒 ปกปิดชื่อ</span>';
+            if (item.sender_nick === myNick) {
+                senderDisplay = '<span class="text-success fw-bold">คุณ (ผู้ส่ง)</span>';
+            }
+
+            // ปุ่มจัดการ
+            let viewBtn = `<button class="btn btn-sm btn-outline-info fw-bold px-2 py-1 m-1" onclick="viewFeedbackDetail('${item.id}')" title="ดูข้อมูล">🔍</button>`;
+            let editBtn = '';
+            let delBtn = '';
+
+            // 🌟 ให้สิทธิ์แก้ไข/ลบ ได้เฉพาะเจ้าของบัญชีผู้ส่งเท่านั้น!
+            if (item.sender_nick === myNick) {
+                editBtn = `<button class="btn btn-sm btn-outline-warning fw-bold px-2 py-1 m-1" onclick="editFeedback('${item.id}')" title="แก้ไข">✏️</button>`;
+                delBtn = `<button class="btn btn-sm btn-outline-danger fw-bold px-2 py-1 m-1" onclick="deleteFeedback('${item.id}')" title="ลบ">✖</button>`;
+            }
 
             html += `<tr>
                 <td class="text-white-50 small">${dateStr}</td>
+                <td class="text-center">${senderDisplay}</td>
                 <td class="fw-bold text-white" style="font-size: 1.05rem;">${item.target_user}</td>
                 <td>${roleBadge}</td>
                 <td><span class="text-info fw-bold">${item.avg_score}</span> <br><span style="font-size:0.8rem">${stars}</span></td>
-                <td class="text-center">${viewBtn}</td>
+                <td class="text-center"><div class="d-flex justify-content-center align-items-center flex-wrap">${viewBtn}${editBtn}${delBtn}</div></td>
             </tr>`;
         });
         
-        // 🔒 ซ่อนข้อมูลถ้าเป็นแค่ Member
-        if (myRole === 'Member') {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">คุณไม่มีสิทธิ์ดูผลประเมิน (สามารถกดส่งประเมินได้อย่างเดียวครับ)</td></tr>';
-        } else {
-            tbody.innerHTML = html;
-        }
-        
+        tbody.innerHTML = html;
         window.currentFeedbackData = filteredData; 
 
     } catch(e) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-danger">Error: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-danger">Error: ${e.message}</td></tr>`;
     }
 }
 
-// 🌟 3. หน้าต่าง Popup เวลาแอดมินกด "ดูรีวิว"
+function editFeedback(id) {
+    const item = window.currentFeedbackData.find(x => x.id.toString() === id.toString());
+    if(!item) return;
+
+    document.getElementById('editFeedbackId').value = item.id;
+    document.getElementById('fbRole').value = item.eval_role;
+    updateFeedbackUserSelect();
+    
+    // หน่วงเวลาให้ Select วาดตัวเลือกเสร็จก่อนแล้วค่อยกำหนดค่า
+    setTimeout(() => { document.getElementById('fbTargetNick').value = item.target_user; }, 100);
+    
+    updateFeedbackQuestions();
+
+    let scores = [];
+    try { scores = JSON.parse(item.scores); } catch(e){}
+    const selects = document.querySelectorAll('.fb-score-select');
+    scores.forEach((sc, i) => { if(selects[i]) selects[i].value = sc; });
+
+    document.getElementById('fbGood').value = item.good_point;
+    document.getElementById('fbImprove').value = item.improve_point;
+    
+    document.getElementById('feedbackModalTitle').innerText = '✏️ แก้ไขแบบประเมิน';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('feedbackModal')).show();
+}
+
+function deleteFeedback(id) {
+    Swal.fire({
+        title: 'ต้องการลบการประเมินนี้?',
+        text: 'ข้อมูลนี้จะถูกลบถาวร ไม่สามารถกู้คืนได้',
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+    }).then(async r => {
+        if(r.isConfirmed) {
+            Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()});
+            try {
+                await supabaseClient.from('hr_feedbacks').delete().eq('id', id);
+                Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+                renderFeedbackList();
+            } catch(e) {
+                Swal.fire('Error', e.message, 'error');
+            }
+        }
+    });
+}
+
 function viewFeedbackDetail(id) {
     const item = window.currentFeedbackData.find(x => x.id.toString() === id.toString());
     if(!item) return;
