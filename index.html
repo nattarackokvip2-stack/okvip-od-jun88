@@ -475,10 +475,10 @@
       </div>
       
       <div class="filter-bar mb-4 pb-3" style="border-bottom: 1px solid #333;">
-        <div id="tabHrEval" class="dept-badge active" onclick="switchHrTab('eval')">📋 1. ประเมินการทำงานรายเดือน</div>
-        <div id="tabHrBehavior" class="dept-badge admin-only-ui" onclick="switchHrTab('behavior')" style="display: none;">⚠️ 2. รายงานพฤติกรรมพนักงาน</div>
-        <div id="tabHrProbation" class="dept-badge admin-only-ui" onclick="switchHrTab('probation')" style="display: none;">🎓 3. ข้อมูลการสอบประเมิน</div>
-        <div id="tabHrFeedback" class="dept-badge" onclick="switchHrTab('feedback')">🗣️ 4. ประเมินพี่เลี้ยง/หัวหน้า</div>
+        <div id="tabHrEval" class="dept-badge active" onclick="switchHrTab('eval')">📋 ประเมินการทำงานรายเดือน</div>
+        <div id="tabHrBehavior" class="dept-badge admin-only-ui" onclick="switchHrTab('behavior')" style="display: none;">⚠️ รายงานพฤติกรรมพนักงาน</div>
+        <div id="tabHrProbation" class="dept-badge admin-only-ui" onclick="switchHrTab('probation')" style="display: none;">🎓 ข้อมูลการสอบประเมิน</div>
+        <div id="tabHrFeedback" class="dept-badge" onclick="switchHrTab('feedback')">🗣️ ประเมินพี่เลี้ยง/หัวหน้า</div>
       </div>
 
       <div id="hrEvalArea">
@@ -2356,7 +2356,9 @@
           if(isLoginEvent) showLoginAnnouncement();
           else if(btn) Swal.fire({toast: true, position: 'top-end', title: '🚀 โหลดข้อมูลสำเร็จ', icon: 'success', showConfirmButton: false, timer: 1500, background: '#111', color: '#fff'});
       } catch (err) {
-          console.error("Refresh Error:", err); Swal.fire('Error', 'โหลดข้อมูลล้มเหลว', 'error');
+          console.error("Refresh Error:", err); 
+          // ให้มันแสดงข้อความ Error จากระบบออกมาให้เราเห็นเลย
+          Swal.fire('Error', 'โหลดข้อมูลล้มเหลว: ' + err.message, 'error'); 
           if(btn) { btn.disabled = false; btn.innerText = '🔄 รีเฟรช'; }
       }
   }
@@ -2738,24 +2740,25 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
         } else { 
             // ➕ กรณีเพิ่มพนักงานใหม่ (สร้าง Auth User + สร้าง Profile)
             if(!pWord) throw new Error("กรุณาตั้งรหัสผ่านให้พนักงานใหม่");
+            if(pWord.length < 6) throw new Error("รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษรครับ!");
 
             // 1. สร้างบัญชีใน Supabase Auth
             const { data: authUser, error: authError } = await supabaseClient.auth.signUp({
                 email: usernameToEmail(uName),
                 password: pWord,
                 options: {
-                    data: { display_name: nickname } // เก็บ Meta data ไว้ใน Auth ด้วย
+                    data: { display_name: nickname }
                 }
             });
 
             if (authError) throw authError;
             if (!authUser.user) throw new Error("ไม่สามารถสร้างบัญชีผู้ใช้ได้");
 
-            // 2. บันทึกข้อมูลลงตาราง public.users โดยใช้ ID เดียวกับ Auth
+            // 2. บันทึกข้อมูลลงตาราง public.users พร้อมกับ auth_id
             const profilePayload = {
-                auth_id: authUser.user.id, // 🌟 แก้เป็น auth_id แล้วครับ
+                auth_id: authUser.user.id, // 🌟 เพิ่มตรงนี้ให้มันส่ง ID ไปด้วย
                 username: uName,
-                password: pWord, // 🌟 เพิ่มบันทึกรหัสผ่านลงตารางด้วยเพื่อให้ระบบเดิมไม่รวน
+                password: pWord, 
                 nickname: nickname,
                 workGroup: workGroup,
                 department: department,
@@ -2768,7 +2771,7 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
             if (profileError) throw profileError;
         }
 
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide(); 
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('regModal')).hide();
         refreshData(document.getElementById('refreshBtn')); 
         Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false});
 
