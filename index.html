@@ -2124,9 +2124,29 @@
               body: JSON.stringify({ chat_id: TG_GROUP_ID, text: message, parse_mode: 'HTML' })
           });
           const data = await res.json();
-          if (data.ok) return data.result.message_id; // 🌟 คืนค่า ID กลับไป
+          if (data.ok) return data.result.message_id; 
           return null;
       } catch (e) { console.error("Telegram Error:", e); return null; }
+  }
+
+  async function replyTelegramMsg(replyToMsgId, message) {
+      if (!replyToMsgId) return null;
+      try {
+          const res = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                  chat_id: TG_GROUP_ID, 
+                  text: message, 
+                  parse_mode: 'HTML',
+                  reply_to_message_id: parseInt(replyToMsgId) 
+              })
+          });
+          const data = await res.json();
+          if (data.ok) return data.result.message_id;
+          console.warn("Telegram Reply Failed:", data);
+          return null;
+      } catch (e) { console.error("Telegram Reply Error:", e); return null; }
   }
 
   // ==========================================
@@ -5411,6 +5431,7 @@ function openSubmitLeaveModal() {
     bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).show(); 
 }
 
+// 🌟 ฟังก์ชันส่งคำขอลา (อัปเดตเพิ่มการแจ้งเตือนหา SuperAdmin และ Telegram)
 async function handleLeaveSubmit(e) { 
     e.preventDefault(); 
     const btn = document.querySelector('#leaveForm button[type="submit"]'); 
@@ -5437,16 +5458,20 @@ async function handleLeaveSubmit(e) {
         
         if (typeof sendTelegramMsg === 'function') {
             const tgMsgId = await sendTelegramMsg(msgLeave);
-            if (tgMsgId) payload.tg_msg_id = tgMsgId.toString(); // 🌟 ยัด ID ใส่ payload เตรียมบันทึก
+            if (tgMsgId) payload.tg_msg_id = tgMsgId.toString(); // 🌟 บันทึก ID Telegram กลับลงไป
         }
         
-        // 2. บันทึกลง Supabase
+        // 2. บันทึกลงฐานข้อมูล
         await supabaseClient.from('leave_requests').insert([payload]); 
         
-        // 3. กระดิ่งแจ้งเตือนหน้าเว็บ
+        // 3. ส่งกระดิ่งแจ้งเตือนให้ SuperAdmin ในเว็บ
         allUsersData.forEach(u => {
             if (u[7] === 'Active' && u[6] === 'SuperAdmin') {
-                sendSystemNoti(u[1], '📩 คำขอลาใหม่', `มีคำขอแจ้งลาจาก ${myNick} โปรดตรวจสอบที่ระบบลากิจ/ลาป่วย`);
+                sendSystemNoti(
+                    u[1], 
+                    '📩 คำขอลาใหม่', 
+                    `มีคำขอแจ้งลาจาก ${myNick} โปรดตรวจสอบที่ระบบลากิจ/ลาป่วย`
+                );
             }
         });
 
@@ -5539,53 +5564,54 @@ function updateLeaveStatus(id, newStatus) {
             try {
                 const adminNick = localStorage.getItem('okvip_nick');
                 
-                // 🌟 ดึงข้อมูลจากฐานข้อมูลสดๆ เพื่อเอา tg_msg_id
+                // 🌟 1. ดึงข้อมูลจากฐานข้อมูลเพื่อเอา tg_msg_id
                 const { data: leaveReq } = await supabaseClient.from('leave_requests').select('*').eq('id', id).single();
                 
                 let replyMsgId = null;
-                // 🌟 1. ส่ง Reply กลับไปที่ข้อความเดิมใน Telegram
+                // 🌟 2. ส่ง Reply กลับไปที่ข้อความเดิมใน Telegram
                 if (leaveReq && leaveReq.tg_msg_id && typeof replyTelegramMsg === 'function') {
                     let statusText = newStatus === 'Approved' ? '✅ อนุมัติการลาแล้ว' : '❌ ปฏิเสธการลา';
                     replyMsgId = await replyTelegramMsg(leaveReq.tg_msg_id, `สถานะ: <b>${statusText}</b>\nดำเนินการโดย: <b>${adminNick}</b>`);
                 }
 
-                // 2. บันทึกสถานะ และ รหัส Reply กลับลงฐานข้อมูล
+                // 🌟 3. บันทึกสถานะ และ รหัส Reply กลับลงฐานข้อมูล
                 let updatePayload = { status: newStatus };
                 if (replyMsgId) updatePayload.tg_reply_msg_id = replyMsgId.toString();
 
                 await supabaseClient.from('leave_requests').update(updatePayload).eq('id', id); 
 
-                // 3. กระดิ่งแจ้งเตือนกลับไปหาคนลา
-                if (leaveReq) {
+                if(leaveReq) {
+                    // ส่งกระดิ่งแจ้งเตือนให้พนักงาน ในเว็บ
                     let statusTh = newStatus === 'Approved' ? '✅ อนุมัติแล้ว' : '❌ ถูกปฏิเสธ';
                     sendSystemNoti(leaveReq.nickname, '📩 อัปเดตคำขอลา', `คำขอลาวันที่ ${new Date(leaveReq.leave_date).toLocaleDateString('th-TH')} ของคุณ ${statusTh}`);
-                }
 
-                // 4. ลงตารางงาน (KL) อัตโนมัติ ถ้าผ่าน
-                if(newStatus === 'Approved' && leaveReq) {
-                    try {
-                        const lDate = new Date(leaveReq.leave_date);
-                        const ym = `${lDate.getFullYear()}-${String(lDate.getMonth()+1).padStart(2,'0')}`;
-                        const dayNum = lDate.getDate();
-                        const nick = leaveReq.nickname;
-                        const { data: existingSch } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym).eq('nickname', nick).limit(1);
-                        let dData = {}; let rId = null;
-                        
-                        if(existingSch && existingSch.length > 0) { 
-                            dData = existingSch[0].daysData ? JSON.parse(existingSch[0].daysData) : {}; 
-                            rId = existingSch[0].id; 
+                    // ลงรหัส KL ในตารางงานเมื่ออนุมัติ
+                    if(newStatus === 'Approved') {
+                        try {
+                            const lDate = new Date(leaveReq.leave_date);
+                            const ym = `${lDate.getFullYear()}-${String(lDate.getMonth()+1).padStart(2,'0')}`;
+                            const dayNum = lDate.getDate();
+                            const nick = leaveReq.nickname;
+                            const { data: existingSch } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym).eq('nickname', nick).limit(1);
+                            let dData = {}; let rId = null;
+                            
+                            if(existingSch && existingSch.length > 0) { 
+                                dData = existingSch[0].daysData ? JSON.parse(existingSch[0].daysData) : {}; 
+                                rId = existingSch[0].id; 
+                            }
+                            
+                            dData[dayNum] = 'KL'; 
+                            
+                            if(rId) { 
+                                await supabaseClient.from('schedules').update({daysData: JSON.stringify(dData)}).eq('id', rId); 
+                            } else { 
+                                await supabaseClient.from('schedules').insert([{nickname: nick, department: leaveReq.department, yearMonth: ym, daysData: JSON.stringify(dData)}]); 
+                            }
+                        } catch(e) { 
+                            console.error('Auto-Sync Leave Error:', e); 
                         }
-                        
-                        dData[dayNum] = 'KL'; // ลงรหัส KL ในตารางอัตโนมัติ
-                        
-                        if(rId) { 
-                            await supabaseClient.from('schedules').update({daysData: JSON.stringify(dData)}).eq('id', rId); 
-                        } else { 
-                            await supabaseClient.from('schedules').insert([{nickname: nick, department: leaveReq.department, yearMonth: ym, daysData: JSON.stringify(dData)}]); 
-                        }
-                    } catch(e) { console.error('Auto-Sync Leave Error:', e); }
+                    }
                 }
-
                 await loadSupabaseLeaves(); 
                 loadLeavesPage(currentLeavePage); 
                 Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
@@ -7905,17 +7931,10 @@ async function handleFeedbackSubmit(e) {
             const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
             if (error) throw error;
             
-            // 🌟 1. แจ้งเตือนกระดิ่งในระบบ
-            let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
-            let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
             if (typeof sendSystemNoti === 'function') {
+                let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
+                let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
                 sendSystemNoti(targetNick, '🚨 รายงานพฤติกรรม (แบบประเมินใหม่)', notiMsg);
-            }
-            
-            // 🌟 2. แจ้งเตือนเข้า Telegram บอท
-            if (typeof sendTelegramMsg === 'function') {
-                let tgMsg = `🚨 <b>มีการประเมิน ${roleTh} ใหม่!</b>\n🎯 ผู้ถูกประเมิน: ${targetNick}\n⭐ คะแนนเฉลี่ย: ${avgScore} ดาว`;
-                sendTelegramMsg(tgMsg);
             }
         }
 
