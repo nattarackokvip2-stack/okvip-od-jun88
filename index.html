@@ -2130,31 +2130,24 @@
       } catch (e) { console.error("Telegram Error:", e); return null; }
   }
 
-  // 🤖 ฟังก์ชันให้บอท Reply ตอบกลับข้อความเดิม (อัปเกรดให้จำ ID กลับมาด้วย)
-  async function replyTelegramMsg(replyToMsgId, message) {
-      if (!replyToMsgId) return null;
+  // 🗑️ ฟังก์ชันให้บอทลบข้อความทิ้งใน Telegram
+  async function deleteTelegramMsg(msgId) {
+      if (!msgId) return;
       try {
-          const res = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+          const res = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/deleteMessage`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                   chat_id: TG_GROUP_ID, 
-                  text: message, 
-                  parse_mode: 'HTML',
-                  reply_to_message_id: replyToMsgId 
+                  message_id: parseInt(msgId) // 👈 สำคัญมาก: ต้องแปลง Text ให้เป็นตัวเลข
               })
           });
           const data = await res.json();
-          if (data.ok) return data.result.message_id; // 👈 คืนค่า ID ของข้อความตอบกลับ
-          return null;
-      } catch (e) { console.error("Telegram Reply Error:", e); return null; }
+          if (!data.ok) console.warn("Telegram ไม่สามารถลบข้อความได้:", data.description);
+      } catch (e) { console.error("Telegram Delete Error:", e); }
   }
 
-
-// --- เลื่อนลงมาที่ระบบแจ้งลา แล้ววางทับ 2 ฟังก์ชันนี้ ---
-
-
-function updateLeaveStatus(id, newStatus) { 
+  function updateLeaveStatus(id, newStatus) { 
     Swal.fire({ 
         title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?', 
         icon: 'question', showCancelButton: true, confirmButtonText: 'ยืนยัน', background:'#111', color:'#fff' 
@@ -2219,25 +2212,34 @@ function deleteLeave(id) {
     }).then(async r => { 
         if(r.isConfirmed) { 
             Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); 
-            const leaveReq = allLeavesData.find(l => l.id.toString() === id.toString());
             
-            // 🌟 1. ให้บอทตามเก็บกวาดลบข้อความทั้งคู่ใน Telegram
-            if (leaveReq) {
-                // ลบข้อความที่ Reply (อนุมัติ/ปฏิเสธ) ก่อน
-                if (leaveReq.tg_reply_msg_id) {
-                    await deleteTelegramMsg(leaveReq.tg_reply_msg_id); 
+            try { // 👈 ใส่ Try-Catch ป้องกันระบบค้าง
+                const leaveReq = allLeavesData.find(l => l.id.toString() === id.toString());
+                
+                // 🌟 1. ให้บอทตามเก็บกวาดลบข้อความทั้งคู่ใน Telegram
+                if (leaveReq) {
+                    // ลบข้อความที่ Reply (อนุมัติ/ปฏิเสธ) ก่อน
+                    if (leaveReq.tg_reply_msg_id) {
+                        await deleteTelegramMsg(leaveReq.tg_reply_msg_id); 
+                    }
+                    // ลบข้อความต้นทาง (คำขอลา)
+                    if (leaveReq.tg_msg_id) {
+                        await deleteTelegramMsg(leaveReq.tg_msg_id); 
+                    }
                 }
-                // ลบข้อความต้นทาง (คำขอลา)
-                if (leaveReq.tg_msg_id) {
-                    await deleteTelegramMsg(leaveReq.tg_msg_id); 
-                }
-            }
 
-            // 2. ลบออกจากระบบฐานข้อมูล
-            await supabaseClient.from('leave_requests').delete().eq('id', id); 
-            await loadSupabaseLeaves(); 
-            loadLeavesPage(1); 
-            Swal.fire({toast:true, position:'top-end', title:'ลบข้อมูลเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+                // 2. ลบออกจากระบบฐานข้อมูล Supabase
+                const { error } = await supabaseClient.from('leave_requests').delete().eq('id', id); 
+                if (error) throw error; // ถ้าลบในฐานข้อมูลไม่สำเร็จให้เด้งไปแสดง Error
+
+                await loadSupabaseLeaves(); 
+                loadLeavesPage(1); 
+                Swal.fire({toast:true, position:'top-end', title:'ลบข้อมูลเรียบร้อย', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+            
+            } catch (error) {
+                console.error("Delete Error:", error);
+                Swal.fire('Error', 'เกิดข้อผิดพลาดในการลบข้อมูล: ' + error.message, 'error');
+            }
         } 
     }); 
 }
