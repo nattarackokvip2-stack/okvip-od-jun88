@@ -703,6 +703,7 @@
                 <button id="btnAssignShift" onclick="openShiftModal()" class="btn btn-outline-info btn-sm px-3" style="display: none; border-radius: 8px;">🔄 จัดเซ็ตกะ</button>
                 <button id="btnSyncSandbox" onclick="syncSandboxToReal()" class="btn btn-warning btn-sm px-3 fw-bold text-dark" style="display: none; border-radius: 8px;">⬇️ ดึง Sandbox</button>
                 <button id="btnQuotaSettings" onclick="openQuotaSettingsModal()" class="btn btn-outline-danger btn-sm px-3" style="display: none; border-radius: 8px;">🛑 โควต้า</button>
+                <button id="btnExportForSheets" onclick="exportScheduleForSheets()" class="btn btn-outline-success btn-sm px-3 ms-2" style="border-radius: 8px; font-weight: bold;">📥 โหลดไฟล์ลงชีต</button>
             </div>
             
             <div id="sandboxScheduleActions" style="display: none; gap: 6px; align-items: center;">
@@ -8154,6 +8155,117 @@ function toggleObserver(idx, currentStatus) {
             refreshData(document.getElementById('refreshBtn'));
         }
     });
+}
+
+// ==========================================
+// 📥 ระบบดึงไฟล์ตารางงานเพื่อเอาไปลง Google Sheets
+// ==========================================
+function exportScheduleForSheets() {
+    Swal.fire({title: 'กำลังเตรียมไฟล์ข้อมูล...', didOpen: () => Swal.showLoading()});
+    
+    setTimeout(() => {
+        try {
+            const ym = document.getElementById('monthPicker').value;
+            if(!ym) throw new Error("กรุณาเลือกเดือนก่อน");
+            
+            const [year, month] = ym.split('-');
+            const daysInMonth = new Date(year, month, 0).getDate();
+
+            let wsData = [];
+            
+            // 1. สร้างหัวตาราง (Header) ให้เหมือน Google Sheets
+            let header = ['ชื่อพนักงาน', 'กะ', 'แผนก'];
+            for(let d=1; d<=daysInMonth; d++) {
+                header.push(d.toString());
+            }
+            wsData.push(header);
+
+            // 2. กวาดข้อมูลจากตาราง (เอาเฉพาะ Data ล้วนๆ ไม่เอา HTML)
+            const rows = document.querySelectorAll('#schTbody tr');
+            let hasData = false;
+
+            rows.forEach(tr => {
+                const nick = tr.getAttribute('data-nick');
+                const deptFull = tr.getAttribute('data-dept');
+                const shiftChar = tr.getAttribute('data-shift');
+                
+                // ข้ามแถวที่ไม่มีชื่อ หรือไม่ใช่พนักงานในกะ
+                if(nick && shiftChar && (shiftChar === 'A' || shiftChar === 'B' || shiftChar === 'Z' || shiftChar === '')) {
+                    hasData = true;
+                    const deptShort = deptFull ? deptFull.split(' ')[0] : '';
+                    let rowData = [nick, shiftChar, deptShort];
+                    
+                    const cells = tr.querySelectorAll('.cell-day');
+                    cells.forEach(cell => {
+                        rowData.push(cell.innerText.trim());
+                    });
+                    
+                    wsData.push(rowData);
+                }
+            });
+
+            if (!hasData) {
+                Swal.fire('แจ้งเตือน', 'ไม่มีข้อมูลพนักงานในตารางที่จะส่งออก', 'warning');
+                return;
+            }
+
+            // 3. สร้างไฟล์และดาวน์โหลด
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, "ตารางส่งออก");
+            
+            XLSX.writeFile(wb, `Schedule_Export_${ym}.xlsx`);
+            Swal.fire({toast:true, position:'top-end', title:'ดึงไฟล์ข้อมูลสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'});
+            
+        } catch(e) {
+            console.error(e);
+            Swal.fire('Error', 'เกิดข้อผิดพลาดในการดึงไฟล์: ' + e.message, 'error');
+        }
+    }, 500);
+}
+
+// ==========================================
+// 🛠️ แก้บั๊ก: ยกเลิกวันลาแล้วค้าง "กำลังยกเลิก..."
+// ==========================================
+// ฟังก์ชันนี้จะไปเขียนทับฟังก์ชัน deleteLeave เดิมที่ค้าง
+function deleteLeave(id) { 
+    Swal.fire({
+        title: 'ยกเลิกคำขอนี้?', 
+        text: 'ข้อมูลจะถูกลบออกจากระบบ', 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#ff3366', 
+        background:'#111', 
+        color:'#fff'
+    }).then(async r => { 
+        if(r.isConfirmed) { 
+            Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); 
+            try { 
+                const { data: leaveReq } = await supabaseClient.from('leave_requests').select('*').eq('id', id).single();
+                
+                // ลบข้อความ Telegram (ถ้ามี) โดยครอบ try..catch ไว้ ป้องกันมันค้างถ้าบอทลบไม่ได้
+                if (leaveReq) {
+                    try {
+                        if (leaveReq.tg_reply_msg_id) await deleteTelegramMsg(leaveReq.tg_reply_msg_id); 
+                        if (leaveReq.tg_msg_id) await deleteTelegramMsg(leaveReq.tg_msg_id); 
+                    } catch(tgError) {
+                        console.warn("ไม่สามารถลบข้อความใน Telegram ได้: ", tgError);
+                    }
+                }
+
+                // ลบจากฐานข้อมูลชัวร์ๆ
+                const { error: deleteErr } = await supabaseClient.from('leave_requests').delete().eq('id', id); 
+                if(deleteErr) throw deleteErr;
+
+                await loadSupabaseLeaves(); 
+                loadLeavesPage(1); 
+                Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'เกิดข้อผิดพลาด: ' + error.message, 'error');
+            }
+        } 
+    }); 
 }
 </script>
 </body>
