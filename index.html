@@ -2657,7 +2657,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           if(currentSearchTerm && !nick.includes(currentSearchTerm) && !user.includes(currentSearchTerm)) return false;
           return true;
       });
+      
       if (filteredData.length === 0) { tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">ไม่พบรายชื่อที่ค้นหา</td></tr>`; return; }
+      
       filteredData.sort((a, b) => getRoleWeight(a[6]) - getRoleWeight(b[6]));
       const totalPages = Math.ceil(filteredData.length / itemsPerPage); if (currentPage > totalPages) currentPage = totalPages;
       const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -2667,11 +2669,11 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       paginatedData.forEach(row => {
           const origIdx = allUsersData.findIndex(r => r[0] === row[0] && r[1] === row[1]); 
           
-          // 🌟 จัดการสถานะใหม่ (Observer)
+          // 🌟 จัดการระบบสีและคำของสถานะ Observer (โหมดล่องหน)
           let sClass = 'status-blocked';
           let sText = row[7];
           if (row[7] === 'Active') { sClass = 'status-active'; }
-          else if (row[7] === 'Observer') { sClass = 'status-observer'; sText = '👻 ซ่อน (Observer)'; }
+          else if (row[7] === 'Observer') { sClass = 'status-observer'; sText = '👻 ซ่อนอยู่'; }
 
           const tgData = row[8] ? row[8] : ''; 
           const tgDisp = tgData ? `<span class="text-info fw-bold">${tgData}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`; 
@@ -2680,20 +2682,26 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           const isMe = (row[1] === myNick);
           const nameDisplay = isMe ? `<span style="color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.8); font-weight: bold; border: 1px solid var(--neon-green); padding: 2px 8px; border-radius: 6px;">${row[1]}</span>` : row[1];
 
-          // 🌟 ปลดล็อคสิทธิ์ให้ SuperAdmin จัดการ SuperAdmin ด้วยกันได้
+          // 🌟 การจัดการปุ่มในช่อง จัดการ (Manage)
           let toolsTd = ''; 
           if (row[4] === currentUsername) { 
               toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-secondary border border-secondary px-3 py-2">บัญชีของฉัน</span><button class="tool-btn telegram" onclick="changeTelegram(${origIdx}, '${tgData}', '${row[1]}')">💬</button><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button></div></td>`; 
           } else {
               let canManage = false;
               if (myRole === 'SuperAdmin') {
-                  canManage = true; // ✅ SuperAdmin มีสิทธิ์จัดการทุกคนแบบ 100%
+                  canManage = true; // ✅ SuperAdmin มีสิทธิ์จัดการทุกคน 100%
               } else if (myRole === 'Admin' && getRoleWeight(myRole) < getRoleWeight(row[6])) {
                   canManage = true; // ✅ Admin จัดการได้เฉพาะ Member
               }
 
               if (canManage) {
-                  toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button><button class="tool-btn settings" onclick="changeStatus(${origIdx},'${row[7]}')">⚙️</button><button class="tool-btn delete" onclick="confirmDeleteUser(${origIdx}, '${row[1]}')">🗑️</button></div></td>`;
+                  // 💡 สร้างปุ่มเปิด/ปิด โหมดล่องหน (ซ่อนชื่อจากระบบ)
+                  let eyeIcon = row[7] === 'Observer' ? '👻' : '👁️';
+                  let eyeColor = row[7] === 'Observer' ? '#cc66ff' : '#00ff66';
+                  let eyeTitle = row[7] === 'Observer' ? 'ยกเลิกซ่อน (โชว์ชื่อในตารางงาน)' : 'ซ่อนชื่อนี้จากทุกตารางงาน';
+                  let btnGhost = `<button class="tool-btn" style="color: ${eyeColor}; border-color: ${eyeColor};" onclick="toggleObserver(${origIdx}, '${row[7]}')" title="${eyeTitle}">${eyeIcon}</button>`;
+
+                  toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center">${btnGhost}<button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button><button class="tool-btn settings" onclick="changeStatus(${origIdx},'${row[7]}')">⚙️</button><button class="tool-btn delete" onclick="confirmDeleteUser(${origIdx}, '${row[1]}')">🗑️</button></div></td>`;
               } else {
                   toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-danger border border-danger opacity-75 px-3 py-2">🔒 ไม่มีสิทธิ์</span></div></td>`;
               }
@@ -2701,7 +2709,13 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
           
           tbody.innerHTML += `<tr><td class="fw-bold">${nameDisplay}</td><td>${setBadge}</td><td>${row[3]}</td><td>${row[4]}</td><td class="role-${row[6]}">${row[6]}</td><td><span class="${sClass}">${sText}</span></td><td>${tgDisp}</td>${toolsTd}</tr>`;
       });
-      if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) pageHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`; pageHtml += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; paginationArea.innerHTML = pageHtml; }
+      
+      if (totalPages > 1) { 
+          let pageHtml = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; 
+          for (let i = 1; i <= totalPages; i++) pageHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`; 
+          pageHtml += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; 
+          paginationArea.innerHTML = pageHtml; 
+      }
   }
 
   // 💬 ฟังก์ชันอัปเดตช่องทางติดต่อ Telegram
@@ -7984,6 +7998,42 @@ function viewFeedbackDetail(id) {
             </div>
         `,
         background: '#151518', color: '#fff', confirmButtonColor: '#00f0ff', confirmButtonText: 'ปิดหน้าต่าง'
+    });
+}
+
+// 👻 ฟังก์ชันซ่อน/แสดงรายชื่อ (Toggle Observer Mode)
+function toggleObserver(idx, currentStatus) {
+    const newStatus = currentStatus === 'Observer' ? 'Active' : 'Observer';
+    const actionText = newStatus === 'Observer' ? 'ซ่อนชื่อ' : 'แสดงชื่อ';
+    const targetName = allUsersData[idx][1];
+
+    Swal.fire({
+        title: `ต้องการ${actionText} "${targetName}" ?`,
+        text: newStatus === 'Observer' 
+            ? 'ชื่อนี้จะถูกซ่อนจากตารางจัดกะ ทานข้าว และประเมินผล (แต่เจ้าตัวยังล็อคอินเข้ามาตรวจงานได้ปกติ)'
+            : 'ชื่อนี้จะกลับมาแสดงในตารางทำงานต่างๆ ตามปกติ',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: newStatus === 'Observer' ? '#cc66ff' : '#00ff66',
+        cancelButtonColor: '#555',
+        confirmButtonText: `ใช่, ${actionText}เลย`,
+        cancelButtonText: 'ยกเลิก',
+        background: '#111',
+        color: '#fff'
+    }).then(async (r) => {
+        if (r.isConfirmed) {
+            Swal.fire({title: 'กำลังอัปเดตระบบ...', didOpen: () => Swal.showLoading()});
+            
+            const userId = allUsersData[idx][0];
+            await supabaseClient.from('users').update({ status: newStatus }).eq('id', userId);
+            
+            Swal.fire({
+                toast: true, position: 'top-end', title: 'อัปเดตสำเร็จ!', 
+                icon: 'success', timer: 1500, showConfirmButton: false, background: '#111', color: '#fff'
+            });
+            
+            refreshData(document.getElementById('refreshBtn'));
+        }
     });
 }
 </script>
