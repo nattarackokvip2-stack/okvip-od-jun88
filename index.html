@@ -3472,6 +3472,44 @@ function saveSandboxScheduleSilent() {
       unsavedChanges = {};
   }
 
+  function confirmClearSchedule() {
+      const ym = document.getElementById('monthPicker').value;
+      if (!ym) return;
+
+      Swal.fire({
+          title: 'ยืนยันการล้างตารางจริง?',
+          text: `ข้อมูลตารางงานทั้งหมดในเดือน ${ym} จะถูกลบทิ้งถาวร!`,
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#ff3366',
+          cancelButtonColor: '#555',
+          background: '#111',
+          color: '#fff',
+          confirmButtonText: 'ลบทิ้งเลย!',
+          cancelButtonText: 'ยกเลิก'
+      }).then(async (r) => {
+          if (r.isConfirmed) {
+              Swal.fire({title: 'กำลังล้างตาราง...', didOpen: () => Swal.showLoading()});
+              try {
+                  // ลบข้อมูลของเดือนนี้ออกจากฐานข้อมูล
+                  const { error } = await supabaseClient.from('schedules').delete().eq('yearMonth', ym);
+                  if (error) throw error;
+
+                  // เคลียร์ตัวแปรที่ค้างอยู่
+                  unsavedChanges = {};
+                  
+                  Swal.fire({toast: true, position: 'top-end', title: 'ล้างตารางสำเร็จ!', icon: 'success', timer: 2000, showConfirmButton: false, background: '#111', color: '#fff'});
+                  
+                  // โหลดตารางใหม่
+                  loadScheduleTable();
+              } catch (err) {
+                  console.error("Clear Schedule Error:", err);
+                  Swal.fire('Error', 'ไม่สามารถล้างตารางได้: ' + err.message, 'error');
+              }
+          }
+      });
+  }
+
   function clearSandboxSchedule() {
       const ym = document.getElementById('monthPicker').value;
       Swal.fire({
