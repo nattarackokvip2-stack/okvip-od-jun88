@@ -475,10 +475,10 @@
       </div>
       
       <div class="filter-bar mb-4 pb-3" style="border-bottom: 1px solid #333;">
-        <div id="tabHrEval" class="dept-badge active" onclick="switchHrTab('eval')">📋 ประเมินการทำงานรายเดือน</div>
-        <div id="tabHrBehavior" class="dept-badge admin-only-ui" onclick="switchHrTab('behavior')" style="display: none;">⚠️ รายงานพฤติกรรมพนักงาน</div>
-        <div id="tabHrProbation" class="dept-badge admin-only-ui" onclick="switchHrTab('probation')" style="display: none;">🎓 ข้อมูลการสอบประเมิน</div>
-        <div id="tabHrFeedback" class="dept-badge" onclick="switchHrTab('feedback')">🗣️ ประเมินพี่เลี้ยง/หัวหน้า</div>
+        <div id="tabHrEval" class="dept-badge active" onclick="switchHrTab('eval')">📋 1. ประเมินการทำงานรายเดือน</div>
+        <div id="tabHrBehavior" class="dept-badge admin-only-ui" onclick="switchHrTab('behavior')" style="display: none;">⚠️ 2. รายงานพฤติกรรมพนักงาน</div>
+        <div id="tabHrProbation" class="dept-badge admin-only-ui" onclick="switchHrTab('probation')" style="display: none;">🎓 3. ข้อมูลการสอบประเมิน</div>
+        <div id="tabHrFeedback" class="dept-badge" onclick="switchHrTab('feedback')">🗣️ 4. ประเมินพี่เลี้ยง/หัวหน้า</div>
       </div>
 
       <div id="hrEvalArea">
@@ -513,8 +513,7 @@
                 <th class="text-center">ผลการประเมิน</th>
               </tr>
             </thead>
-            <tbody id="hrEvalTableBody">
-               </tbody>
+            <tbody id="hrEvalTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -573,13 +572,11 @@
               <div class="d-flex align-items-center gap-2 flex-wrap">
                   <span class="text-white small">📅 เดือน:</span>
                   <input type="month" id="hrFeedbackMonth" class="form-control text-center text-info shadow-none fw-bold bg-dark border-info" style="width: 140px; padding: 5px;" onchange="renderFeedbackList()">
-                  
                   <span class="text-white small ms-2">📌 กรองดูรายชื่อ:</span>
                   <select id="filterFeedbackTarget" class="form-select bg-dark text-warning border-warning fw-bold" style="width: auto; min-width: 180px; padding: 5px;" onchange="renderFeedbackList()">
                       <option value="ALL">-- ดูทุกคน --</option>
                   </select>
               </div>
-              
               <button class="btn btn-info fw-bold text-dark" onclick="openFeedbackModal()" style="border-radius: 8px; box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);">➕ ทำแบบประเมิน (ไม่ระบุตัวตน)</button>
           </div>
           <div class="table-responsive" style="background: #0a0a0c; border: 1px solid #333; border-radius: 12px; padding: 10px;">
@@ -3673,7 +3670,7 @@ function saveSandboxScheduleSilent() {
           bootstrap.Modal.getOrCreateInstance(document.getElementById('shiftSwapModal')).hide();
           loadScheduleTable(); 
           
-          document.getElementById('btnSaveSandbox').style.display = 'flex'; // โชว์ปุ่มให้เซฟ
+          document.getElementById('btnSaveSchedule').style.display = 'flex'; // โชว์ปุ่มให้เซฟ
           
           Swal.fire({toast: true, position: 'top-end', title: `สลับกะให้ ${swapCount} คน สำเร็จ!`, icon: 'success', timer: 2500, showConfirmButton: false, background:'#111', color:'#fff'});
       }, 800);
