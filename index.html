@@ -3810,43 +3810,18 @@ function saveSandboxScheduleSilent() {
         let swapCount = 0;
         const daysToSwap = endDay - startDay + 1;
         
+        // สุ่มลำดับรายชื่อเพื่อเกลี่ยคนไม่ให้กระจุกตัว
         eligibleUsersA.sort(() => 0.5 - Math.random());
         eligibleUsersB.sort(() => 0.5 - Math.random());
         
-        // 🌟 ฟังก์ชันย่อยสำหรับเช็คว่าช่องนั้น "ว่าง" หรือเป็นกะเก่าที่สามารถเขียนทับได้หรือไม่
-        // (ห้ามเขียนทับ X, TX, PN, KL, ฯลฯ)
-        const canFillCell = (nick, d) => {
-            const currentVal = sandboxDataCache[nick][d];
-            return !currentVal || currentVal === 'D' || currentVal === 'N' || currentVal === '';
-        };
-
-        // 🌟 ฟังก์ชันย่อยสำหรับ เติมกะ (Auto-Fill) ให้เต็มตาราง
-        const autoFillShifts = (nick, swapDay, oldShiftStamp, newShiftStamp) => {
-            // เติมกะเก่า: ตั้งแต่วันที่ 1 จนถึงก่อนวันสลับกะ (swapDay)
-            for (let d = 1; d < swapDay; d++) {
-                if (canFillCell(nick, d)) {
-                    sandboxDataCache[nick][d] = oldShiftStamp;
-                    if(!unsavedChanges[nick]) unsavedChanges[nick] = {};
-                    unsavedChanges[nick][d] = oldShiftStamp;
-                }
-            }
-            // เติมกะใหม่: ตั้งแต่วันถัดจากสลับกะ ไปจนถึงสิ้นเดือน (หรือจบ endDay)
-            for (let d = swapDay + 1; d <= daysInMonth; d++) {
-                if (canFillCell(nick, d)) {
-                    sandboxDataCache[nick][d] = newShiftStamp;
-                    if(!unsavedChanges[nick]) unsavedChanges[nick] = {};
-                    unsavedChanges[nick][d] = newShiftStamp;
-                }
-            }
-        };
-
         let dayIndexB = 0;
-        // โลจิกสลับกะ B -> A (ดึก ไป เช้า)
+        // 🌙 โลจิกสลับกะ B -> A (ดึก ไป เช้า)
         if (targetShift === 'BOTH' || targetShift === 'B') {
             eligibleUsersB.forEach(nick => {
                 const swapDay = startDay + (dayIndexB % daysToSwap);
                 if (!sandboxDataCache[nick]) sandboxDataCache[nick] = {};
                 
+                // เช็คว่าหน้า-หลัง 1 วัน มีวันหยุด X, TX หรือไม่ ถ้ามีให้ข้ามการสลับ
                 let canSwap = true;
                 const prev = sandboxDataCache[nick][swapDay - 1];
                 const curr = sandboxDataCache[nick][swapDay];
@@ -3855,30 +3830,32 @@ function saveSandboxScheduleSilent() {
                 if (['X', 'TX', 'KL', 'PN'].includes(prev) || ['X', 'TX', 'KL', 'PN'].includes(curr) || ['X', 'TX', 'KL', 'PN'].includes(next)) canSwap = false;
                 
                 if (canSwap) {
-                    // 1. ลงวันหยุดพิเศษให้ (วันสลับกะ)
-                    sandboxDataCache[nick][swapDay] = 'XX'; 
-                    
-                    // 2. วันถัดไปเริ่มเข้ากะเช้า
-                    if (swapDay + 1 <= daysInMonth) {
-                        sandboxDataCache[nick][swapDay + 1] = 'D'; 
-                    }
-                    
-                    sandboxUserShiftCache[nick] = dept + ' (A)'; // เปลี่ยนสังกัด
+                    sandboxUserShiftCache[nick] = dept + ' (A)'; // เปลี่ยนสังกัดกะเป็น A
                     swapCount++;
-                    
-                    if(!unsavedChanges[nick]) unsavedChanges[nick] = {};
-                    unsavedChanges[nick][swapDay] = 'XX';
-                    if (swapDay + 1 <= daysInMonth) unsavedChanges[nick][swapDay + 1] = 'D';
 
-                    // 🚀 3. เรียกใช้ AI Auto-Fill เติมตารางให้เต็ม! (ก่อนสลับ=N, หลังสลับ=D)
-                    autoFillShifts(nick, swapDay, 'N', 'D');
+                    // 🚀 ระบบ AI วนลูปเติมกะอัตโนมัติ (ตั้งแต่ 1 ถึงสิ้นเดือน)
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const currentVal = sandboxDataCache[nick][d];
+                        // ตรวจสอบว่าช่องว่าง หรือเป็นกะปกติ (D, N) ถึงจะเขียนทับได้ (ห้ามทับ X, TX, PN)
+                        const isEmptyOrShift = !currentVal || currentVal === 'D' || currentVal === 'N' || currentVal === '';
+                        
+                        if (isEmptyOrShift) {
+                            if (d < swapDay) {
+                                sandboxDataCache[nick][d] = 'N'; // ก่อนถึงวันสลับ ให้เป็นกะดึก (N)
+                            } else if (d === swapDay) {
+                                sandboxDataCache[nick][d] = 'XX'; // วันสลับกะ ได้หยุดพัก (XX)
+                            } else if (d > swapDay) {
+                                sandboxDataCache[nick][d] = 'D'; // หลังวันสลับ ให้เป็นกะเช้า (D) ลากยาว
+                            }
+                        }
+                    }
                 }
                 dayIndexB++;
             });
         }
         
         let dayIndexA = 0;
-        // โลจิกสลับกะ A -> B (เช้า ไป ดึก)
+        // ☀️ โลจิกสลับกะ A -> B (เช้า ไป ดึก)
         if (targetShift === 'BOTH' || targetShift === 'A') {
             eligibleUsersA.forEach(nick => {
                 const swapDay = startDay + (dayIndexA % daysToSwap);
@@ -3892,24 +3869,29 @@ function saveSandboxScheduleSilent() {
                 if (['X', 'TX', 'KL', 'PN'].includes(prev) || ['X', 'TX', 'KL', 'PN'].includes(curr) || ['X', 'TX', 'KL', 'PN'].includes(next)) canSwap = false;
                 
                 if (canSwap) {
-                    // 1. ไม่ต้องมีวันหยุด XX ให้เข้ากะดึกเสียบแทนกะ B ที่หยุดไปเลย
-                    sandboxDataCache[nick][swapDay] = 'N'; 
-                    sandboxUserShiftCache[nick] = dept + ' (B)'; // เปลี่ยนสังกัด
+                    sandboxUserShiftCache[nick] = dept + ' (B)'; // เปลี่ยนสังกัดกะเป็น B
                     swapCount++;
-                    
-                    if(!unsavedChanges[nick]) unsavedChanges[nick] = {};
-                    unsavedChanges[nick][swapDay] = 'N';
 
-                    // 🚀 2. เรียกใช้ AI Auto-Fill เติมตารางให้เต็ม! (ก่อนสลับ=D, หลังสลับ=N)
-                    // สำหรับ A->B ไม่มี XX ขวางกลาง ดังนั้นจุดกลับตัวคือ swapDay 
-                    // (เราให้สลับจาก D ไป N โดยเริ่มที่ตัวมันเอง ไม่ต้องเว้นว่าง)
-                    autoFillShifts(nick, swapDay - 1, 'D', 'N'); 
+                    // 🚀 ระบบ AI วนลูปเติมกะอัตโนมัติ (ตั้งแต่ 1 ถึงสิ้นเดือน)
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const currentVal = sandboxDataCache[nick][d];
+                        // ตรวจสอบว่าช่องว่าง หรือเป็นกะปกติ (D, N) ถึงจะเขียนทับได้
+                        const isEmptyOrShift = !currentVal || currentVal === 'D' || currentVal === 'N' || currentVal === '';
+                        
+                        if (isEmptyOrShift) {
+                            if (d < swapDay) {
+                                sandboxDataCache[nick][d] = 'D'; // ก่อนถึงวันสลับ ให้เป็นกะเช้า (D)
+                            } else if (d >= swapDay) {
+                                sandboxDataCache[nick][d] = 'N'; // ตั้งแต่วันสลับเป็นต้นไป เข้ากะดึก (N) ลากยาว
+                            }
+                        }
+                    }
                 }
                 dayIndexA++;
             });
         }
 
-        // อัปเดต Sandbox ลง LocalStorage
+        // บันทึก Sandbox ลงระบบความจำชั่วคราว
         localStorage.setItem('okvip_sandbox_' + ym, JSON.stringify({ schedules: sandboxDataCache, shifts: sandboxUserShiftCache }));
         
         // ซ่อน Popup แล้วโหลดตารางโชว์ใหม่
@@ -3918,7 +3900,7 @@ function saveSandboxScheduleSilent() {
         
         document.getElementById('btnSaveSandbox').style.display = 'flex'; // โชว์ปุ่มให้เซฟ
         
-        Swal.fire({toast: true, position: 'top-end', title: `จัดกะให้ ${swapCount} คน สำเร็จ!`, icon: 'success', timer: 2500, showConfirmButton: false, background:'#111', color:'#fff'});
+        Swal.fire({toast: true, position: 'top-end', title: `สลับกะและเติมตารางให้ ${swapCount} คน สำเร็จ!`, icon: 'success', timer: 2500, showConfirmButton: false, background:'#111', color:'#fff'});
     }, 800);
 }
 
