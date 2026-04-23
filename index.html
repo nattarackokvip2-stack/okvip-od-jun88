@@ -6786,18 +6786,28 @@ function switchHrTab(tab) {
         b.classList.remove('active'); b.style.borderColor = "#444"; b.style.color = "#ccc";
     });
     
-    let btnId = tab === 'eval' ? 'tabHrEval' : (tab === 'behavior' ? 'tabHrBehavior' : 'tabHrProbation');
+    let btnId = tab === 'eval' ? 'tabHrEval' : (tab === 'behavior' ? 'tabHrBehavior' : (tab === 'probation' ? 'tabHrProbation' : 'tabHrFeedback'));
     let btn = document.getElementById(btnId);
     if(btn) { btn.classList.add('active'); btn.style.borderColor = "#fff"; btn.style.color = "#fff"; }
 
     document.getElementById('hrEvalArea').style.display = tab === 'eval' ? 'block' : 'none';
     document.getElementById('hrBehaviorArea').style.display = tab === 'behavior' ? 'block' : 'none';
     document.getElementById('hrProbationArea').style.display = tab === 'probation' ? 'block' : 'none';
+    document.getElementById('hrFeedbackArea').style.display = tab === 'feedback' ? 'block' : 'none';
     
     if(tab === 'eval') renderHrEvalList();
     if(tab === 'behavior') {
         if(allBehaviorsData.length === 0) loadSupabaseBehaviors();
         else renderBehaviorList();
+    }
+    if(tab === 'feedback') {
+        const now = new Date();
+        const fbMonth = document.getElementById('hrFeedbackMonth');
+        if (fbMonth && !fbMonth.value) {
+            fbMonth.value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+        }
+        updateFeedbackFilterDropdown(); 
+        renderFeedbackList();
     }
 }
 
@@ -7501,11 +7511,7 @@ function deleteBehavior(id) {
       });
   }
 
-  // ==========================================
-// 🗣️ 4. ระบบประเมินพี่เลี้ยง / หัวหน้างาน
-// ==========================================
-
-function updateFeedbackFilterDropdown() {
+  function updateFeedbackFilterDropdown() {
     const filterSelect = document.getElementById('filterFeedbackTarget');
     if(!filterSelect) return;
 
