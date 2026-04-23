@@ -56,7 +56,8 @@
   .role-Member { color: var(--neon-blue) !important; font-weight: 600; text-shadow: 0 0 10px rgba(0,240,255,0.8) !important; }
   .status-active { color: var(--neon-green); background: rgba(0,255,102,0.1); padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; border: 1px solid rgba(0,255,102,0.4); text-shadow: none; white-space: nowrap;}
   .status-blocked { color: var(--neon-red); background: rgba(255,51,102,0.1); padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; border: 1px solid rgba(255,51,102,0.4); text-shadow: none; white-space: nowrap;}
-  
+  .status-observer { color: #cc66ff; background: rgba(204, 102, 255, 0.1); padding: 5px 15px; border-radius: 50px; font-size: 0.85rem; border: 1px solid rgba(204, 102, 255, 0.4); text-shadow: none; white-space: nowrap;}
+   
   .btn-neon-blue { background: transparent; color: var(--neon-blue); border: 1px solid var(--neon-blue); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(0,240,255,0.5); }
   .btn-neon-blue:hover { background: var(--neon-blue); color: #000; box-shadow: 0 0 15px rgba(0,240,255,0.7); text-shadow: none; }
   .btn-neon-yellow { background: transparent; color: var(--neon-yellow); border: 1px solid var(--neon-yellow); font-weight: 600; transition: 0.3s; text-shadow: 0 0 5px rgba(255,204,0,0.5); }
@@ -2661,32 +2662,150 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       const totalPages = Math.ceil(filteredData.length / itemsPerPage); if (currentPage > totalPages) currentPage = totalPages;
       const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-      const myNick = localStorage.getItem('okvip_nick') || ''; // 🌟 ดึงชื่อตัวเองมาตรวจสอบ
+      const myNick = localStorage.getItem('okvip_nick') || '';
 
       paginatedData.forEach(row => {
-          const origIdx = allUsersData.findIndex(r => r[0] === row[0] && r[1] === row[1]); const sClass = row[7] === 'Active' ? 'status-active' : 'status-blocked'; const tgData = row[8] ? row[8] : ''; const tgDisp = tgData ? `<span class="text-info fw-bold">${tgData}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`; const setBadge = row[9] ? `<span class="badge border border-info text-info">${row[9]}</span>` : '-';
+          const origIdx = allUsersData.findIndex(r => r[0] === row[0] && r[1] === row[1]); 
           
-          // 🌟 เช็คว่าเป็นชื่อตัวเองไหม ถ้าใช่ให้แสดงเป็นกรอบสีเขียวเรืองแสง
+          // 🌟 จัดการสถานะใหม่ (Observer)
+          let sClass = 'status-blocked';
+          let sText = row[7];
+          if (row[7] === 'Active') { sClass = 'status-active'; }
+          else if (row[7] === 'Observer') { sClass = 'status-observer'; sText = '👻 ซ่อน (Observer)'; }
+
+          const tgData = row[8] ? row[8] : ''; 
+          const tgDisp = tgData ? `<span class="text-info fw-bold">${tgData}</span>` : `<span class="text-muted small">ยังไม่ระบุ</span>`; 
+          const setBadge = row[9] ? `<span class="badge border border-info text-info">${row[9]}</span>` : '-';
+          
           const isMe = (row[1] === myNick);
           const nameDisplay = isMe ? `<span style="color: var(--neon-green); text-shadow: 0 0 10px rgba(0,255,102,0.8); font-weight: bold; border: 1px solid var(--neon-green); padding: 2px 8px; border-radius: 6px;">${row[1]}</span>` : row[1];
 
+          // 🌟 ปลดล็อคสิทธิ์ให้ SuperAdmin จัดการ SuperAdmin ด้วยกันได้
           let toolsTd = ''; 
-          if (row[4] === currentUsername) { toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-secondary border border-secondary px-3 py-2">บัญชีของฉัน</span><button class="tool-btn telegram" onclick="changeTelegram(${origIdx}, '${tgData}', '${row[1]}')">💬</button><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button></div></td>`; } 
-          else if (myRole === 'SuperAdmin' || myRole === 'Admin') {
-              if (getRoleWeight(myRole) < getRoleWeight(row[6])) toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button><button class="tool-btn settings" onclick="changeStatus(${origIdx},'${row[7]}')">⚙️</button><button class="tool-btn delete" onclick="confirmDeleteUser(${origIdx}, '${row[1]}')">🗑️</button></div></td>`;
-              else toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-danger border border-danger opacity-75 px-3 py-2">🔒 ไม่มีสิทธิ์</span></div></td>`;
-          } else { toolsTd = `<td></td>`; }
+          if (row[4] === currentUsername) { 
+              toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-secondary border border-secondary px-3 py-2">บัญชีของฉัน</span><button class="tool-btn telegram" onclick="changeTelegram(${origIdx}, '${tgData}', '${row[1]}')">💬</button><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button></div></td>`; 
+          } else {
+              let canManage = false;
+              if (myRole === 'SuperAdmin') {
+                  canManage = true; // ✅ SuperAdmin มีสิทธิ์จัดการทุกคนแบบ 100%
+              } else if (myRole === 'Admin' && getRoleWeight(myRole) < getRoleWeight(row[6])) {
+                  canManage = true; // ✅ Admin จัดการได้เฉพาะ Member
+              }
+
+              if (canManage) {
+                  toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><button class="tool-btn edit" onclick="openEditUserModal(${origIdx})">📝</button><button class="tool-btn settings" onclick="changeStatus(${origIdx},'${row[7]}')">⚙️</button><button class="tool-btn delete" onclick="confirmDeleteUser(${origIdx}, '${row[1]}')">🗑️</button></div></td>`;
+              } else {
+                  toolsTd = `<td><div class="d-flex gap-1 justify-content-center align-items-center"><span class="badge bg-dark text-danger border border-danger opacity-75 px-3 py-2">🔒 ไม่มีสิทธิ์</span></div></td>`;
+              }
+          }
           
-          // 🌟 แสดงชื่อที่ถูกปรับแต่ง (nameDisplay)
-          tbody.innerHTML += `<tr><td class="fw-bold">${nameDisplay}</td><td>${setBadge}</td><td>${row[3]}</td><td>${row[4]}</td><td class="role-${row[6]}">${row[6]}</td><td><span class="${sClass}">${row[7]}</span></td><td>${tgDisp}</td>${toolsTd}</tr>`;
+          tbody.innerHTML += `<tr><td class="fw-bold">${nameDisplay}</td><td>${setBadge}</td><td>${row[3]}</td><td>${row[4]}</td><td class="role-${row[6]}">${row[6]}</td><td><span class="${sClass}">${sText}</span></td><td>${tgDisp}</td>${toolsTd}</tr>`;
       });
       if (totalPages > 1) { let pageHtml = `<button class="page-btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; for (let i = 1; i <= totalPages; i++) pageHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`; pageHtml += `<button class="page-btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; paginationArea.innerHTML = pageHtml; }
   }
 
-  function changeTelegram(idx, currentTelegram, name) { Swal.fire({ title: `อัปเดตช่องทางติดต่อ`, html: `<div class="small text-muted mb-3 text-start">ตั้งค่า Telegram ให้กับ: <b class="text-white">${name}</b></div>`, input: 'text', inputPlaceholder: '@username', inputValue: currentTelegram, showCancelButton: true, confirmButtonText: 'บันทึก', confirmButtonColor: '#0088cc', background: '#111', color: '#fff', inputValidator: (value) => { if (!value) return 'กรุณาระบุ Telegram!'; } }).then(async (result) => { if (result.isConfirmed) { let tg = result.value.trim(); if (!tg.startsWith('@')) tg = '@' + tg; const userId = allUsersData[idx][0]; await supabaseClient.from('users').update({ telegram: tg }).eq('id', userId); Swal.fire({toast:true, position:'top-end', title:'อัปเดตสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); refreshData(document.getElementById('refreshBtn')); } }); }
-  function changeStatus(idx, current) { const optionsHtml = `<div class="text-start mb-2" style="font-size:0.9rem; color:#aaa;">เลือกสถานะใหม่:</div><select id="swal-status-select" class="swal2-select mx-0"><option value="Active" ${current === 'Active' ? 'selected' : ''}>🟢 Active</option><option value="Blocked" ${current === 'Blocked' ? 'selected' : ''}>🔴 Blocked</option></select>`; Swal.fire({ html: optionsHtml, showCancelButton: true, confirmButtonText: 'บันทึก', background:'#111', color:'#fff', preConfirm: () => { return document.getElementById('swal-status-select').value; } }).then(async r => { if(r.isConfirmed) { const userId = allUsersData[idx][0]; await supabaseClient.from('users').update({ status: r.value }).eq('id', userId); refreshData(document.getElementById('refreshBtn')); } }); }
-  function confirmDeleteUser(idx, name) { Swal.fire({ title: `ลบ "${name}" ?`, icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff' }).then(async (r) => { if (r.isConfirmed) { Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()}); const userId = allUsersData[idx][0]; await supabaseClient.from('users').delete().eq('id', userId); refreshData(document.getElementById('refreshBtn')); Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:1500, showConfirmButton:false}); } }); }
+  // 💬 ฟังก์ชันอัปเดตช่องทางติดต่อ Telegram
+function changeTelegram(idx, currentTelegram, name) {
+    Swal.fire({
+        title: `อัปเดตช่องทางติดต่อ`,
+        html: `<div class="small text-muted mb-3 text-start">ตั้งค่า Telegram ให้กับ: <b class="text-white">${name}</b></div>`,
+        input: 'text',
+        inputPlaceholder: '@username',
+        inputValue: currentTelegram,
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        confirmButtonColor: '#0088cc',
+        background: '#111',
+        color: '#fff',
+        inputValidator: (value) => {
+            if (!value) return 'กรุณาระบุ Telegram!';
+        }
+    }).then(async (result) => {
+        if (result.isConfirmed) {
+            let tg = result.value.trim();
+            if (!tg.startsWith('@')) tg = '@' + tg;
+            
+            const userId = allUsersData[idx][0];
+            await supabaseClient.from('users').update({ telegram: tg }).eq('id', userId);
+            
+            Swal.fire({
+                toast: true, 
+                position: 'top-end', 
+                title: 'อัปเดตสำเร็จ!', 
+                icon: 'success', 
+                background: '#111', 
+                color: '#fff', 
+                timer: 1500, 
+                showConfirmButton: false
+            });
+            
+            refreshData(document.getElementById('refreshBtn'));
+        }
+    });
+}
 
+// ⚙️ ฟังก์ชันเปลี่ยนสถานะผู้ใช้งาน
+function changeStatus(idx, current) {
+    const optionsHtml = `
+        <div class="text-start mb-2" style="font-size:0.9rem; color:#aaa;">เลือกสถานะใหม่:</div>
+        <select id="swal-status-select" class="swal2-select mx-0">
+            <option value="Active" ${current === 'Active' ? 'selected' : ''}>🟢 Active</option>
+            <option value="Blocked" ${current === 'Blocked' ? 'selected' : ''}>🔴 Blocked</option>
+        </select>
+    `;
+    
+    Swal.fire({
+        html: optionsHtml,
+        showCancelButton: true,
+        confirmButtonText: 'บันทึก',
+        background: '#111',
+        color: '#fff',
+        preConfirm: () => {
+            return document.getElementById('swal-status-select').value;
+        }
+    }).then(async (r) => {
+        if (r.isConfirmed) {
+            const userId = allUsersData[idx][0];
+            await supabaseClient.from('users').update({ status: r.value }).eq('id', userId);
+            refreshData(document.getElementById('refreshBtn'));
+        }
+    });
+}
+
+// 🗑️ ฟังก์ชันลบผู้ใช้งาน
+function confirmDeleteUser(idx, name) {
+    Swal.fire({
+        title: `ลบ "${name}" ?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#ff3366',
+        background: '#111',
+        color: '#fff'
+    }).then(async (r) => {
+        if (r.isConfirmed) {
+            Swal.fire({
+                title: 'กำลังลบ...',
+                didOpen: () => Swal.showLoading()
+            });
+            
+            const userId = allUsersData[idx][0];
+            await supabaseClient.from('users').delete().eq('id', userId);
+            refreshData(document.getElementById('refreshBtn'));
+            
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                title: 'ลบสำเร็จ!',
+                icon: 'success',
+                background: '#111',
+                color: '#fff',
+                timer: 1500,
+                showConfirmButton: false
+            });
+        }
+    });
+}
+  
   function updateRoleDropdown(currentRoleValue = '') {
       const roleSelect = document.getElementById('uRole'); roleSelect.innerHTML = '';
       roleSelect.innerHTML += '<option value="Member">Member</option>'; roleSelect.innerHTML += '<option value="Admin">Admin</option>';
