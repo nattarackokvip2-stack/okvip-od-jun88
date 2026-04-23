@@ -1565,14 +1565,22 @@
           <label class="small mb-1 text-white">1. วัน/เดือน/ปี ที่ต้องการลา</label>
           <input type="date" id="leaveDateInput" class="form-control mb-3" required>
           
-          <label class="small mb-1 text-white">2. ประเภทการลา</label>
+          <label class="small mb-1 text-white">2. กะทำงาน ช่วงเวลาที่ทำงาน</label>
+          <select id="leaveShiftInput" class="form-select mb-3" required>
+            <option value="">-- เลือกกะทำงาน --</option>
+            <option value="กะเช้า 08:00 - 20:00">☀️ กะเช้า 08:00 - 20:00</option>
+            <option value="กะดึก 20:00 - 08:00">🌙 กะดึก 20:00 - 08:00</option>
+            <option value="กะอื่นๆ 11:00 - 23:00">🕒 กะอื่นๆ 11:00 - 23:00</option>
+          </select>
+
+          <label class="small mb-1 text-white">3. ประเภทการลา</label>
           <select id="leaveTypeInput" class="form-select mb-3" required>
             <option value="">-- เลือกประเภท --</option>
             <option value="ลากิจ">ลากิจ</option>
             <option value="ลาป่วย">ลาป่วย</option>
           </select>
           
-          <label class="small mb-1 text-white">3. รายละเอียด / สาเหตุ</label>
+          <label class="small mb-1 text-white">4. รายละเอียด / สาเหตุ</label>
           <textarea id="leaveReasonInput" class="form-control mb-4" rows="3" required placeholder="ระบุเหตุผลการลา..."></textarea>
           
           <button type="submit" class="btn btn-warning w-100 py-2 fw-bold text-dark">ส่งคำขอลา</button>
@@ -2101,21 +2109,49 @@
         btn.innerText = '💾 บันทึกข้อมูล';
     }
 }
-
+  
   // ==========================================
   // 🌟 ฟังก์ชันแจ้งเตือน Telegram
   // ==========================================
   const TG_BOT_TOKEN = '7794418543:AAFUj0UkOS3fxCFbOl8ksqf7LnHV4AFEdRY';
   const TG_GROUP_ID = '-1003955105343';
 
+  // ส่งข้อความและคืนค่า Message ID
   async function sendTelegramMsg(message) {
       try {
-          await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+          const res = await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ chat_id: TG_GROUP_ID, text: message, parse_mode: 'HTML' })
           });
-      } catch (e) { console.error("Telegram Error:", e); }
+          const data = await res.json();
+          if (data.ok) return data.result.message_id; 
+          return null;
+      } catch (e) { console.error("Telegram Error:", e); return null; }
+  }
+
+  // ให้บอท Reply ข้อความเดิม
+  async function replyTelegramMsg(replyToMsgId, message) {
+      if (!replyToMsgId) return;
+      try {
+          await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: TG_GROUP_ID, text: message, parse_mode: 'HTML', reply_to_message_id: replyToMsgId })
+          });
+      } catch (e) { console.error("Telegram Reply Error:", e); }
+  }
+
+  // ให้บอทลบข้อความทิ้ง
+  async function deleteTelegramMsg(msgId) {
+      if (!msgId) return;
+      try {
+          await fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/deleteMessage`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ chat_id: TG_GROUP_ID, message_id: msgId })
+          });
+      } catch (e) { console.error("Telegram Delete Error:", e); }
   }
 
   // ==========================================
@@ -5345,244 +5381,261 @@ function autoBalanceMeals() {
         }
     }
 }
+
   // ==========================================
-// 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests)
-// ==========================================
-let allLeavesData = []; 
-let currentLeavePage = 1; 
-const leavesPerPage = 10;
+  // 🚀 9. ระบบแจ้งลากิจ / ลาป่วย (Leave Requests)
+  // ==========================================
+  let allLeavesData = []; 
+  let currentLeavePage = 1; 
+  const leavesPerPage = 10;
 
-async function loadSupabaseLeaves() { 
-    try { 
-        const { data } = await supabaseClient.from('leave_requests').select('*').order('created_at', { ascending: false }); 
-        allLeavesData = data || []; 
-        checkLeaveAlerts(); 
-    } catch (err) { 
-        console.error('Error loading leaves:', err); 
-    } 
-}
+  async function loadSupabaseLeaves() { 
+      try { 
+          const { data } = await supabaseClient.from('leave_requests').select('*').order('created_at', { ascending: false }); 
+          allLeavesData = data || []; 
+          checkLeaveAlerts(); 
+      } catch (err) { 
+          console.error('Error loading leaves:', err); 
+      } 
+  }
 
-function checkLeaveAlerts() { 
-    const btnLeave = document.getElementById('btnLeaveSystem'); 
-    if (!btnLeave) return; 
-    
-    const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : ''; 
-    let hasPendingInCurrentMonth = false; 
-    
-    if (myRole === 'SuperAdmin') { 
-        hasPendingInCurrentMonth = allLeavesData.some(L => { 
-            const reqMonth = L.leave_date.substring(0, 7); 
-            return L.status === 'Pending' && (!currentMonth || reqMonth === currentMonth); 
-        }); 
-    } 
-    
-    if (hasPendingInCurrentMonth) { 
-        btnLeave.classList.add('btn-alert-blink'); 
-        btnLeave.innerText = '🚨 มีคำขอลาใหม่!'; 
-    } else { 
-        btnLeave.classList.remove('btn-alert-blink'); 
-        btnLeave.innerText = '📩 ระบบแจ้งลา'; 
-    } 
-}
+  function checkLeaveAlerts() { 
+      const btnLeave = document.getElementById('btnLeaveSystem'); 
+      if (!btnLeave) return; 
+      
+      const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : ''; 
+      let hasPendingInCurrentMonth = false; 
+      
+      if (myRole === 'SuperAdmin') { 
+          hasPendingInCurrentMonth = allLeavesData.some(L => { 
+              const reqMonth = L.leave_date.substring(0, 7); 
+              return L.status === 'Pending' && (!currentMonth || reqMonth === currentMonth); 
+          }); 
+      } 
+      
+      if (hasPendingInCurrentMonth) { 
+          btnLeave.classList.add('btn-alert-blink'); 
+          btnLeave.innerText = '🚨 มีคำขอลาใหม่!'; 
+      } else { 
+          btnLeave.classList.remove('btn-alert-blink'); 
+          btnLeave.innerText = '📩 ระบบแจ้งลา'; 
+      } 
+  }
 
-function openLeaveHistoryModal() { 
-    const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : ''; 
-    if(document.getElementById('leaveMonthFilter')) document.getElementById('leaveMonthFilter').value = currentMonth; 
-    loadLeavesPage(1); 
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('leaveHistoryModal')).show(); 
-}
+  function openLeaveHistoryModal() { 
+      const currentMonth = document.getElementById('monthPicker') ? document.getElementById('monthPicker').value : ''; 
+      if(document.getElementById('leaveMonthFilter')) document.getElementById('leaveMonthFilter').value = currentMonth; 
+      loadLeavesPage(1); 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('leaveHistoryModal')).show(); 
+  }
 
-function openSubmitLeaveModal() { 
-    document.getElementById('leaveForm').reset(); 
-    const now = new Date(); 
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); // ปรับเวลาเป็น Local ไทย
-    document.getElementById('leaveDateInput').value = now.toISOString().split('T')[0]; 
-    bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).show(); 
-}
+  function openSubmitLeaveModal() { 
+      document.getElementById('leaveForm').reset(); 
+      const now = new Date(); 
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); 
+      document.getElementById('leaveDateInput').value = now.toISOString().split('T')[0]; 
+      bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).show(); 
+  }
 
-// 🌟 ฟังก์ชันส่งคำขอลา (อัปเดตเพิ่มการแจ้งเตือนหา SuperAdmin)
-async function handleLeaveSubmit(e) { 
-    e.preventDefault(); 
-    const btn = document.querySelector('#leaveForm button[type="submit"]'); 
-    btn.disabled = true; btn.innerText = '⏳ กำลังส่งคำขอ...'; 
-    
-    const myNick = localStorage.getItem('okvip_nick'); 
-    const me = allUsersData.find(u => u[1] === myNick); 
-    const myDept = me ? me[3] : 'ไม่ระบุ'; 
-    const payload = { 
-        nickname: myNick, 
-        department: myDept, 
-        leave_date: document.getElementById('leaveDateInput').value, 
-        leave_type: document.getElementById('leaveTypeInput').value, 
-        reason: document.getElementById('leaveReasonInput').value, 
-        status: 'Pending' 
-    }; 
-    
-    try { 
-        // 1. บันทึกลงฐานข้อมูล
-        await supabaseClient.from('leave_requests').insert([payload]); 
-        
-        // 2. ส่งแจ้งเตือนผ่าน Telegram (ถ้าระบบยังเปิดใช้อยู่)
-        const msgLeave = `📩 <b>แจ้งลางานใหม่</b>\n👤 ผู้แจ้ง: ${myNick} (${myDept})\n🗓 วันที่ลา: ${payload.leave_date}\n📌 ประเภท: ${payload.leave_type}\n💬 เหตุผล: ${payload.reason}`;
-        if (typeof sendTelegramMsg === "function") sendTelegramMsg(msgLeave);
-        
-        // 🌟 3. ส่งกระดิ่งแจ้งเตือนให้ SuperAdmin 🌟
-        allUsersData.forEach(u => {
-            if (u[7] === 'Active' && u[6] === 'SuperAdmin') {
-                sendSystemNoti(
-                    u[1], 
-                    '📩 คำขอลาใหม่', 
-                    `มีคำขอแจ้งลาจาก ${myNick} โปรดตรวจสอบที่ระบบลากิจ/ลาป่วย`
-                );
-            }
-        });
+  async function handleLeaveSubmit(e) { 
+      e.preventDefault(); 
+      const btn = document.querySelector('#leaveForm button[type="submit"]'); 
+      btn.disabled = true; btn.innerText = '⏳ กำลังส่งคำขอ...'; 
+      
+      const myNick = localStorage.getItem('okvip_nick'); 
+      const me = allUsersData.find(u => u[1] === myNick); 
+      const myDept = me ? me[3] : 'ไม่ระบุ'; 
+      const shiftTime = document.getElementById('leaveShiftInput').value;
 
-        bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).hide(); 
-        await loadSupabaseLeaves(); 
-        loadLeavesPage(currentLeavePage); 
-        Swal.fire({toast:true, position:'top-end', title:'ส่งคำขอลาสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
-    } catch(err) { 
-        Swal.fire('Error', err.message, 'error'); 
-    } finally { 
-        btn.disabled = false; btn.innerText = 'ส่งคำขอลา'; 
-    } 
-}
+      const payload = { 
+          nickname: myNick, 
+          department: myDept, 
+          leave_date: document.getElementById('leaveDateInput').value, 
+          leave_type: document.getElementById('leaveTypeInput').value, 
+          reason: document.getElementById('leaveReasonInput').value, 
+          shift_time: shiftTime,
+          status: 'Pending' 
+      }; 
+      
+      try { 
+          // 1. ยิงบอทไป Telegram และดึงเอา Message ID กลับมา
+          const msgLeave = `📩 <b>แจ้งลางานใหม่</b>\n👤 ผู้แจ้ง: ${myNick} (${myDept})\n🗓 วันที่ลา: ${payload.leave_date}\n⏰ กะงาน: ${payload.shift_time}\n📌 ประเภท: ${payload.leave_type}\n💬 เหตุผล: ${payload.reason}`;
+          const tgMsgId = await sendTelegramMsg(msgLeave);
+          if (tgMsgId) payload.tg_msg_id = tgMsgId.toString();
+          
+          // 2. บันทึกลง Supabase
+          await supabaseClient.from('leave_requests').insert([payload]); 
+          
+          // 3. กระดิ่งแจ้งเตือนหน้าเว็บ
+          allUsersData.forEach(u => {
+              if (u[7] === 'Active' && u[6] === 'SuperAdmin') {
+                  sendSystemNoti(u[1], '📩 คำขอลาใหม่', `มีคำขอแจ้งลาจาก ${myNick} โปรดตรวจสอบที่ระบบลากิจ/ลาป่วย`);
+              }
+          });
 
-function loadLeavesPage(page) { 
-    currentLeavePage = page; 
-    const tb = document.getElementById('leaveTableBody'); 
-    const pagArea = document.getElementById('leavePaginationArea'); 
-    tb.innerHTML = ''; pagArea.innerHTML = ''; 
-    
-    const filterMonth = document.getElementById('leaveMonthFilter').value; 
-    const myNick = localStorage.getItem('okvip_nick'); 
-    
-    let filteredData = allLeavesData.filter(L => { 
-        const reqMonth = L.leave_date ? L.leave_date.substring(0, 7) : ''; 
-        return !filterMonth || reqMonth === filterMonth; 
-    }); 
-    
-    if(filteredData.length === 0) { 
-        tb.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลการแจ้งลาในเดือนที่เลือก</td></tr>`; 
-        return; 
-    } 
-    
-    const totalPages = Math.ceil(filteredData.length / leavesPerPage); 
-    if (currentLeavePage > totalPages) currentLeavePage = totalPages; 
-    
-    const startIndex = (currentLeavePage - 1) * leavesPerPage; 
-    const paginatedData = filteredData.slice(startIndex, startIndex + leavesPerPage); 
-    
-    paginatedData.forEach(L => { 
-        let statusBadge = ''; 
-        if(L.status === 'Pending') statusBadge = `<span class="badge bg-warning text-dark border">⏳ รออนุมัติ</span>`; 
-        else if(L.status === 'Approved') statusBadge = `<span class="badge bg-success border">✅ อนุมัติแล้ว</span>`; 
-        else if(L.status === 'Rejected') statusBadge = `<span class="badge bg-danger border">❌ ปฏิเสธ</span>`; 
-        
-        let actionBtns = '-'; 
-        if(myRole === 'SuperAdmin' && L.status === 'Pending') { 
-            actionBtns = `<button class="btn btn-sm btn-outline-success me-1" onclick="updateLeaveStatus('${L.id}', 'Approved')">✔️</button><button class="btn btn-sm btn-outline-danger" onclick="updateLeaveStatus('${L.id}', 'Rejected')">❌</button>`; 
-        } else if ((myRole === 'SuperAdmin' || myNick === L.nickname) && L.status === 'Pending') { 
-            actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ยกเลิกคำขอ</button>`; 
-        } else if (myRole === 'SuperAdmin') { 
-            actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ลบประวัติ</button>`; 
-        } 
-        
-        let displayNick = L.nickname; 
-        if (L.nickname === myNick) displayNick = `<span class="text-warning">${L.nickname} (คุณ)</span>`; 
-        
-        tb.innerHTML += `<tr>
-            <td>${new Date(L.leave_date).toLocaleDateString('th-TH')}</td>
-            <td class="fw-bold text-white">${displayNick} <br><small class="text-muted">${L.department.split(' ')[0]}</small></td>
-            <td class="text-info">${L.leave_type}</td>
-            <td class="small text-muted" style="max-width: 200px; white-space: normal;">${L.reason}</td>
-            <td>${statusBadge}</td>
-            <td class="text-center">${actionBtns}</td>
-        </tr>`; 
-    }); 
-    
-    if (totalPages > 1) { 
-        let pageHtml = `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage - 1})" ${currentLeavePage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; 
-        for (let i = 1; i <= totalPages; i++) { 
-            pageHtml += `<button class="page-btn ${i === currentLeavePage ? 'active' : ''}" onclick="loadLeavesPage(${i})">${i}</button>`; 
-        } 
-        pageHtml += `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage + 1})" ${currentLeavePage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; 
-        pagArea.innerHTML = pageHtml; 
-    } 
-}
+          bootstrap.Modal.getOrCreateInstance(document.getElementById('submitLeaveModal')).hide(); 
+          await loadSupabaseLeaves(); 
+          loadLeavesPage(currentLeavePage); 
+          Swal.fire({toast:true, position:'top-end', title:'ส่งคำขอลาสำเร็จ!', icon:'success', timer:2000, showConfirmButton:false, background:'#111', color:'#fff'}); 
+      } catch(err) { 
+          Swal.fire('Error', err.message, 'error'); 
+      } finally { 
+          btn.disabled = false; btn.innerText = 'ส่งคำขอลา'; 
+      } 
+  }
 
-function updateLeaveStatus(id, newStatus) { 
-    Swal.fire({ 
-        title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?', 
-        icon: 'question', 
-        showCancelButton: true, 
-        confirmButtonColor: newStatus === 'Approved' ? '#00ff66' : '#ff3366', 
-        confirmButtonText: 'ยืนยัน', 
-        background:'#111', 
-        color:'#fff' 
-    }).then(async r => { 
-        if(r.isConfirmed) { 
-            Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()}); 
-            await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id); 
-            
-            const leaveReq = allLeavesData.find(l => l.id.toString() === id.toString());
-            if(leaveReq) {
-                // ส่งกระดิ่งแจ้งเตือนให้พนักงาน เมื่อมีการอัปเดตสถานะ
-                let statusTh = newStatus === 'Approved' ? '✅ อนุมัติแล้ว' : '❌ ถูกปฏิเสธ';
-                sendSystemNoti(leaveReq.nickname, '📩 อัปเดตคำขอลา', `คำขอลาวันที่ ${new Date(leaveReq.leave_date).toLocaleDateString('th-TH')} ของคุณ ${statusTh}`);
+  function loadLeavesPage(page) { 
+      currentLeavePage = page; 
+      const tb = document.getElementById('leaveTableBody'); 
+      const pagArea = document.getElementById('leavePaginationArea'); 
+      tb.innerHTML = ''; pagArea.innerHTML = ''; 
+      
+      const filterMonth = document.getElementById('leaveMonthFilter').value; 
+      const myNick = localStorage.getItem('okvip_nick'); 
+      
+      let filteredData = allLeavesData.filter(L => { 
+          const reqMonth = L.leave_date ? L.leave_date.substring(0, 7) : ''; 
+          return !filterMonth || reqMonth === filterMonth; 
+      }); 
+      
+      if(filteredData.length === 0) { 
+          tb.innerHTML = `<tr><td colspan="6" class="text-center py-5 text-muted">ไม่มีข้อมูลการแจ้งลาในเดือนที่เลือก</td></tr>`; 
+          return; 
+      } 
+      
+      const totalPages = Math.ceil(filteredData.length / leavesPerPage); 
+      if (currentLeavePage > totalPages) currentLeavePage = totalPages; 
+      
+      const startIndex = (currentLeavePage - 1) * leavesPerPage; 
+      const paginatedData = filteredData.slice(startIndex, startIndex + leavesPerPage); 
+      
+      paginatedData.forEach(L => { 
+          let statusBadge = ''; 
+          if(L.status === 'Pending') statusBadge = `<span class="badge bg-warning text-dark border">⏳ รออนุมัติ</span>`; 
+          else if(L.status === 'Approved') statusBadge = `<span class="badge bg-success border">✅ อนุมัติแล้ว</span>`; 
+          else if(L.status === 'Rejected') statusBadge = `<span class="badge bg-danger border">❌ ปฏิเสธ</span>`; 
+          
+          let actionBtns = '-'; 
+          if(myRole === 'SuperAdmin' && L.status === 'Pending') { 
+              actionBtns = `<button class="btn btn-sm btn-outline-success me-1" onclick="updateLeaveStatus('${L.id}', 'Approved')">✔️</button><button class="btn btn-sm btn-outline-danger" onclick="updateLeaveStatus('${L.id}', 'Rejected')">❌</button>`; 
+          } else if ((myRole === 'SuperAdmin' || myNick === L.nickname) && L.status === 'Pending') { 
+              actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ยกเลิกคำขอ</button>`; 
+          } else if (myRole === 'SuperAdmin') { 
+              actionBtns = `<button class="btn btn-sm btn-outline-secondary" onclick="deleteLeave('${L.id}')">ลบประวัติ</button>`; 
+          } 
+          
+          let displayNick = L.nickname; 
+          if (L.nickname === myNick) displayNick = `<span class="text-warning">${L.nickname} (คุณ)</span>`; 
+          
+          let shiftText = L.shift_time ? `<br><small class="text-warning">${L.shift_time.split(' ')[0]}</small>` : '';
 
-                if(newStatus === 'Approved') {
-                    try {
-                        const lDate = new Date(leaveReq.leave_date);
-                        const ym = `${lDate.getFullYear()}-${String(lDate.getMonth()+1).padStart(2,'0')}`;
-                        const dayNum = lDate.getDate();
-                        const nick = leaveReq.nickname;
-                        const { data: existingSch } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym).eq('nickname', nick).limit(1);
-                        let dData = {}; let rId = null;
-                        
-                        if(existingSch && existingSch.length > 0) { 
-                            dData = existingSch[0].daysData ? JSON.parse(existingSch[0].daysData) : {}; 
-                            rId = existingSch[0].id; 
-                        }
-                        
-                        dData[dayNum] = 'KL'; // ลงรหัส KL ในตารางงานเมื่ออนุมัติ
-                        
-                        if(rId) { 
-                            await supabaseClient.from('schedules').update({daysData: JSON.stringify(dData)}).eq('id', rId); 
-                        } else { 
-                            await supabaseClient.from('schedules').insert([{nickname: nick, department: leaveReq.department, yearMonth: ym, daysData: JSON.stringify(dData)}]); 
-                        }
-                    } catch(e) { 
-                        console.error('Auto-Sync Leave Error:', e); 
-                    }
-                }
-            }
-            await loadSupabaseLeaves(); 
-            loadLeavesPage(currentLeavePage); 
-            Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
-        } 
-    }); 
-}
+          tb.innerHTML += `<tr>
+              <td>${new Date(L.leave_date).toLocaleDateString('th-TH')}</td>
+              <td class="fw-bold text-white">${displayNick} <br><small class="text-muted">${L.department.split(' ')[0]}</small></td>
+              <td class="text-info">${L.leave_type}${shiftText}</td>
+              <td class="small text-muted" style="max-width: 200px; white-space: normal;">${L.reason}</td>
+              <td>${statusBadge}</td>
+              <td class="text-center">${actionBtns}</td>
+          </tr>`; 
+      }); 
+      
+      if (totalPages > 1) { 
+          let pageHtml = `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage - 1})" ${currentLeavePage === 1 ? 'disabled' : ''}>&laquo; ก่อนหน้า</button>`; 
+          for (let i = 1; i <= totalPages; i++) { 
+              pageHtml += `<button class="page-btn ${i === currentLeavePage ? 'active' : ''}" onclick="loadLeavesPage(${i})">${i}</button>`; 
+          } 
+          pageHtml += `<button class="page-btn" onclick="loadLeavesPage(${currentLeavePage + 1})" ${currentLeavePage === totalPages ? 'disabled' : ''}>ถัดไป &raquo;</button>`; 
+          pagArea.innerHTML = pageHtml; 
+      } 
+  }
 
-function deleteLeave(id) { 
-    Swal.fire({
-        title: 'ยกเลิกคำขอนี้?', 
-        text: 'ข้อมูลจะถูกลบออกจากระบบ', 
-        icon: 'warning', 
-        showCancelButton: true, 
-        confirmButtonColor: '#ff3366', 
-        background:'#111', 
-        color:'#fff'
-    }).then(async r => { 
-        if(r.isConfirmed) { 
-            Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); 
-            await supabaseClient.from('leave_requests').delete().eq('id', id); 
-            await loadSupabaseLeaves(); 
-            loadLeavesPage(1); 
-            Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
-        } 
-    }); 
-}
+  function updateLeaveStatus(id, newStatus) { 
+      Swal.fire({ 
+          title: newStatus === 'Approved' ? 'ยืนยันการ "อนุมัติ" ?' : 'ยืนยันการ "ปฏิเสธ" ?', 
+          icon: 'question', 
+          showCancelButton: true, 
+          confirmButtonColor: newStatus === 'Approved' ? '#00ff66' : '#ff3366', 
+          confirmButtonText: 'ยืนยัน', 
+          background:'#111', 
+          color:'#fff' 
+      }).then(async r => { 
+          if(r.isConfirmed) { 
+              Swal.fire({title:'กำลังบันทึก...', didOpen:()=>Swal.showLoading()}); 
+              await supabaseClient.from('leave_requests').update({status: newStatus}).eq('id', id); 
+              
+              const adminNick = localStorage.getItem('okvip_nick');
+              const leaveReq = allLeavesData.find(l => l.id.toString() === id.toString());
+              
+              if(leaveReq) {
+                  let statusTh = newStatus === 'Approved' ? '✅ อนุมัติแล้ว' : '❌ ถูกปฏิเสธ';
+                  
+                  // 🤖 1. ให้บอท Reply ข้อความเดิมใน Telegram
+                  if (leaveReq.tg_msg_id) {
+                      await replyTelegramMsg(leaveReq.tg_msg_id, `สถานะ: <b>${statusTh}</b>\nดำเนินการโดย: <b>${adminNick}</b>`);
+                  }
+
+                  // 2. กระดิ่งแจ้งเตือนกลับไปหาคนลา
+                  sendSystemNoti(leaveReq.nickname, '📩 อัปเดตคำขอลา', `คำขอลาวันที่ ${new Date(leaveReq.leave_date).toLocaleDateString('th-TH')} ของคุณ ${statusTh}`);
+
+                  if(newStatus === 'Approved') {
+                      try {
+                          const lDate = new Date(leaveReq.leave_date);
+                          const ym = `${lDate.getFullYear()}-${String(lDate.getMonth()+1).padStart(2,'0')}`;
+                          const dayNum = lDate.getDate();
+                          const nick = leaveReq.nickname;
+                          const { data: existingSch } = await supabaseClient.from('schedules').select('*').eq('yearMonth', ym).eq('nickname', nick).limit(1);
+                          let dData = {}; let rId = null;
+                          
+                          if(existingSch && existingSch.length > 0) { 
+                              dData = existingSch[0].daysData ? JSON.parse(existingSch[0].daysData) : {}; 
+                              rId = existingSch[0].id; 
+                          }
+                          
+                          dData[dayNum] = 'KL'; // ลงรหัส KL ในตารางอัตโนมัติ
+                          
+                          if(rId) { 
+                              await supabaseClient.from('schedules').update({daysData: JSON.stringify(dData)}).eq('id', rId); 
+                          } else { 
+                              await supabaseClient.from('schedules').insert([{nickname: nick, department: leaveReq.department, yearMonth: ym, daysData: JSON.stringify(dData)}]); 
+                          }
+                      } catch(e) { console.error('Auto-Sync Leave Error:', e); }
+                  }
+              }
+              await loadSupabaseLeaves(); 
+              loadLeavesPage(currentLeavePage); 
+              Swal.fire({toast:true, position:'top-end', title:'อัปเดตสถานะสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          } 
+      }); 
+  }
+
+  function deleteLeave(id) { 
+      Swal.fire({
+          title: 'ยกเลิกคำขอนี้?', 
+          text: 'ข้อความแจ้งลาใน Telegram จะถูกลบออกไปพร้อมกันด้วย', 
+          icon: 'warning', 
+          showCancelButton: true, 
+          confirmButtonColor: '#ff3366', 
+          background:'#111', 
+          color:'#fff'
+      }).then(async r => { 
+          if(r.isConfirmed) { 
+              Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); 
+              
+              const leaveReq = allLeavesData.find(l => l.id.toString() === id.toString());
+              
+              // 🗑️ 1. ลบข้อความออกจากกลุ่ม Telegram
+              if (leaveReq && leaveReq.tg_msg_id) {
+                  await deleteTelegramMsg(leaveReq.tg_msg_id);
+              }
+
+              // 2. ลบออกจากระบบ
+              await supabaseClient.from('leave_requests').delete().eq('id', id); 
+              await loadSupabaseLeaves(); 
+              loadLeavesPage(1); 
+              Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+          } 
+      }); 
+  }
 
   // ==========================================
   // 🚀 7. คู่มือการทำงานและกติกา (Manuals)
