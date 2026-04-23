@@ -3269,41 +3269,75 @@ function confirmDeleteUser(idx, name) {
         document.getElementById('schThead').innerHTML = th1 + summaryHtml;
         
         let tb = ''; let hasData = false;
+        
+        // 🌟 1. ดึงข้อมูลพนักงานที่ Active และเตรียมข้อมูลกะ (Shift) ปัจจุบัน
+        let sortableUsers = [];
         allUsersData.forEach(u => {
             if(!u || u[7] !== 'Active') return; 
             const nick = u[1] ? u[1].toString() : ''; 
             const dept = u[3] ? u[3].toString() : 'ไม่ระบุ';
+            const role = u[6] ? u[6].toString() : 'Member';
             
             let shiftSet = u[9] ? u[9].toString() : '-'; 
             const userDays = displayMap[nick] || {};
             
-            // 🌟 เช็คว่ามีการสลับกะชั่วคราวของเดือนนี้หรือไม่
+            // เช็คการสลับกะในโหมด Sandbox หรือกะเฉพาะเดือน
             if (currentScheduleMode === 'SANDBOX' && sandboxUserShiftCache[nick]) {
                 shiftSet = sandboxUserShiftCache[nick];
             } else if (currentScheduleMode === 'REAL' && userDays['_shift']) {
-                shiftSet = userDays['_shift']; // ดึงค่ากะที่จำเพาะเจาะจงของเดือนนี้มาโชว์
+                shiftSet = userDays['_shift'];
             }
             
-            let shiftChar = shiftSet.includes('(A)') ? 'A' : (shiftSet.includes('(B)') ? 'B' : '');
+            let shiftChar = shiftSet.includes('(A)') ? 'A' : (shiftSet.includes('(B)') ? 'B' : 'Z'); // Z = กะอื่นๆ จะได้อยู่ล่างสุด
             
+            // กรองข้อมูลตาม Filter
+            let shouldShow = true;
             if (currentSchDept !== 'ALL') {
-                if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) return;
-                if (currentSchDept === 'ออดิทออนไลน์ (ODOL)' && !dept.includes('ODOL')) return;
-                if (currentSchDept === 'อื่นๆ (OTHER)' && (dept.includes('OD') || dept.includes('ODOL'))) return;
+                if (currentSchDept === 'ออดิท (OD)' && (!dept.includes('OD') || dept.includes('ODOL'))) shouldShow = false;
+                if (currentSchDept === 'ออดิทออนไลน์ (ODOL)' && !dept.includes('ODOL')) shouldShow = false;
+                if (currentSchDept === 'อื่นๆ (OTHER)' && (dept.includes('OD') || dept.includes('ODOL'))) shouldShow = false;
             }
-            
             if (currentSchShift !== 'ALL') {
-                if (currentSchShift === 'A' && shiftChar !== 'A') return;
-                if (currentSchShift === 'B' && shiftChar !== 'B') return;
+                if (currentSchShift === 'A' && shiftChar !== 'A') shouldShow = false;
+                if (currentSchShift === 'B' && shiftChar !== 'B') shouldShow = false;
             }
-            if (scheduleSearchTerm && !nick.toLowerCase().includes(scheduleSearchTerm.toLowerCase())) return; 
-            
+            if (scheduleSearchTerm && !nick.toLowerCase().includes(scheduleSearchTerm.toLowerCase())) shouldShow = false; 
+
+            if (shouldShow) {
+                sortableUsers.push({
+                    originalData: u,
+                    nick: nick,
+                    dept: dept,
+                    role: role,
+                    shiftSet: shiftSet,
+                    shiftChar: shiftChar,
+                    userDays: userDays
+                });
+            }
+        });
+
+        // 🌟 2. ระบบจัดเรียงลำดับ (กะ A->B->อื่น) แล้วตามด้วย (ยศ SuperAdmin->Admin->Member)
+        sortableUsers.sort((a, b) => {
+            // เทียบกะก่อน (A มาก่อน B)
+            if (a.shiftChar !== b.shiftChar) {
+                return a.shiftChar.localeCompare(b.shiftChar);
+            }
+            // ถ้ากะเดียวกัน ให้เทียบยศ
+            return getRoleWeight(a.role) - getRoleWeight(b.role);
+        });
+
+        // 🌟 3. นำข้อมูลที่เรียงแล้วมาสร้างตาราง
+        sortableUsers.forEach(uObj => {
             hasData = true;
-            
+            const nick = uObj.nick;
+            const dept = uObj.dept;
+            const shiftSet = uObj.shiftSet;
+            const shiftChar = uObj.shiftChar === 'Z' ? '' : uObj.shiftChar; // เอา Z ออกเวลาแสดงผล
+            const userDays = uObj.userDays;
+
             const isMyRow = (nick === localStorage.getItem('okvip_nick')); 
             const isSuperAdmin = (myRole === 'SuperAdmin');
             
-            // 🌟 ปรับสิทธิ์: Sandbox กดได้ทุกคน / Real กดได้แค่ SuperAdmin หรือตัวเองในเดือนหน้า
             let canEdit = false;
             if (currentScheduleMode === 'SANDBOX') {
                 canEdit = true;
@@ -3314,7 +3348,7 @@ function confirmDeleteUser(idx, name) {
             const nameClass = isMyRow ? 'name-col highlight-me' : 'name-col'; 
             const rowBg = currentScheduleMode === 'SANDBOX' ? 'background-color: rgba(255, 153, 0, 0.05);' : (isMyRow ? 'background-color: rgba(0, 255, 102, 0.05);' : '');
             
-            // 🌟 สร้าง Dropdown ให้ SuperAdmin แก้ไขได้ทันที
+            // สร้าง Dropdown ให้ SuperAdmin
             let shiftBadge = '-';
             let deptBadge = `<span class="text-muted small">${dept.split(' ')[0]}</span>`;
 
@@ -3355,6 +3389,7 @@ function confirmDeleteUser(idx, name) {
             } 
             tb += '</tr>';
         }); 
+        
         if (!hasData) tb = `<tr><td colspan="${daysInMonth + 3}" class="text-center py-5 text-muted">ไม่พบข้อมูลพนักงานในกลุ่มนี้</td></tr>`;
         document.getElementById('schTbody').innerHTML = tb;
 
