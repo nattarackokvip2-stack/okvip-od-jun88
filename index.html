@@ -7881,10 +7881,17 @@ async function handleFeedbackSubmit(e) {
             const { error } = await supabaseClient.from('hr_feedbacks').insert([payload]);
             if (error) throw error;
             
+            // 🌟 1. แจ้งเตือนกระดิ่งในระบบ
+            let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
+            let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
             if (typeof sendSystemNoti === 'function') {
-                let roleTh = evaluateRole === 'Mentor' ? 'พี่เลี้ยงสอนงาน' : 'หัวหน้างาน';
-                let notiMsg = `มีพนักงานส่งแบบประเมิน (ไม่เปิดเผยชื่อ) ให้คุณในฐานะ ${roleTh} ได้คะแนนเฉลี่ย ${avgScore} ดาว กรุณาเข้าไปดูข้อเสนอแนะที่เมนู "ข้อมูลการทำงานพนักงาน" ครับ`;
                 sendSystemNoti(targetNick, '🚨 รายงานพฤติกรรม (แบบประเมินใหม่)', notiMsg);
+            }
+            
+            // 🌟 2. แจ้งเตือนเข้า Telegram บอท
+            if (typeof sendTelegramMsg === 'function') {
+                let tgMsg = `🚨 <b>มีการประเมิน ${roleTh} ใหม่!</b>\n🎯 ผู้ถูกประเมิน: ${targetNick}\n⭐ คะแนนเฉลี่ย: ${avgScore} ดาว`;
+                sendTelegramMsg(tgMsg);
             }
         }
 
