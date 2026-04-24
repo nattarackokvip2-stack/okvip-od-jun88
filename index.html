@@ -8009,11 +8009,11 @@ async function renderFeedbackList() {
             let starCount = Math.round(item.avg_score);
             let stars = '⭐'.repeat(starCount) + '<span style="opacity:0.2">' + '⭐'.repeat(5-starCount) + '</span>';
 
-            // ระบบซ่อนชื่อคนประเมิน
+            // ระบบซ่อนชื่อคนประเมิน (แก้ไข: ซ่อนจากทุกคน รวมถึง SuperAdmin)
             let senderDisplay = '<span class="text-muted small">🔒 ปกปิดชื่อ</span>';
-            if (item.sender_nick === myNick || myRole === 'SuperAdmin') {
-                // ตัวเอง กับ SuperAdmin จะเห็นชื่อคนส่ง
-                senderDisplay = `<span class="text-success fw-bold">${item.sender_nick}</span>`;
+            if (item.sender_nick === myNick) {
+                // ให้โชว์คำว่า "คุณ" เฉพาะตอนที่ดูประวัติที่ตัวเองเป็นคนส่งเท่านั้น
+                senderDisplay = `<span class="text-success fw-bold">คุณ (ผู้ส่ง)</span>`;
             }
 
             let viewBtn = `<button class="btn btn-sm btn-outline-info fw-bold px-2 py-1 m-1" onclick="viewFeedbackDetail('${item.id}')" title="ดูข้อมูล">🔍</button>`;
