@@ -2671,6 +2671,9 @@ function verifyUserStatus(user, nick, role, isLoginEvent = false) {
       switchMainTab(targetTab);
       refreshData(document.getElementById('refreshBtn'), isLoginEvent);
       initChatAndNoti();
+      
+      // 🌟 เพิ่มบรรทัดนี้: ให้เชื่อมต่อท่อส่งข้อมูล "หลังจาก" ล็อกอินสำเร็จเท่านั้น
+      initScheduleRealtime();
   }
 
   function getRoleWeight(roleStr) { if (!roleStr) return 3; const r = roleStr.toString().trim(); if (r === 'SuperAdmin') return 1; if (r === 'Admin') return 2; return 3; }
@@ -3553,11 +3556,16 @@ function confirmDeleteUser(idx, name) {
   }
 
   // --- ระบบ Realtime Draft ---
-let scheduleChannel = null;
+  let scheduleChannel = null;
 
 // สร้างหรือเชื่อมต่อช่องทาง Realtime
 function initScheduleRealtime() {
-    if (!supabaseClient || scheduleChannel) return;
+    if (!supabaseClient) return;
+    
+    // 🌟 ถ้าเคยต่อไว้แล้ว ให้ตัดของเก่าทิ้งก่อน ป้องกันการส่งเบิ้ล
+    if (scheduleChannel) {
+        supabaseClient.removeChannel(scheduleChannel);
+    }
     
     scheduleChannel = supabaseClient.channel('schedule-live', {
         config: { broadcast: { self: false } } // ไม่รับข้อความที่ตัวเองส่ง
@@ -3574,7 +3582,7 @@ function initScheduleRealtime() {
         })
         .subscribe((status) => {
             if (status === 'SUBSCRIBED') {
-                console.log('🔗 เชื่อมต่อระบบจองตารางเรียลไทม์แล้ว!');
+                console.log('🔗 เชื่อมต่อระบบจองตารางแบบ Realtime สำเร็จ!');
             }
         });
 }
@@ -3588,11 +3596,11 @@ function updateDraftUI(data) {
     if (cell) {
         const conf = stampConfig[stamp] || { bg: 'transparent', text: '#aaaaaa' };
         cell.innerText = stamp;
-        // ทำไฮไลต์ให้รู้ว่าเป็นการ "จอง" ยังไม่เซฟ (เช่น ใส่กรอบกะพริบ)
+        // ทำไฮไลต์ให้รู้ว่าเป็นการ "จอง" ยังไม่เซฟ (กะพริบขอบเหลือง)
         cell.style.backgroundColor = conf.bg;
         cell.style.color = conf.text;
         cell.style.border = '2px dashed #ffcc00';
-        cell.setAttribute('title', `กำลังจองโดย: ${byUser}`);
+        cell.setAttribute('title', `กำลังเลือกโดย: ${byUser}`);
     }
 }
 
@@ -3735,9 +3743,11 @@ function applyStamp(cell, nick, dept, day) {
                 stamp: currentStamp,
                 byUser: localStorage.getItem('okvip_nick')
             }
+        }).then((resp) => {
+            // เช็คว่าสัญญาณถูกยิงออกไปจริงไหม (ถ้าหลุดมันจะแจ้งเตือนใน Console F12)
+            if (resp !== 'ok') console.warn('Realtime Broadcast Failed:', resp);
         });
     }
-}
 
 // 🌟 2. ปรับปรุงฟังก์ชันประทับตรา (ลบการ Save รัวๆ ออก และเปลี่ยนวิธีค้นหาให้เร็วขึ้น)
 function applyStamp(cell, nick, dept, day) {
