@@ -5106,8 +5106,10 @@ if (deptF === 'ALL') {
                 <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกเวลาทานข้าวของฉัน</button>
             `;
         } else {
+            // 🌟 เพิ่มปุ่มดวงตาเข้าไปใน JS ตรงนี้ มันจะได้ไม่ถูกลบทิ้ง 🌟
             actionBtnsContainer.innerHTML = `
                 <button class="btn" style="color:#ff66cc; border-color:#ff66cc; font-weight:bold; background: rgba(255,102,204,0.1);" onclick="autoBalanceMeals()">🔀 สุ่มกระจายรอบอัตโนมัติ</button>
+                <button class="btn" style="color:#00f0ff; border-color:#00f0ff; font-weight:bold; background: rgba(0,240,255,0.1);" onclick="showMealOverlapDetails()">👁️ ตรวจสอบเวลาชนกัน</button>
                 <button class="btn" style="background-color:#004d26; color:#00ff5f; border: 1px solid rgba(0, 255, 95, 0.5); font-weight:bold;" onclick="saveMealData()">💾 บันทึกตารางทานข้าว</button>
             `;
         }
@@ -8269,103 +8271,42 @@ function deleteLeave(id) {
     }); 
 }
 
-// 🌟 ฟังก์ชันใหม่: แสดงรายละเอียดคนที่กินข้าวชนกัน
-function showMealOverlapDetails() {
-    const rows = document.querySelectorAll('#mealTableBody tr');
-    let overlapDetails = [];
-    let siteGroups = {};
-
-    // 1. จัดกลุ่มคนตาม (เว็บไซต์ + กะงาน) เพื่อหาว่าใครอยู่กลุ่มเดียวกันบ้าง
-    rows.forEach(tr => {
-        const nick = tr.getAttribute('data-nick');
-        if(!nick) return;
-        
-        const siteCell = tr.querySelector('.site-cell');
-        if(!siteCell) return;
-        const siteText = siteCell.innerText;
-        if(siteText === 'ยังไม่ระบุเว็บ') return;
-
-        const stampText = tr.querySelector('td:nth-child(3)').innerText;
-        const shiftType = stampText.includes('เช้า') || stampText.includes('D') ? 'D' : (stampText.includes('ดึก') || stampText.includes('N') ? 'N' : 'OTHER');
-
-        const sel1 = tr.querySelector('.sel-meal-1');
-        const sel2 = tr.querySelector('.sel-meal-2');
-        
-        if(!sel1 || sel1.style.display === 'none') return; // ข้ามคนที่ไม่มีช่องเลือกเวลาพัก
-
-        let sites = siteText.replace(/\(หลัก\)/g, '').replace(/\(รอง\)/g, '').split(',').map(s => s.trim()).filter(s => s !== '');
-
-        sites.forEach(site => {
-            const key = site + '_' + shiftType; 
-            if(!siteGroups[key]) siteGroups[key] = [];
-            siteGroups[key].push({
-                nick: nick,
-                site: site,
-                shiftType: shiftType,
-                val1: sel1.value,
-                val2: sel2 ? sel2.value : ''
-            });
-        });
-    });
-
-    // 2. ตรวจสอบว่าในแต่ละกลุ่ม มีใครเวลาพักตรงกันบ้าง
-    for(let key in siteGroups) {
-        let users = siteGroups[key];
-        
-        // วนลูปจับคู่เช็คทุกคนในกลุ่มเดียวกัน
-        for(let i = 0; i < users.length; i++) {
-            for(let j = i + 1; j < users.length; j++) {
-                let u1 = users[i];
-                let u2 = users[j];
+function deleteLeave(id) { 
+    Swal.fire({
+        title: 'ยกเลิกคำขอนี้?', 
+        text: 'ข้อมูลจะถูกลบออกจากระบบ', 
+        icon: 'warning', 
+        showCancelButton: true, 
+        confirmButtonColor: '#ff3366', 
+        background:'#111', 
+        color:'#fff'
+    }).then(async r => { 
+        if(r.isConfirmed) { 
+            Swal.fire({title:'กำลังยกเลิก...', didOpen:()=>Swal.showLoading()}); 
+            try { 
+                const { data: leaveReq } = await supabaseClient.from('leave_requests').select('*').eq('id', id).single();
                 
-                let overlapTime = null;
-
-                // เช็คว่าเวลาพักช่วงที่ 1 หรือ 2 ตรงกันหรือไม่ (ข้ามค่าว่าง)
-                if (u1.val1 && (u1.val1 === u2.val1 || u1.val1 === u2.val2)) {
-                    overlapTime = u1.val1;
-                } else if (u1.val2 && (u1.val2 === u2.val1 || u1.val2 === u2.val2)) {
-                    overlapTime = u1.val2;
+                if (leaveReq) {
+                    try {
+                        if (leaveReq.tg_reply_msg_id) await deleteTelegramMsg(leaveReq.tg_reply_msg_id); 
+                        if (leaveReq.tg_msg_id) await deleteTelegramMsg(leaveReq.tg_msg_id); 
+                    } catch(tgError) {
+                        console.warn("ข้ามการลบใน Telegram ไปเนื่องจากหาข้อความไม่พบ", tgError);
+                    }
                 }
 
-                if (overlapTime) {
-                    overlapDetails.push(`
-                        <div class="mb-2 p-2" style="background: rgba(255, 51, 102, 0.1); border-left: 4px solid #ff3366; border-radius: 4px;">
-                            <span class="text-info fw-bold">${u1.site}</span> 
-                            (กะ ${u1.shiftType === 'D' ? 'เช้า' : 'ดึก'})<br>
-                            <span class="text-white">${u1.nick}</span> ⚔️ <span class="text-white">${u2.nick}</span><br>
-                            <span class="text-warning small">ชนกันเวลา: ${overlapTime}</span>
-                        </div>
-                    `);
-                }
+                const { error: deleteErr } = await supabaseClient.from('leave_requests').delete().eq('id', id); 
+                if(deleteErr) throw deleteErr;
+
+                await loadSupabaseLeaves(); 
+                loadLeavesPage(1); 
+                Swal.fire({toast:true, position:'top-end', title:'ยกเลิกคำขอสำเร็จ', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'}); 
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Error', 'เกิดข้อผิดพลาด: ' + error.message, 'error');
             }
-        }
-    }
-
-    // 3. แสดงผลทางหน้าจอ (SweetAlert2)
-    if (overlapDetails.length > 0) {
-        Swal.fire({
-            title: '⚠️ ตรวจพบเวลาพักชนกัน',
-            html: `<div class="text-start" style="max-height: 300px; overflow-y: auto;">
-                    <p class="text-muted small mb-2">พนักงานที่ดูแลเว็บไซต์เดียวกันในกะเดียวกัน มีเวลาพักตรงกันดังนี้:</p>
-                    ${overlapDetails.join('')}
-                   </div>`,
-            icon: 'warning',
-            confirmButtonText: 'รับทราบ',
-            confirmButtonColor: '#ffcc00',
-            background: '#151518',
-            color: '#fff'
-        });
-    } else {
-        Swal.fire({
-            title: '✅ ผ่านฉลุย!',
-            text: 'ไม่มีพนักงานที่ดูแลเว็บเดียวกัน ทานข้าวเวลาเดียวกันครับ',
-            icon: 'success',
-            confirmButtonText: 'เยี่ยมเลย',
-            confirmButtonColor: '#00ff66',
-            background: '#151518',
-            color: '#fff'
-        });
-    }
+        } 
+    }); 
 }
 </script>
 </body>
