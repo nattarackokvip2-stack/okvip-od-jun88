@@ -3099,8 +3099,19 @@ function confirmDeleteUser(idx, name) {
                   let finalMsg = `เดือน ${ym} มีการปรับแก้:\n${notiMessages.join('\n')}`;
                   sendSystemNoti(nick, '📅 อัปเดตตารางงาน', finalMsg);
               }
+
+              // 🚀 ยิงบอกทุกคนให้เอาเส้นปะจอง (Draft) ออก เพราะบันทึกเสร็จแล้ว
+              if (scheduleChannel) {
+                  for (const d in changes) {
+                     scheduleChannel.send({
+                         type: 'broadcast',
+                         event: 'clear-draft',
+                         payload: { nick: nick, day: d, originalStamp: changes[d] }
+                     });
+                  }
+              }
           }
-          unsavedChanges = {}; 
+          unsavedChanges = {};
           document.querySelectorAll('.unsaved-mark').forEach(c=>{ c.setAttribute('data-original', c.innerText); c.classList.remove('unsaved-mark'); }); 
           if(btn) btn.style.display = 'none'; 
           Swal.fire({toast:true, position:'top-end', title:'บันทึกตารางจริงสำเร็จ!', icon:'success', background:'#111', color:'#fff', timer:2000, showConfirmButton:false});
@@ -3418,8 +3429,10 @@ function confirmDeleteUser(idx, name) {
                 const mouse = canEdit ? `onmousedown="startStampDrag(this,'${nick}','${dept}',${d})" onmouseenter="enterStampDrag(event, this,'${nick}','${dept}',${d})"` : ''; 
                 const c = (isCurMonth && d === curD) ? 'today-column' : ''; 
                 const curClass = canEdit ? 'admin-mode cell-day' : 'cell-day'; 
-                tb += `<td class="${curClass} ${c}" data-day="${d}" data-original="${val}" style="background-color:${style.bg}; color:${style.text};" ${mouse}>${val}</td>`; 
-            } 
+                // เพิ่ม id ให้เซลล์เพื่อให้อัปเดตจาก Realtime ได้ง่าย
+                const cellId = `cell-${nick}-${d}`;
+                tb += `<td id="${cellId}" class="${curClass} ${c}" data-day="${d}" data-original="${val}" style="background-color:${style.bg}; color:${style.text};" ${mouse}>${val}</td>`; 
+            }
             tb += '</tr>';
         }); 
         
@@ -3539,12 +3552,77 @@ function confirmDeleteUser(idx, name) {
       if(code === 'TX') Swal.fire({toast:true, position:'top-end', title:'โหมดสลับวันหยุด (TX)', text:'ระบบจะบันทึก TX ในช่องที่กดเท่านั้น', icon:'info', timer:4000, showConfirmButton:false, background:'#111', color:'#fff'}); 
   }
 
-  // 🌟 1. ปรับปรุง Event การปล่อยเมาส์ (ให้ทำทุกอย่างตอนปล่อยเมาส์ทีเดียว)
+  // --- ระบบ Realtime Draft ---
+let scheduleChannel = null;
+
+// สร้างหรือเชื่อมต่อช่องทาง Realtime
+function initScheduleRealtime() {
+    if (!supabaseClient || scheduleChannel) return;
+    
+    scheduleChannel = supabaseClient.channel('schedule-live', {
+        config: { broadcast: { self: false } } // ไม่รับข้อความที่ตัวเองส่ง
+    });
+
+    scheduleChannel
+        .on('broadcast', { event: 'draft-stamp' }, payload => {
+            // เมื่อได้รับสัญญาณว่ามีคนกำลังจอง
+            updateDraftUI(payload.payload);
+        })
+        .on('broadcast', { event: 'clear-draft' }, payload => {
+            // เมื่อได้รับสัญญาณว่าเคลียร์การจอง (เช่น กดเซฟแล้ว หรือกดยกเลิก)
+            clearDraftUI(payload.payload);
+        })
+        .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+                console.log('🔗 เชื่อมต่อระบบจองตารางเรียลไทม์แล้ว!');
+            }
+        });
+}
+
+// อัปเดตหน้าจอเมื่อคนอื่นกำลังจอง
+function updateDraftUI(data) {
+    const { nick, day, stamp, byUser } = data;
+    const cellId = `cell-${nick}-${day}`;
+    const cell = document.getElementById(cellId);
+    
+    if (cell) {
+        const conf = stampConfig[stamp] || { bg: 'transparent', text: '#aaaaaa' };
+        cell.innerText = stamp;
+        // ทำไฮไลต์ให้รู้ว่าเป็นการ "จอง" ยังไม่เซฟ (เช่น ใส่กรอบกะพริบ)
+        cell.style.backgroundColor = conf.bg;
+        cell.style.color = conf.text;
+        cell.style.border = '2px dashed #ffcc00';
+        cell.setAttribute('title', `กำลังจองโดย: ${byUser}`);
+    }
+}
+
+// ล้างหน้าจอเมื่อจองเสร็จแล้ว
+function clearDraftUI(data) {
+    const { nick, day, originalStamp } = data;
+    const cellId = `cell-${nick}-${day}`;
+    const cell = document.getElementById(cellId);
+    
+    if (cell) {
+        const conf = stampConfig[originalStamp] || { bg: 'transparent', text: '#aaaaaa' };
+        cell.innerText = originalStamp;
+        cell.style.backgroundColor = conf.bg;
+        cell.style.color = conf.text;
+        cell.style.border = '1px solid #2a2a2a'; // กลับเป็นกรอบปกติ
+        cell.removeAttribute('title');
+    }
+}
+
+// เรียกใช้ตอนโหลดเว็บ
+document.addEventListener('DOMContentLoaded', () => {
+    // หน่วงเวลาเล็กน้อยเพื่อให้ Supabase โหลดเสร็จ
+    setTimeout(initScheduleRealtime, 1000); 
+});
+// -----------------------------
+
 document.addEventListener('mouseup', function() { 
     if (isDraggingStamp) {
         isDraggingStamp = false; 
         
-        // ทำการ Save และอัปเดตสรุปผล แค่ตอน "ปล่อยเมาส์" เท่านั้น ลดภาระเครื่องได้ 99%
         if (currentScheduleMode === 'SANDBOX') {
             saveSandboxScheduleSilent();
         } else {
@@ -3553,7 +3631,6 @@ document.addEventListener('mouseup', function() {
             }
         }
         
-        // อัปเดตตัวเลขสรุปหัวตาราง
         if (typeof recalcScheduleSummary === 'function') recalcScheduleSummary();
     }
 });
@@ -3566,6 +3643,100 @@ function startStampDrag(cell, nick, dept, day) {
 function enterStampDrag(e, cell, nick, dept, day) { 
     if(isDraggingStamp && currentStamp !== null && e.buttons === 1) { applyStamp(cell, nick, dept, day); } 
     else { isDraggingStamp = false; } 
+}
+
+function applyStamp(cell, nick, dept, day) {
+    if(currentStamp === null || cell.innerText === currentStamp) return; 
+    
+    const conf = stampConfig[currentStamp] || { bg: 'transparent', text: '#aaaaaa', label: 'ลบ', limit: 99 };
+    
+    if (myRole !== 'SuperAdmin') {
+        const rowCells = cell.parentElement.children; 
+        
+        if (currentStamp === 'X' || currentStamp === 'TX') {
+            let countXTX = 0;
+            for(let i = 0; i < rowCells.length; i++) {
+                let txt = rowCells[i].innerText;
+                if (rowCells[i] !== cell && (txt === 'X' || txt === 'TX')) countXTX++;
+            }
+            if (countXTX >= 4) {
+                isDraggingStamp = false; 
+                Swal.fire({toast:true, position:'top', title:'โควต้าวันหยุดรายเดือนเต็ม!', text:'X และ TX รวมกันได้สูงสุด 4 วัน/เดือน เท่านั้น', icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
+                return; 
+            }
+        }
+        
+        if (currentStamp === 'XX' || currentStamp === 'PN' || currentStamp === 'X4') {
+            let countType = 0;
+            for(let i = 0; i < rowCells.length; i++) {
+                if (rowCells[i] !== cell && rowCells[i].innerText === currentStamp) countType++;
+            }
+            let limit = conf.limit || 99; 
+            if (countType >= limit) {
+                isDraggingStamp = false;
+                Swal.fire({toast:true, position:'top', title:'โควต้าเดือนนี้เต็ม!', text:`ใช้ ${conf.label} ได้สูงสุด ${limit} ครั้ง/เดือน`, icon:'error', background:'#111', color:'#fff', timer:3500, showConfirmButton:false});
+                return; 
+            }
+        }
+        
+        const dailyOffLimits = sysSettings.leaveQuotas || { 'OD (A)': 2, 'OD (B)': 2, 'ODOL (A)': 2, 'ODOL (B)': 2 };
+        const offStampsToCount = ['X', 'TX', 'PN']; 
+        
+        if (offStampsToCount.includes(currentStamp)) {
+            const myUserObj = allUsersData.find(u => u[1] === nick);
+            const myShiftSet = myUserObj && myUserObj[9] ? myUserObj[9] : '';
+            
+            if (myShiftSet && dailyOffLimits[myShiftSet] !== undefined) {
+                let currentDayOffCount = 0;
+                const colIndex = cell.cellIndex; 
+                const allRows = cell.closest('tbody').rows;
+                const targetShiftChar = myShiftSet.includes('(A)') ? 'A' : 'B';
+                
+                for(let i = 0; i < allRows.length; i++) {
+                    let row = allRows[i];
+                    if (row.getAttribute('data-leave') === 'true' || row.getAttribute('data-excluded') === 'true') continue;
+                    if (row.getAttribute('data-shift') !== targetShiftChar) continue;
+                    
+                    let dayCell = row.cells[colIndex];
+                    if (dayCell && dayCell !== cell && offStampsToCount.includes(dayCell.innerText)) {
+                        currentDayOffCount++;
+                    }
+                }
+              const limit = dailyOffLimits[myShiftSet];
+                if (currentDayOffCount >= limit) {
+                    isDraggingStamp = false;
+                    Swal.fire({toast:true, position:'top', title:'⚠️ โควต้าคนหยุดรายวันเต็ม!', text:`กะ ${myShiftSet} ในวันนี้ มีคนหยุด (X, TX, PN) เต็มโควต้า ${limit} คนแล้วครับ`, icon:'error', background:'#111', color:'#fff', timer:4000, showConfirmButton:false});
+                    return; 
+                }
+            }
+        }
+    }
+
+    cell.innerText = currentStamp; 
+    cell.style.backgroundColor = conf.bg; 
+    cell.style.color = conf.text; 
+    cell.style.border = '1px solid #2a2a2a'; // รีเซ็ตขอบเผื่อมันติดเส้นปะจาก Draft
+    
+    if (cell.getAttribute('data-original') !== currentStamp) cell.classList.add('unsaved-mark'); 
+    else cell.classList.remove('unsaved-mark');
+    
+    if(!unsavedChanges[nick]) unsavedChanges[nick] = {}; 
+    unsavedChanges[nick][day] = currentStamp; 
+    unsavedChanges[nick]['dept'] = dept; 
+
+    // 🚀 ยิงสัญญาณ Broadcast ไปบอกทุกคนในห้องว่า "ฉันกำลังจองช่องนี้นะ!"
+    if (scheduleChannel && currentScheduleMode === 'REAL') {
+        scheduleChannel.send({
+            type: 'broadcast',
+            event: 'draft-stamp',
+            payload: {
+                nick: nick,
+                day: day,
+                stamp: currentStamp,
+                byUser: localStorage.getItem('okvip_nick')
+            }
+        });
+    }
 }
 
 // 🌟 2. ปรับปรุงฟังก์ชันประทับตรา (ลบการ Save รัวๆ ออก และเปลี่ยนวิธีค้นหาให้เร็วขึ้น)
