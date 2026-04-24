@@ -8096,31 +8096,42 @@ function viewFeedbackDetail(id) {
 
     let qHtml = '';
     scores.forEach((sc, idx) => {
-        qHtml += `<div class="d-flex justify-content-between border-bottom border-secondary mb-2 pb-1">
-                    <span class="text-white-50 small">ข้อที่ ${idx+1}</span>
-                    <span class="text-warning fw-bold">${sc} ดาว</span>
+        qHtml += `<div class="d-flex justify-content-between border-bottom border-secondary mb-3 pb-2">
+                    <span class="text-white" style="font-size: 1.1rem;">ข้อที่ ${idx+1}</span>
+                    <span class="text-warning fw-bold" style="font-size: 1.2rem;">${sc} ดาว</span>
                   </div>`;
     });
 
     Swal.fire({
-        title: `รีวิวการประเมิน: ${item.target_user}`,
+        title: `<h3 class="fw-bold text-white mb-0">รีวิวการประเมิน: <span class="text-info">${item.target_user}</span></h3>`,
+        width: '900px', // 🌟 ขยายความกว้างของหน้าต่างให้ใหญ่ขึ้น 2 เท่า
         html: `
-            <div class="text-start" style="font-size: 0.95rem;">
-                <div class="mb-3 p-3 rounded" style="background: #111; border: 1px solid #333;">
-                    <div class="text-info fw-bold mb-2">📊 คะแนนแต่ละข้อ</div>
+            <div class="text-start mt-4" style="font-size: 1.1rem;">
+                
+                <div class="mb-4 p-4 rounded" style="background: #000000; border: 1px solid #444;">
+                    <div class="text-info fw-bold mb-4 fs-5 border-bottom border-info pb-2">📊 สรุปคะแนนแต่ละข้อ</div>
                     ${qHtml}
                 </div>
-                <div class="mb-3 p-3 rounded" style="background: rgba(0,255,102,0.1); border: 1px solid rgba(0,255,102,0.3);">
-                    <div class="text-success fw-bold mb-1">👍 สิ่งที่ประทับใจ / ทำได้ดี</div>
-                    <div class="text-white" style="white-space: pre-wrap;">${item.good_point || '-'}</div>
+                
+                <div class="mb-4 p-4 rounded" style="background: #000000; border: 1px solid #00ff66;">
+                    <div class="text-success fw-bold mb-3 fs-5">👍 สิ่งที่ประทับใจ / ทำได้ดี</div>
+                    <div class="text-white" style="white-space: pre-wrap; font-size: 1.05rem; line-height: 1.6;">${item.good_point || '-'}</div>
                 </div>
-                <div class="p-3 rounded" style="background: rgba(255,204,0,0.1); border: 1px solid rgba(255,204,0,0.3);">
-                    <div class="text-warning fw-bold mb-1">💡 สิ่งที่ควรพัฒนา</div>
-                    <div class="text-white" style="white-space: pre-wrap;">${item.improve_point || '-'}</div>
+                
+                <div class="p-4 rounded" style="background: #000000; border: 1px solid #ffcc00;">
+                    <div class="text-warning fw-bold mb-3 fs-5">💡 สิ่งที่ควรพัฒนา</div>
+                    <div class="text-white" style="white-space: pre-wrap; font-size: 1.05rem; line-height: 1.6;">${item.improve_point || '-'}</div>
                 </div>
+                
             </div>
         `,
-        background: '#151518', color: '#fff', confirmButtonColor: '#00f0ff', confirmButtonText: 'ปิดหน้าต่าง'
+        background: '#0a0a0c', // สีพื้นหลังหลักของ Popup (ดำเข้มสุด)
+        color: '#fff', 
+        confirmButtonColor: '#00f0ff', 
+        confirmButtonText: '<b style="color:#000; font-size: 1.1rem; padding: 5px 20px;">ปิดหน้าต่าง</b>',
+        customClass: {
+            popup: 'rounded-4 border border-secondary shadow-lg'
+        }
     });
 }
 
