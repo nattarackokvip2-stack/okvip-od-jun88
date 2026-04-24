@@ -8021,11 +8021,10 @@ async function renderFeedbackList() {
             let delBtn = '';
 
             // ระบบจัดการ แก้/ลบ
-            if (item.sender_nick === myNick || myRole === 'SuperAdmin') {
+            if (item.sender_nick === myNick) {
                 editBtn = `<button class="btn btn-sm btn-outline-warning fw-bold px-2 py-1 m-1" onclick="editFeedback('${item.id}')" title="แก้ไข">✏️</button>`;
                 delBtn = `<button class="btn btn-sm btn-outline-danger fw-bold px-2 py-1 m-1" onclick="deleteFeedback('${item.id}')" title="ลบ">✖</button>`;
             }
-
             html += `<tr>
                 <td class="text-white-50 small">${dateStr}</td>
                 <td class="text-center">${senderDisplay}</td>
