@@ -551,19 +551,34 @@
       </div>
 
       <div id="hrProbationArea" style="display: none;">
-        <div class="alert alert-dark border-success text-success small mb-3" style="background: rgba(0, 255, 102, 0.05);">
-            <b>🎓 ขั้นตอนและเงื่อนไขการสอบประเมินผ่านโปร:</b><br>
-            1. พนักงานต้องมีอายุงานตามที่กำหนดและไม่มีประวัติพฤติกรรมร้ายแรง<br>
-            2. ผู้สอบ (Admin/SuperAdmin) เป็นผู้บันทึกผลการทดสอบและข้อเสนอแนะ<br>
-            3. ข้อมูลนี้ใช้พิจารณาปรับฐานเงินเดือน
+        <div class="alert mb-3" style="background: #111111; border: 1px solid #333; border-radius: 10px; padding: 15px;">
+            <b style="color: #00ff66; font-size: 1.05rem;">🎓 ขั้นตอนและเงื่อนไขการสอบประเมินผ่านโปร:</b><br>
+            <div style="color: #dddddd; line-height: 1.6; margin-top: 5px;">
+                <span class="text-info">1.</span> พนักงานต้องมีอายุงานตามที่กำหนดและไม่มีประวัติพฤติกรรมร้ายแรง<br>
+                <span class="text-info">2.</span> ผู้สอบ (Admin/SuperAdmin) เป็นผู้บันทึกผลการทดสอบและข้อเสนอแนะ<br>
+                <span class="text-info">3.</span> ข้อมูลนี้ใช้พิจารณาปรับฐานเงินเดือน
+            </div>
         </div>
+
         <div class="d-flex justify-content-end mb-3">
-            <button class="btn btn-outline-success fw-bold" onclick="openProbationModal()">➕ บันทึกผลสอบประเมิน</button>
+            <button class="btn fw-bold" style="background-color: transparent; border: 1px solid #00ff66; color: #00ff66; border-radius: 8px; transition: 0.3s;" onmouseover="this.style.backgroundColor='#00ff66'; this.style.color='#000';" onmouseout="this.style.backgroundColor='transparent'; this.style.color='#00ff66';" onclick="openProbationModal()">➕ บันทึกผลสอบประเมิน</button>
         </div>
-        <div class="table-responsive">
-          <table class="table table-hover align-middle">
-            <thead><tr><th>วันที่ประเมิน</th><th>พนักงาน</th><th>รายละเอียดการผ่านโปร</th><th>พฤติกรรมที่ผ่านมา (สรุป)</th><th>สถานะ</th></tr></thead>
-            <tbody id="hrProbationTableBody"><tr><td colspan="5" class="text-center text-muted py-4">รอการเชื่อมต่อฐานข้อมูล...</td></tr></tbody>
+
+        <div class="table-responsive" style="background: #0a0a0c; border: 1px solid #333; border-radius: 12px; padding: 10px;">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="text-info">วันที่ประเมิน</th>
+                    <th>พนักงาน</th>
+                    <th class="text-success">รายละเอียดการผ่านโปร</th>
+                    <th class="text-warning">พฤติกรรมที่ผ่านมา (สรุป)</th>
+                    <th class="text-center">สถานะ</th>
+                    <th class="text-center">จัดการ</th>
+                </tr>
+            </thead>
+            <tbody id="hrProbationTableBody">
+                <tr><td colspan="6" class="text-center text-muted py-4">กำลังโหลดข้อมูล...</td></tr>
+            </tbody>
           </table>
         </div>
       </div>
