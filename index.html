@@ -1862,6 +1862,55 @@
     </div>
   </div>
 </div>
+
+<div class="modal fade" id="probationModal" tabindex="-1" data-bs-theme="dark">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border: 1px solid #00ff66; box-shadow: 0 0 20px rgba(0, 255, 102, 0.2);">
+      <div class="modal-body p-4">
+        <h4 class="fw-bold mb-4 text-center" style="color: #00ff66;" id="probationModalTitle">🎓 บันทึกผลสอบประเมินผ่านโปร</h4>
+        
+        <form id="probationForm" onsubmit="handleProbationSubmit(event)">
+          <input type="hidden" id="editProbationId">
+          
+          <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                  <label class="small mb-1 text-white">1. พนักงานที่ถูกประเมิน <span class="text-danger">*</span></label>
+                  <select id="probNick" class="form-select bg-dark text-white border-secondary" required></select>
+              </div>
+              <div class="col-md-6">
+                  <label class="small mb-1 text-white">2. วันที่ประเมิน <span class="text-danger">*</span></label>
+                  <input type="date" id="probDate" class="form-control bg-dark text-white border-secondary" required>
+              </div>
+          </div>
+
+          <label class="small mb-1 text-success fw-bold">3. รายละเอียดการทดสอบ / ทักษะที่ทำได้ <span class="text-danger">*</span></label>
+          <textarea id="probDetails" class="form-control mb-3 bg-dark text-white border-success" rows="3" placeholder="ระบุสิ่งที่พนักงานทำได้ดี ทักษะที่ผ่านเกณฑ์..." required></textarea>
+
+          <label class="small mb-1 text-warning fw-bold">4. สรุปพฤติกรรมที่ผ่านมา (จุดแข็ง/จุดอ่อน) <span class="text-danger">*</span></label>
+          <textarea id="probBehavior" class="form-control mb-4 bg-dark text-white border-warning" rows="3" placeholder="ระบุพฤติกรรมการทำงาน ความรับผิดชอบ..." required></textarea>
+
+          <div class="mb-4 p-3 rounded" style="background: rgba(255,255,255,0.05); border: 1px solid #444;">
+              <label class="small mb-2 text-white fw-bold d-block">5. สรุปผลการประเมินขั้นเด็ดขาด <span class="text-danger">*</span></label>
+              <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="probStatus" id="probStatusPass" value="ผ่านโปร (ปรับขึ้นเป็นพนักงานประจำ)" required>
+                  <label class="form-check-label text-success fw-bold" for="probStatusPass">✅ ผ่านโปร</label>
+              </div>
+              <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="probStatus" id="probStatusExtend" value="ต่อโปร (ขยายเวลาทดลองงาน)">
+                  <label class="form-check-label text-warning fw-bold" for="probStatusExtend">⏳ ขยายเวลาต่อโปร</label>
+              </div>
+              <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="probStatus" id="probStatusFail" value="ไม่ผ่านโปร (พ้นสภาพ)">
+                  <label class="form-check-label text-danger fw-bold" for="probStatusFail">❌ ไม่ผ่านโปร</label>
+              </div>
+          </div>
+
+          <button type="submit" id="btnSaveProbation" class="btn w-100 py-2 fw-bold" style="background-color: #00ff66; color: #000; font-size: 1.1rem; border-radius: 8px;">💾 บันทึกผลลงระบบ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
   
 <div class="modal fade" id="evalFormModal" tabindex="-1" data-bs-theme="light">
   <div class="modal-dialog modal-fullscreen"><div class="modal-content" style="background: #e6f2f2;">
@@ -8357,6 +8406,168 @@ function deleteLeave(id) {
             }
         } 
     }); 
+}
+
+// ==========================================
+// 🎓 ระบบข้อมูลการสอบประเมินผ่านโปร
+// ==========================================
+let allProbationsData = [];
+
+// ฟังก์ชันโหลดข้อมูล
+async function loadSupabaseProbations() {
+    try {
+        const { data } = await supabaseClient.from('hr_probations').select('*').order('record_date', { ascending: false });
+        allProbationsData = data || [];
+        if (currentHrTab === 'probation') renderProbationList();
+    } catch(e) { console.error("Probation Load Error:", e); }
+}
+
+// อัปเดตรายชื่อให้เลือกในฟอร์ม (ดึงเฉพาะคนที่ยังไม่ผ่านโปรหรือเป็น Member)
+function updateProbationUserSelect() {
+    let html = '<option value="">-- เลือกพนักงาน --</option>'; 
+    allUsersData.forEach(u => { 
+        if(u[7] === 'Active' && u[6] === 'Member') { 
+            const dept = u[3] ? u[3].split(' ')[0] : '';
+            html += `<option value="${u[1]}|${u[3]}">${u[1]} (${dept})</option>`;
+        } 
+    }); 
+    document.getElementById('probNick').innerHTML = html; 
+}
+
+// เปิดหน้าฟอร์มใหม่
+function openProbationModal() {
+    document.getElementById('probationForm').reset();
+    document.getElementById('editProbationId').value = '';
+    document.getElementById('probationModalTitle').innerText = '🎓 บันทึกผลสอบประเมินผ่านโปร';
+    
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    document.getElementById('probDate').value = now.toISOString().split('T')[0];
+    
+    updateProbationUserSelect();
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('probationModal')).show();
+}
+
+// ฟังก์ชันกดแก้ไข
+function openEditProbation(id) {
+    const p = allProbationsData.find(x => x.id.toString() === id.toString());
+    if(!p) return;
+    
+    updateProbationUserSelect();
+    document.getElementById('editProbationId').value = p.id;
+    document.getElementById('probNick').value = `${p.nickname}|${p.department}`;
+    document.getElementById('probDate').value = p.record_date;
+    document.getElementById('probDetails').value = p.eval_details;
+    document.getElementById('probBehavior').value = p.behavior_summary;
+    
+    // ติ๊ก Radio button ตามสถานะเดิม
+    const radios = document.getElementsByName('probStatus');
+    for (let i = 0; i < radios.length; i++) {
+        if (radios[i].value === p.status) {
+            radios[i].checked = true; break;
+        }
+    }
+
+    document.getElementById('probationModalTitle').innerText = '✏️ แก้ไขผลสอบประเมินผ่านโปร';
+    bootstrap.Modal.getOrCreateInstance(document.getElementById('probationModal')).show();
+}
+
+// ฟังก์ชันบันทึกข้อมูล
+async function handleProbationSubmit(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnSaveProbation');
+    btn.disabled = true; btn.innerText = '⏳ กำลังบันทึก...';
+    
+    try {
+        const id = document.getElementById('editProbationId').value;
+        const nickVal = document.getElementById('probNick').value.split('|');
+        if(!nickVal[0]) throw new Error("กรุณาเลือกพนักงาน");
+
+        // หาระดับสถานะที่ติ๊กไว้
+        let selectedStatus = "";
+        const radios = document.getElementsByName('probStatus');
+        for (let i = 0; i < radios.length; i++) {
+            if (radios[i].checked) { selectedStatus = radios[i].value; break; }
+        }
+
+        const myNick = localStorage.getItem('okvip_nick');
+
+        const payload = { 
+            nickname: nickVal[0], 
+            department: nickVal[1], 
+            record_date: document.getElementById('probDate').value, 
+            eval_details: document.getElementById('probDetails').value, 
+            behavior_summary: document.getElementById('probBehavior').value, 
+            status: selectedStatus,
+            recorded_by: myNick 
+        };
+
+        if(id) await supabaseClient.from('hr_probations').update(payload).eq('id', id);
+        else await supabaseClient.from('hr_probations').insert([payload]);
+
+        bootstrap.Modal.getOrCreateInstance(document.getElementById('probationModal')).hide();
+        Swal.fire({toast:true, position:'top-end', title:'บันทึกสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+        
+        await loadSupabaseProbations();
+    } catch(err) { 
+        Swal.fire('Error', err.message, 'error'); 
+    } finally { 
+        btn.disabled = false; btn.innerText = '💾 บันทึกผลลงระบบ'; 
+    }
+}
+
+// แสดงตารางข้อมูล
+function renderProbationList() {
+    const tbody = document.getElementById('hrProbationTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    if(allProbationsData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center py-5 text-muted">🎓 ยังไม่มีข้อมูลการสอบประเมิน</td></tr>';
+        return;
+    }
+
+    allProbationsData.forEach(p => {
+        const dateStr = new Date(p.record_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
+        
+        let statusBadge = '';
+        if (p.status.includes('ผ่านโปร')) statusBadge = `<span class="badge bg-success border border-success px-2 py-1">✅ ผ่านโปร</span>`;
+        else if (p.status.includes('ไม่ผ่าน')) statusBadge = `<span class="badge bg-danger border border-danger px-2 py-1">❌ ไม่ผ่านโปร</span>`;
+        else statusBadge = `<span class="badge bg-warning text-dark border border-warning px-2 py-1">⏳ ขยายเวลาต่อโปร</span>`;
+
+        const adminBtns = (myRole === 'SuperAdmin' || myRole === 'Admin') ? `
+            <div class="d-flex justify-content-center gap-1">
+                <button class="btn btn-sm btn-outline-info py-0 px-2" onclick="openEditProbation('${p.id}')">✏️</button>
+                <button class="btn btn-sm btn-outline-danger py-0 px-2" onclick="deleteProbation('${p.id}')">✖</button>
+            </div>
+        ` : '-';
+
+        tbody.innerHTML += `
+            <tr>
+                <td class="text-info fw-bold">${dateStr}</td>
+                <td class="fw-bold text-white" style="font-size: 1.05rem;">${p.nickname} <br><span class="badge bg-secondary border border-secondary mt-1">${p.department.split(' ')[0]}</span></td>
+                <td class="small text-light" style="max-width: 250px; white-space: normal; line-height: 1.5;"><span class="text-success fw-bold d-block mb-1">ผลเทส:</span> ${p.eval_details}</td>
+                <td class="small text-light" style="max-width: 250px; white-space: normal; line-height: 1.5;"><span class="text-warning fw-bold d-block mb-1">พฤติกรรม:</span> ${p.behavior_summary}</td>
+                <td class="text-center">${statusBadge}</td>
+                <td class="text-center">${adminBtns}</td>
+            </tr>
+        `;
+    });
+}
+
+function deleteProbation(id) {
+    Swal.fire({
+        title: 'ลบข้อมูลนี้?',
+        text: 'ผลการสอบประเมินนี้จะถูกลบถาวร',
+        icon: 'warning', showCancelButton: true, confirmButtonColor: '#ff3366', background: '#111', color: '#fff'
+    }).then(async r => {
+        if(r.isConfirmed) {
+            Swal.fire({title:'กำลังลบ...', didOpen:()=>Swal.showLoading()});
+            await supabaseClient.from('hr_probations').delete().eq('id', id);
+            await loadSupabaseProbations();
+            Swal.fire({toast:true, position:'top-end', title:'ลบสำเร็จ!', icon:'success', timer:1500, showConfirmButton:false, background:'#111', color:'#fff'});
+        }
+    });
 }
 </script>
 </body>
